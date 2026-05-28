@@ -28,7 +28,15 @@ app.use(express.static(join(__dirname, 'public')));
 // ─── Config ───────────────────────────────────────────────
 const GEMINI_MODEL = 'gemini-2.5-pro';
 const GEMINI_FLASH = 'gemini-2.5-flash';
-const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GCP_PROJECT  = process.env.GOOGLE_CLOUD_PROJECT;
+const GCP_LOCATION = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+
+function geminiUrl(model) {
+  return `https://${GCP_LOCATION}-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT}/locations/${GCP_LOCATION}/publishers/google/models/${model}:generateContent`;
+}
+function geminiHeaders(apiKey) {
+  return { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey };
+}
 const CORRECTIONS_FILE = join(__dirname, 'corrections.json');
 
 // Voting weights: Pro is more accurate, counts double
@@ -1306,13 +1314,12 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
     thinkingBudget = 8000,
   } = opts;
 
-  const url = `${BASE_URL}/${model}:generateContent?key=${apiKey}`;
+  const url = geminiUrl(model);
 
   const genConfig = {
     temperature,
     max_output_tokens: maxOutputTokens,
     thinking_config: { thinking_budget: thinkingBudget },
-    media_resolution: 'MEDIA_RESOLUTION_HIGH',
   };
 
   if (responseSchema) {
@@ -1333,7 +1340,7 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
     try {
       const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: geminiHeaders(apiKey),
         body: JSON.stringify(body),
       });
 
@@ -2608,7 +2615,7 @@ SATB: Soprano=top treble stems up, Alto=bottom treble stems down, Tenor=top bass
     contents.push({ role: 'user', parts: [{ text: 'Help me with this sheet music.' }, ...chatImages] });
   }
 
-  const url = `${BASE_URL}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const url = geminiUrl(GEMINI_MODEL);
 
   const body = {
     contents,
@@ -2617,7 +2624,6 @@ SATB: Soprano=top treble stems up, Alto=bottom treble stems down, Tenor=top bass
       temperature: 0.7,
       max_output_tokens: 4096,
       thinking_config: { thinking_budget: 4000 },
-      media_resolution: 'MEDIA_RESOLUTION_HIGH',
     },
   };
 
@@ -2625,7 +2631,7 @@ SATB: Soprano=top treble stems up, Alto=bottom treble stems down, Tenor=top bass
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const resp = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: geminiHeaders(apiKey),
       body: JSON.stringify(body),
     });
 
@@ -2684,7 +2690,7 @@ Evaluate as a professional choir director. Return ONLY valid JSON:
 
 Most student singers score 40-75. Only score below 30 if clearly off-pitch or unclear.`;
 
-    const url = `${BASE_URL}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    const url = geminiUrl(GEMINI_MODEL);
     const body = {
       contents: [{ role: 'user', parts: [
         { text: userText },
@@ -2701,7 +2707,7 @@ Most student singers score 40-75. Only score below 30 if clearly off-pitch or un
 
     const resp = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: geminiHeaders(apiKey),
       body: JSON.stringify(body),
     });
 
