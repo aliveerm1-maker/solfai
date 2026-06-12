@@ -4,9 +4,11 @@
 //   reconciliation, enhanced music theory validation, enharmonic awareness,
 //   weighted majority voting, correction cache, vocal coach, MusicXML parser.
 
+import 'dotenv/config';
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { tmpdir } from 'os';
 import { createHash, randomUUID } from 'crypto';
 import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from 'fs';
 import sharp from 'sharp';
@@ -14,10 +16,12 @@ import multer from 'multer';
 import AdmZip from 'adm-zip';
 import { Note, Scale, Interval } from 'tonal';
 
-const upload = multer({ dest: '/tmp/solfai-uploads/' });
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+const UPLOAD_DIR = join(tmpdir(), 'solfai-uploads');
+mkdirSync(UPLOAD_DIR, { recursive: true });
+const upload = multer({ dest: UPLOAD_DIR });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -544,9 +548,11 @@ function resolveKeyFromCounts(flatCount, sharpCount, keySignatureVotes = []) {
     else majorWeight += v.weight;
   }
 
-  // Weighted majority rules. Tie or no votes → default to major (safer for 0 accidentals)
+  // Major-biased decision: minor only wins with a clear majority (>65%).
+  // Reason: minor is rarer in choral repertoire and was being mis-picked on close
+  // votes (e.g. 2 flats reading as G minor instead of Bb major).
   const minorRatio = totalWeight > 0 ? minorWeight / totalWeight : 0;
-  const keyName = (totalWeight > 0 && minorRatio >= 0.5) ? entry.minor : entry.major;
+  const keyName = (totalWeight > 0 && minorRatio > 0.65) ? entry.minor : entry.major;
 
   const accLabel = sharpCount > 0 ? `${sharpCount} sharp${sharpCount > 1 ? 's' : ''}` :
     flatCount > 0 ? `${flatCount} flat${flatCount > 1 ? 's' : ''}` : 'no sharps or flats';
@@ -1320,6 +1326,7 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
     temperature,
     max_output_tokens: maxOutputTokens,
     thinking_config: { thinking_budget: thinkingBudget },
+    media_resolution: 'MEDIA_RESOLUTION_HIGH',
   };
 
   if (responseSchema) {
@@ -2624,6 +2631,7 @@ SATB: Soprano=top treble stems up, Alto=bottom treble stems down, Tenor=top bass
       temperature: 0.7,
       max_output_tokens: 4096,
       thinking_config: { thinking_budget: 4000 },
+      media_resolution: 'MEDIA_RESOLUTION_HIGH',
     },
   };
 
@@ -2824,7 +2832,7 @@ function parseMusicXML(xmlString, targetPart) {
 }
 
 // ─── MusicXML Upload Route ────────────────────────────────
-const musicxmlUpload = multer({ dest: '/tmp/solfai-uploads/', limits: { fileSize: 10 * 1024 * 1024 } });
+const musicxmlUpload = multer({ dest: UPLOAD_DIR, limits: { fileSize: 10 * 1024 * 1024 } });
 app.post('/api/parse-musicxml', musicxmlUpload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file provided' });
 
@@ -4122,13 +4130,10 @@ app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.setHeader('Cache-Control', 'no-cache');
   res.send(`
-const CACHE_NAME = 'solfai-cache-v1';
+const CACHE_NAME = 'solfai-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/style.css',
-  '/app.js',
-  '/manifest.json',
 ];
 
 self.addEventListener('install', (event) => {
