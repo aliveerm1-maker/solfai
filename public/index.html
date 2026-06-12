@@ -2238,7 +2238,7 @@ function playPiano(frequency, duration = 2.5, btn = null) {
     nodes.push(osc);
   });
 
-  const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate);
+  const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.005, ctx.sampleRate);
   const noiseData = noiseBuf.getChannelData(0);
   for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.3;
   const noiseSrc = ctx.createBufferSource();
@@ -2249,7 +2249,7 @@ function playPiano(frequency, duration = 2.5, btn = null) {
   noiseBand.Q.value = 2;
   const noiseGain = ctx.createGain();
   noiseGain.gain.setValueAtTime(0.18, ctx.currentTime);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.005);
   noiseSrc.connect(noiseBand);
   noiseBand.connect(noiseGain);
   noiseGain.connect(master);
