@@ -32,11 +32,12 @@ app.use(express.static(join(__dirname, 'public')));
 // ─── Config ───────────────────────────────────────────────
 const GEMINI_MODEL = 'gemini-2.5-pro';
 const GEMINI_FLASH = 'gemini-2.5-flash';
-const GCP_PROJECT  = process.env.GOOGLE_CLOUD_PROJECT;
-const GCP_LOCATION = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
-
+// Google AI Studio (Gemini Developer API). Auth is the AIzaSy API key sent via
+// the x-goog-api-key header. NOTE: do NOT switch this to the Vertex AI endpoint
+// ({loc}-aiplatform.googleapis.com/.../projects/...) unless you also switch auth
+// to an OAuth2 service-account bearer token — that endpoint rejects API keys.
 function geminiUrl(model) {
-  return `https://${GCP_LOCATION}-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT}/locations/${GCP_LOCATION}/publishers/google/models/${model}:generateContent`;
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 }
 function geminiHeaders(apiKey) {
   return { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey };
