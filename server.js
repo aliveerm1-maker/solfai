@@ -2662,8 +2662,12 @@ Most student singers score 40-75. Only score below 30 if clearly off-pitch or un
   }
 });
 
-// ─── MusicXML Parser ──────────────────────────────────────
+// ─── MusicXML Parser (MuseScore-style) ───────────────────
+// Pitch:    step + alter + octave → e.g. "F#4", "Bb3"
+// Duration: <type> fraction × dots × tuplet ratio
+// Validate: sum durations per measure vs time signature
 function parseMusicXML(xmlString, targetPart) {
+  // ── Part list ─────────────────────────────────────────────
   const partList = [];
   const partListMatch = xmlString.match(/<part-list>([\s\S]*?)<\/part-list>/);
   if (partListMatch) {
@@ -2680,21 +2684,61 @@ function parseMusicXML(xmlString, targetPart) {
     if (p.name.toLowerCase().includes(target)) { partId = p.id; break; }
   }
 
+  // ── Key signature ─────────────────────────────────────────
   let fifths = 0;
   const fifthsMatch = xmlString.match(/<fifths>(-?\d+)<\/fifths>/);
   if (fifthsMatch) fifths = parseInt(fifthsMatch[1], 10);
 
+  const modeMatch = xmlString.match(/<mode>(major|minor)<\/mode>/i);
+  const mode = modeMatch ? modeMatch[1].toLowerCase() : 'major';
+
   const sharpCount = fifths > 0 ? fifths : 0;
-  const flatCount = fifths < 0 ? Math.abs(fifths) : 0;
+  const flatCount  = fifths < 0 ? Math.abs(fifths) : 0;
   const code = sharpCount > 0 ? `${sharpCount}s` : flatCount > 0 ? `${flatCount}b` : '0';
   const keyEntry = KEY_FROM_COUNT[code];
-  const tonic = keyEntry ? keyEntry.major.split(' ')[0] : 'C';
+  const keySignature = keyEntry ? (keyEntry[mode] || keyEntry.major) : 'C major';
+  const tonic = keySignature.split(' ')[0];
 
-  const partRegex = new RegExp(`<part\\s+id="${partId}"[^>]*>([\\s\\S]*?)<\\/part>`);
-  const partMatch = xmlString.match(partRegex);
+  // ── Time signature ────────────────────────────────────────
+  let timeSignature = '4/4';
+  const beatsMatch    = xmlString.match(/<beats>(\d+)<\/beats>/);
+  const beatTypeMatch = xmlString.match(/<beat-type>(\d+)<\/beat-type>/);
+  if (beatsMatch && beatTypeMatch) timeSignature = `${beatsMatch[1]}/${beatTypeMatch[1]}`;
+
+  // ── Duration table (fraction of a whole note) ─────────────
+  const TYPE_FRACTION = {
+    'breve': 2, 'whole': 1, 'half': 0.5, 'quarter': 0.25,
+    'eighth': 0.125, '16th': 0.0625, '32nd': 0.03125, '64th': 0.015625,
+  };
+
+  function calcDuration(noteXml) {
+    const tm = noteXml.match(/<type>([^<]+)<\/type>/);
+    if (!tm) return null;
+    const base = TYPE_FRACTION[tm[1].trim()];
+    if (base === undefined) return null;
+    // Dots: each adds half the previous added value
+    const dotCount = (noteXml.match(/<dot\/>/g) || []).length;
+    let dur = base, add = base / 2;
+    for (let i = 0; i < dotCount; i++) { dur += add; add /= 2; }
+    // Tuplet: actual-notes / normal-notes (e.g. triplet = 3/2)
+    const am = noteXml.match(/<actual-notes>(\d+)<\/actual-notes>/);
+    const nm2 = noteXml.match(/<normal-notes>(\d+)<\/normal-notes>/);
+    if (am && nm2) {
+      const actual = parseInt(am[1], 10), normal = parseInt(nm2[1], 10);
+      if (actual > 0) dur = dur * normal / actual;
+    }
+    return dur;
+  }
+
+  // ── Part XML ──────────────────────────────────────────────
+  const partRx = new RegExp(`<part\\s+id="${partId}"[^>]*>([\\s\\S]*?)<\\/part>`);
+  const partMatch = xmlString.match(partRx);
   if (!partMatch) {
     return { error: `Could not find part "${targetPart}" in the MusicXML file.`, parts: partList };
   }
+
+  // Expected whole-note fractions per measure (4/4 = 1.0, 3/4 = 0.75, 6/8 = 0.75)
+  const defaultExpected = getBeatsPerMeasure(timeSignature) / 4;
 
   const partXml = partMatch[1];
   const measures = [];
@@ -2704,41 +2748,65 @@ function parseMusicXML(xmlString, targetPart) {
   while ((mm = measureRegex.exec(partXml)) !== null) {
     const measureNum = parseInt(mm[1], 10);
     const measureXml = mm[2];
-    const notes = [];
-    const lyrics = [];
+    const notes = [], durations = [], lyrics = [];
+    let totalDur = 0, hasValidDur = false;
+
+    // Per-measure time-sig override (e.g. pickup bar)
+    const mb = measureXml.match(/<beats>(\d+)<\/beats>/);
+    const mbt = measureXml.match(/<beat-type>(\d+)<\/beat-type>/);
+    const expected = (mb && mbt)
+      ? parseInt(mb[1]) / parseInt(mbt[1])
+      : defaultExpected;
 
     const noteRegex = /<note>([\s\S]*?)<\/note>/g;
     let nm;
     while ((nm = noteRegex.exec(measureXml)) !== null) {
       const noteXml = nm[1];
-      if (noteXml.includes('<rest')) continue;
-      if (noteXml.includes('<chord')) continue;
+      const isChord = noteXml.includes('<chord');
+      const isRest  = noteXml.includes('<rest');
 
-      const stepMatch = noteXml.match(/<step>([A-G])<\/step>/);
-      const octaveMatch = noteXml.match(/<octave>(\d)<\/octave>/);
-      const alterMatch = noteXml.match(/<alter>(-?\d+)<\/alter>/);
+      const dur = calcDuration(noteXml);
+      if (dur !== null && !isChord) { totalDur += dur; hasValidDur = true; }
 
-      if (stepMatch && octaveMatch) {
-        let noteName = stepMatch[1];
-        const alter = alterMatch ? parseInt(alterMatch[1], 10) : 0;
-        if (alter === 1) noteName += '#';
-        else if (alter === -1) noteName += 'b';
-        else if (alter === 2) noteName += '##';
-        else if (alter === -2) noteName += 'bb';
-        noteName += octaveMatch[1];
-        notes.push(noteName);
+      if (isRest || isChord) continue;
+
+      const stepM   = noteXml.match(/<step>([A-G])<\/step>/);
+      const octaveM = noteXml.match(/<octave>(\d)<\/octave>/);
+      const alterM  = noteXml.match(/<alter>(-?[\d.]+)<\/alter>/);
+
+      if (stepM && octaveM) {
+        let n = stepM[1];
+        const alter = alterM ? parseFloat(alterM[1]) : 0;
+        if      (alter ===  2) n += '##';
+        else if (alter ===  1) n += '#';
+        else if (alter === -1) n += 'b';
+        else if (alter === -2) n += 'bb';
+        n += octaveM[1];
+        notes.push(n);
+        if (dur !== null) durations.push(dur);
       }
 
-      const lyricMatch = noteXml.match(/<lyric[\s\S]*?<text>([^<]*)<\/text>/);
-      if (lyricMatch) lyrics.push(lyricMatch[1]);
+      const lyricM = noteXml.match(/<lyric[\s\S]*?<text>([^<]*)<\/text>/);
+      if (lyricM) lyrics.push(lyricM[1]);
     }
 
-    if (notes.length > 0) {
-      measures.push({ num: measureNum, notes, lyrics: lyrics.join(' ') });
+    // Measure validation: flag mismatch but never reject
+    let durationWarning = null;
+    if (hasValidDur) {
+      const diff = Math.abs(totalDur - expected);
+      if (diff > 0.01) {
+        const got = +(totalDur * 4).toFixed(3);
+        const exp = +(expected * 4).toFixed(3);
+        durationWarning = `got ${got} beats, expected ${exp} (${timeSignature})`;
+      }
+    }
+
+    if (notes.length > 0 || durationWarning) {
+      measures.push({ num: measureNum, notes, durations, lyrics: lyrics.join(' '), durationWarning });
     }
   }
 
-  return { tonic, measures, partId, partList, sharpCount, flatCount };
+  return { tonic, keySignature, timeSignature, mode, measures, partId, partList, sharpCount, flatCount };
 }
 
 // ─── MusicXML Upload Route ────────────────────────────────
@@ -2749,6 +2817,7 @@ app.post('/api/parse-musicxml', musicxmlUpload.single('file'), async (req, res) 
   const filePath = req.file.path;
   try {
     const selectedPart = req.body.selectedPart || 'Soprano';
+    const apiKey = process.env.GEMINI_API_KEY;
     let xmlString;
 
     const originalName = (req.file.originalname || '').toLowerCase();
@@ -2757,10 +2826,12 @@ app.post('/api/parse-musicxml', musicxmlUpload.single('file'), async (req, res) 
     if (originalName.endsWith('.mxl') || (buf[0] === 0x50 && buf[1] === 0x4B)) {
       const zip = new AdmZip(buf);
       const entries = zip.getEntries();
+      // Prefer .musicxml inside the archive, skip META-INF
       const xmlEntry = entries.find(e =>
-        e.entryName.endsWith('.musicxml') || e.entryName.endsWith('.xml')
-      ) || entries.find(e => !e.entryName.startsWith('META-INF') && e.entryName.endsWith('.xml'));
-
+        !e.entryName.startsWith('META-INF') && e.entryName.endsWith('.musicxml')
+      ) || entries.find(e =>
+        !e.entryName.startsWith('META-INF') && e.entryName.endsWith('.xml')
+      );
       if (!xmlEntry) return res.status(400).json({ error: 'No MusicXML file found inside the .mxl archive.' });
       xmlString = xmlEntry.getData().toString('utf8');
     } else {
@@ -2774,32 +2845,107 @@ app.post('/api/parse-musicxml', musicxmlUpload.single('file'), async (req, res) 
     const result = parseMusicXML(xmlString, selectedPart);
     if (result.error) return res.status(400).json(result);
 
-    const VALID_SOLFEGE = new Set(['Do', 'Di', 'Re', 'Ri', 'Me', 'Mi', 'Fa', 'Fi', 'Sol', 'Si', 'La', 'Li', 'Te', 'Ti', '?']);
+    // ── Solfege (tonal.js — never Gemini) ───────────────────
+    const VALID_SOLFEGE = new Set(['Do','Di','Re','Ri','Me','Mi','Fa','Fi','Sol','Si','La','Li','Te','Ti','?']);
+    const durationWarnings = [];
     for (const m of result.measures) {
-      m.solfege = (m.notes || []).map(n =>
-        noteToSolfege(n.replace(/\d+$/, ''), result.tonic)
-      );
+      m.solfege = (m.notes || []).map(n => noteToSolfege(n.replace(/\d+$/, ''), result.tonic));
       m.valid = m.solfege.every(s => VALID_SOLFEGE.has(s));
       m.confidence = 'high';
       m.disagreement = false;
+      if (m.durationWarning) durationWarnings.push(`Measure ${m.num}: ${m.durationWarning}`);
     }
 
-    console.log(`[Solfai] MusicXML parsed: ${result.measures.length} measures, part=${selectedPart}, key=${result.tonic}`);
+    // ── Title / composer from XML header ────────────────────
+    const titleMatch = xmlString.match(/<movement-title>([^<]+)<\/movement-title>/)
+      || xmlString.match(/<work-title>([^<]+)<\/work-title>/);
+    const composerMatch = xmlString.match(/<creator[^>]*type="composer"[^>]*>([^<]+)<\/creator>/)
+      || xmlString.match(/<creator>([^<]+)<\/creator>/);
+    const pieceTitle = titleMatch ? titleMatch[1].trim() : '';
+    const composerName = composerMatch ? composerMatch[1].trim() : '';
+    const firstLyrics = result.measures.slice(0, 3).map(m => m.lyrics).filter(Boolean).join(' ');
+    const measureCount = result.measures.length;
+    const noteCount = result.measures.reduce((s, m) => s + (m.notes?.length || 0), 0);
+
+    console.log(`[Solfai] MusicXML parsed: ${measureCount} measures, ${noteCount} notes, part=${selectedPart}, key=${result.keySignature}, time=${result.timeSignature}, warnings=${durationWarnings.length}`);
+
+    // ── Gemini: practice guide only (facts already known) ────
+    let analysis = { overview: '', practiceTips: [], composerBio: null, pieceInfo: null,
+      pronunciation: { language: 'English', needsGuide: false, words: [] } };
+
+    if (apiKey && measureCount > 0) {
+      try {
+        const sysPrompt = `You are a patient, encouraging choir director writing a practice guide.
+Write in a warm, supportive tone. Be practical and specific.
+Use Google Search to verify composer biography and historical context when the piece is identifiable.`;
+
+        const userText = `Write a practice guide for a ${selectedPart} singer.
+
+Verified musical facts (parsed directly from MusicXML — 100% accurate, do NOT guess or alter these):
+- Key: ${result.keySignature}
+- Time signature: ${result.timeSignature}
+- Measures: ${measureCount}  Notes: ${noteCount}
+${pieceTitle    ? `- Title: "${pieceTitle}"` : ''}
+${composerName  ? `- Composer: ${composerName}` : ''}
+${firstLyrics   ? `- Opening lyrics: "${firstLyrics}"` : ''}
+${durationWarnings.length ? `- Duration notes (notation quirks): ${durationWarnings.slice(0,3).join('; ')}` : ''}
+
+Return ONLY this JSON (no markdown):
+{
+  "overview": "2-3 paragraphs: what is this piece, what does the ${selectedPart} singer need to know",
+  "practiceTips": ["5-8 specific actionable tips"],
+  "composerBio": "2-3 sentences about the composer, or null",
+  "pieceInfo": "historical context and performance notes, or null",
+  "pronunciation": { "language": "English", "needsGuide": false, "words": [] }
+}`;
+
+        const raw = await callGemini(apiKey, sysPrompt, [{ text: userText }], {
+          temperature: 0.7,
+          maxOutputTokens: 4096,
+          thinkingBudget: 2000,
+          tools: [{ googleSearch: {} }],
+        });
+        const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        analysis = JSON.parse(cleaned);
+      } catch (e) {
+        console.error('[Solfai] MusicXML write-up failed:', e.message);
+      }
+    }
+
+    const structured = {
+      source: 'musicxml',
+      keySignature: result.keySignature,
+      keyConfident: true,
+      keyWarning: null,
+      timeSignature: result.timeSignature,
+      tempo: 'See score',
+      dynamics: 'See score',
+      tonic: result.tonic,
+      difficulty: { overall: 5, rhythm: 4, range: 4, intervals: 4, text: 3 },
+      firstNotesSolfege: result.measures[0]?.solfege?.slice(0, 3) || null,
+      firstNotes: result.measures[0]?.notes?.slice(0, 3) || null,
+      firstLyrics: firstLyrics || null,
+      overview: analysis.overview || '',
+      practiceTips: Array.isArray(analysis.practiceTips) ? analysis.practiceTips : [],
+      composerName: composerName || null,
+      composerBio: analysis.composerBio || null,
+      pieceTitle: pieceTitle || null,
+      pieceInfo: analysis.pieceInfo || null,
+      pronunciation: analysis.pronunciation || { language: 'English', needsGuide: false, words: [] },
+      staffNum: 1,
+      totalStaves: result.partList.length,
+      clef: 'treble',
+      measures: result.measures,
+      disagreements: 0,
+      durationWarnings,
+      _confidenceScore: 100,
+      _selfConsistency: { keysAgree: true, totalKeyReads: 1 },
+      _dbMatch: null,
+    };
 
     return res.status(200).json({
-      structured: {
-        key: result.tonic,
-        tonic: result.tonic,
-        staffNum: 1,
-        totalStaves: result.partList.length,
-        clef: 'treble',
-        measures: result.measures,
-        disagreements: 0,
-        source: 'musicxml',
-      },
-      text: result.measures.map(m =>
-        `m.${m.num}:\n  Notes:   ${m.notes.join(' ')}\n  Solfege: ${m.solfege.join(' ')}\n  Lyrics:  "${m.lyrics}"`
-      ).join('\n\n'),
+      structured,
+      text: buildTextSummary(structured, selectedPart),
       parts: result.partList.map(p => p.name),
     });
   } catch (err) {
