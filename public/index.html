@@ -2159,17 +2159,30 @@ function renderStructured(s) {
   }
 
   const cards = [
-    { label: 'KEY SIGNATURE', value: s.keySignature, warning: s.keyWarning },
-    { label: 'TIME SIGNATURE', value: s.timeSignature },
+    { label: 'KEY SIGNATURE', value: s.keySignature, warning: s.keyWarning, confidence: s._selfConsistency?.keysAgree ? null : 'low' },
+    { label: 'TIME SIGNATURE', value: s.timeSignature, confidence: s.timeSigConfidence === 'low' ? 'low' : s.timeSigConfidence === 'medium' ? 'medium' : null },
     { label: 'TEMPO', value: s.tempo },
     { label: 'DYNAMICS', value: s.dynamics },
   ].filter(c => c.value && c.value !== 'Not determined');
 
-  $('infoGrid').innerHTML = meterHtml + cards.map((c, i) => {
+  // Build validation warning banner
+  const valWarnings = (s._validationWarnings || []);
+  const warnBanner = valWarnings.length ? valWarnings.map(w =>
+    `<div class="quality-warning animate-in" style="animation-delay:0.05s;${w.level === 'error' ? 'border-color:rgba(220,50,50,0.4);color:#e07070;' : ''}">
+      <span class="quality-warning-icon">${w.level === 'error' ? '&#x274C;' : '&#x26A0;'}</span>
+      <span>${esc(w.message)}</span>
+    </div>`).join('') : '';
+
+  $('infoGrid').innerHTML = meterHtml + warnBanner + cards.map((c, i) => {
     const notFound = c.value === 'Not found in score';
+    const confBadge = c.confidence === 'low'
+      ? `<span style="font-size:0.6rem;background:rgba(220,140,50,0.15);border:1px solid rgba(220,140,50,0.3);color:#e09050;padding:2px 7px;border-radius:100px;margin-left:6px;vertical-align:middle;">low confidence</span>`
+      : c.confidence === 'medium'
+      ? `<span style="font-size:0.6rem;background:rgba(180,180,50,0.12);border:1px solid rgba(180,180,50,0.25);color:#b8b840;padding:2px 7px;border-radius:100px;margin-left:6px;vertical-align:middle;">verify</span>`
+      : '';
     return `<div class="info-card animate-in" style="animation-delay:${0.1 + i * 0.08}s">
       ${notFound ? '' : `<button class="edit-btn" onclick="editCard(this)">&#9998;</button>`}
-      <div class="info-label">${esc(c.label)}</div>
+      <div class="info-label">${esc(c.label)}${confBadge}</div>
       <div class="info-value" ${notFound ? 'style="color:var(--muted);font-size:0.78rem;font-style:italic;font-weight:400;"' : ''}>${esc(c.value)}</div>
       ${c.warning ? `<div class="key-warning">${esc(c.warning)}</div>` : ''}
     </div>`;
@@ -2617,7 +2630,7 @@ function renderSolfegeStructured(s) {
             h += `<div style="display:flex;align-items:center;justify-content:center;min-width:18px;padding:0 1px;"><span style="font-size:0.52rem;color:var(--muted);background:var(--card2);border-radius:4px;padding:1px 4px;white-space:nowrap;margin-top:14px;">${esc(intv)}</span></div>`;
           }
         }
-        h += `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:34px;padding:0 3px;"><div style="font-size:0.7rem;color:var(--muted);font-family:monospace;">${esc(n)}</div><div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:700;color:${displayColor};">${esc(displayText)}</div></div>`;
+        h += `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:38px;padding:0 3px;"><div style="font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:700;color:${displayColor};line-height:1;">${esc(displayText)}</div><div style="font-size:0.62rem;color:var(--muted);font-family:monospace;line-height:1;">${esc(n)}</div></div>`;
       }
       h += '</div>';
     }

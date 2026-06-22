@@ -261,6 +261,27 @@ const LAST_NOTE_SCHEMA = {
   required: ["pitch"]
 };
 
+// Dedicated time signature schema
+const TIME_SIG_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    time_signature: {
+      type: "STRING",
+      description: "The time signature as two numbers separated by a slash.",
+      enum: ["4/4", "3/4", "2/4", "6/8", "9/8", "12/8", "2/2", "3/8", "3/2", "6/4", "5/4", "7/8"]
+    },
+    confidence: {
+      type: "STRING",
+      enum: ["certain", "likely", "uncertain"]
+    },
+    what_i_see: {
+      type: "STRING",
+      description: "Describe exactly what numbers you see stacked vertically. Example: 'I see a 3 on top and a 4 below = 3/4' or 'I see a C symbol = 4/4'"
+    }
+  },
+  required: ["time_signature", "confidence", "what_i_see"]
+};
+
 // ─── Key from flat/sharp count (CODE, not AI) ─────────────
 const KEY_FROM_COUNT = {
   '0': { major: 'C major', minor: 'A minor' },
@@ -694,7 +715,7 @@ function correctEnharmonicForKey(noteName, tonic) {
 const NOTE_TO_SEMI = { 'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11 };
 
 function noteToSolfege(noteName, tonicName) {
-  if (!noteName || !tonicName) return noteName;
+  if (!noteName || !tonicName) return '?';
   const getSemi = (n) => {
     const letter = n[0].toUpperCase();
     let s = NOTE_TO_SEMI[letter];
@@ -707,10 +728,10 @@ function noteToSolfege(noteName, tonicName) {
   };
   const ts = getSemi(tonicName);
   const ns = getSemi(noteName);
-  if (ts == null || ns == null) return noteName;
+  if (ts == null || ns == null) return '?';
   const interval = ((ns - ts) % 12 + 12) % 12;
   const map = { 0: 'Do', 2: 'Re', 4: 'Mi', 5: 'Fa', 7: 'Sol', 9: 'La', 11: 'Ti', 1: 'Di', 3: 'Me', 6: 'Fi', 8: 'Si', 10: 'Te' };
-  return map[interval] || noteName;
+  return map[interval] || '?';
 }
 
 // ─── Interval and Scale Degree Helpers ────────────────────
@@ -1135,27 +1156,44 @@ async function preprocessForGemini(base64Data, mode = 'full') {
     let pipeline;
 
     if (mode === 'key_region') {
+      // Crop first 20% of width × first 20% of height — exactly the key sig zone between clef and time sig
       const meta = await sharp(buf).metadata();
       pipeline = sharp(buf)
         .extract({
           left: 0, top: 0,
-          width: Math.floor(meta.width * 0.35),
-          height: Math.floor(meta.height * 0.22)
+          width: Math.floor(meta.width * 0.20),
+          height: Math.floor(meta.height * 0.20)
         })
-        .resize({ width: 1400 })
+        .resize({ width: 2400 })  // high-res zoom for counting accidentals
         .grayscale()
         .normalise()
         .sharpen({ sigma: 2.5 })
-        .threshold()  // Otsu's method — automatically finds optimal threshold from histogram
+        .threshold()  // Otsu's method
+        .jpeg({ quality: 97 });
+    } else if (mode === 'time_sig_region') {
+      // Crop first 25% width × first 25% height — covers both key sig and time sig area
+      // Upscale to 2400px so the stacked numbers are clearly visible
+      const meta = await sharp(buf).metadata();
+      pipeline = sharp(buf)
+        .extract({
+          left: 0, top: 0,
+          width: Math.floor(meta.width * 0.25),
+          height: Math.floor(meta.height * 0.25)
+        })
+        .resize({ width: 2400 })
+        .grayscale()
+        .normalise()
+        .linear(1.5, -30)  // boost contrast to make numbers crisp
+        .sharpen({ sigma: 2.0 })
         .jpeg({ quality: 97 });
     } else if (mode === 'key_region_extreme') {
-      // 7x zoom into ONLY the key signature zone for desperate retries (left 18% x top 15%)
+      // 7x zoom into ONLY the key signature zone for desperate retries (left 12% x top 15%)
       const meta = await sharp(buf).metadata();
       pipeline = sharp(buf)
         .extract({
           left: Math.floor(meta.width * 0.03),
           top: Math.floor(meta.height * 0.01),
-          width: Math.floor(meta.width * 0.18),
+          width: Math.floor(meta.width * 0.12),
           height: Math.floor(meta.height * 0.15)
         })
         .resize({ width: 2400 })  // extreme zoom
@@ -1309,6 +1347,9 @@ function buildImageParts(imageBase64, imageMime, pdfPages) {
   }
   return parts;
 }
+
+// Watermark ignore instruction — added to EVERY prompt sent to Gemini
+const WATERMARK_NOTE = `IMPORTANT: This image may contain watermark text printed diagonally across the page saying things like "For perusal purposes only" or "Preview copy" or similar. Completely ignore all watermark text — it is not part of the music. Do not let it affect your reading of any musical symbols, notes, or markings.`;
 
 // ─── Gemini caller with retry + exponential backoff ───────
 async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
@@ -1532,6 +1573,58 @@ function calculateCompositeConfidence({ keyAgreement, imageQuality, dbMatch, suc
 }
 
 // ═══════════════════════════════════════════════════════════
+// ─── Extraction validator ─────────────────────────────────
+// Runs after all AI extraction is complete. Returns array of warning objects.
+const STANDARD_TIME_SIGS = new Set(['4/4','3/4','2/4','6/8','9/8','12/8','2/2','3/8','3/2','6/4','5/4','7/8','3/2','4/8']);
+const VOCAL_RANGE_MIDI = {
+  Soprano: { low: 60, high: 79 },  // C4–G5
+  Alto:    { low: 55, high: 76 },  // G3–E5
+  Tenor:   { low: 48, high: 69 },  // C3–A4
+  Bass:    { low: 40, high: 64 },  // E2–E4
+};
+
+function validateExtraction(keySignature, timeSignature, notes, part) {
+  const warnings = [];
+
+  // 1. Key validation
+  if (!keySignature || keySignature === 'Unknown') {
+    warnings.push({ field: 'key', level: 'error', message: 'Key signature could not be determined — check the score manually.' });
+  } else {
+    const validKeys = Object.values(KEY_FROM_COUNT).flatMap(e => [e.major, e.minor]);
+    if (!validKeys.includes(keySignature)) {
+      warnings.push({ field: 'key', level: 'warning', message: `Key "${keySignature}" is unusual — verify accidental count.` });
+    }
+  }
+
+  // 2. Time signature validation
+  if (!timeSignature || timeSignature === 'Not determined') {
+    warnings.push({ field: 'time', level: 'warning', message: 'Time signature not found — defaulted. Check score.' });
+  } else if (!STANDARD_TIME_SIGS.has(timeSignature)) {
+    warnings.push({ field: 'time', level: 'warning', message: `Time signature "${timeSignature}" is uncommon — verify.` });
+  }
+
+  // 3. Vocal range validation — quick MIDI approximation
+  if (notes && notes.length > 0) {
+    const BASE_MIDI = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+    const range = VOCAL_RANGE_MIDI[part] || VOCAL_RANGE_MIDI.Soprano;
+    const outOfRange = [];
+    for (const n of notes) {
+      if (!n || n === '[?]') continue;
+      const m = String(n).match(/^([A-G])([b#]?)(\d)$/);
+      if (!m) continue;
+      let midi = BASE_MIDI[m[1]] + (parseInt(m[3]) + 1) * 12;
+      if (m[2] === '#') midi++;
+      if (m[2] === 'b') midi--;
+      if (midi < range.low - 2 || midi > range.high + 2) outOfRange.push(n);
+    }
+    if (outOfRange.length > 3) {
+      warnings.push({ field: 'notes', level: 'warning', message: `${outOfRange.length} notes outside ${part} range — possible wrong staff or octave error.` });
+    }
+  }
+
+  return warnings;
+}
+
 // ANALYZE — 5-way consensus + dedicated key/pitch extraction
 // ═══════════════════════════════════════════════════════════
 async function handleAnalyze(res, apiKey, imageParts, part, rawBase64, pdfPages) {
@@ -1573,86 +1666,140 @@ async function handleAnalyze(res, apiKey, imageParts, part, rawBase64, pdfPages)
   let annotatedKeyParts = [];
   let first2MeasuresParts = [];
 
+  let timeSigRegionParts = [];
+
   if (firstJpeg) {
-    const [keyData, firstSysData, hiContrast, annotatedData, first2MData] = await Promise.all([
+    const [keyData, firstSysData, hiContrast, annotatedData, first2MData, timeSigData] = await Promise.all([
       preprocessForGemini(firstJpeg.inlineData.data, 'key_region').catch(() => null),
       preprocessForGemini(firstJpeg.inlineData.data, 'first_system').catch(() => null),
       preprocessForGemini(firstJpeg.inlineData.data, 'high_contrast').catch(() => null),
       preprocessForGemini(firstJpeg.inlineData.data, 'annotated').catch(() => null),
       preprocessForGemini(firstJpeg.inlineData.data, 'first_2_measures').catch(() => null),
+      preprocessForGemini(firstJpeg.inlineData.data, 'time_sig_region').catch(() => null),
     ]);
     if (keyData) keyRegionParts = [{ inlineData: { mimeType: 'image/jpeg', data: keyData } }];
     if (hiContrast) {
-      // Add high-contrast version to processed parts for Flash reads
       processedParts.push({ inlineData: { mimeType: 'image/jpeg', data: hiContrast } });
     }
     if (annotatedData) annotatedKeyParts = [{ inlineData: { mimeType: 'image/jpeg', data: annotatedData } }];
     if (first2MData) first2MeasuresParts = [{ inlineData: { mimeType: 'image/jpeg', data: first2MData } }];
+    if (timeSigData) timeSigRegionParts = [{ inlineData: { mimeType: 'image/jpeg', data: timeSigData } }];
   }
 
   // Extraction phases run in parallel
 
-  const keySigPrompt = `You are an expert music engraver identifying the key signature.
+  const keySigPrompt = `You are a music engraver counting accidentals in a key signature.
 
-KEY SIGNATURE ZONE: The symbols between the CLEF SYMBOL and the TIME SIGNATURE numbers.
-- Flats (♭): curved 'b' shapes — they appear in order: B, E, A, D, G, C, F
-- Sharps (♯): hash '#' shapes — they appear in order: F, C, G, D, A, E, B
-- Do NOT count accidentals before individual notes
-- Do NOT count natural signs (♮)
-- Do NOT count clef symbols themselves
-- IGNORE any watermark text overlaid on the music
+${WATERMARK_NOTE}
 
-SHOW YOUR WORK — reason step by step before answering:
-Step 1: Find the clef symbol at the far left of the first staff.
-Step 2: Scan to the right until you reach the time signature (two stacked numbers like 4/4 or 3/4).
-Step 3: List every accidental symbol in that zone, one by one. Example: "I see flat on B-line, flat on E-space, flat on A-line = 3 flats total"
-Step 4: Verify it matches a real key signature. 3 flats = Eb major / C minor. 2 sharps = D major / B minor.
-Step 5: Report your counts. Write your step-by-step reasoning in the "reasoning" field.
+YOUR ONLY JOB: Count the symbols between the CLEF and the TIME SIGNATURE on the first staff.
+- Sharp symbols look like a hashtag # (two vertical lines crossed by two horizontal lines).
+- Flat symbols look like a lowercase b with a rounded bottom.
+- Count carefully — do NOT guess. Do NOT name the key.
+- Do NOT count accidentals before individual notes (only the group right after the clef).
+- Do NOT count natural signs (♮) — they look like a box with tails.
+- Do NOT count the clef symbol itself.
 
-CRITICAL: flat_count and sharp_count are MUTUALLY EXCLUSIVE. A key signature has EITHER flats OR sharps, NEVER both. If you see 3 flats: flat_count=3, sharp_count=0. If you see 2 sharps: flat_count=0, sharp_count=2.`;
+HOW TO COUNT — step by step:
+Step 1: Locate the clef symbol at the far left of the first staff (treble clef looks like an ornate spiral; bass clef looks like a reversed C with two dots).
+Step 2: Scan RIGHT from the clef. Stop when you reach two stacked numbers (the time signature) or a barline.
+Step 3: In that zone, count EACH sharp # symbol you see. Write them out: "sharp 1, sharp 2, sharp 3..."
+Step 4: Count EACH flat b symbol you see. Write them out: "flat 1, flat 2..."
+Step 5: A key can have sharps OR flats but NEVER both. If you somehow see both, recount — you are making an error.
+Step 6: Report flat_count and sharp_count. If nothing is there, both are 0 (C major / A minor).
+
+Examples: "4 sharps" means sharp_count=4, flat_count=0. "2 flats" means flat_count=2, sharp_count=0. "0 accidentals" means both=0.
+
+CRITICAL: flat_count and sharp_count are MUTUALLY EXCLUSIVE. Never set both to non-zero.`;
 
   const fullExtractPrompt = `You are an expert music engraver and choir director reading sheet music with extreme precision.
 
+${WATERMARK_NOTE}
+
 CRITICAL RULES:
 - If any image is a title/cover page with no staves or notes, SKIP IT and look at the next image.
-- Count accidentals (flats ♭ or sharps ♯) that appear between the clef symbol and the time signature. These define the key signature.
-- Do NOT count accidentals before individual notes (those are accidentals, not key signature).
-- SATB STAFF IDENTIFICATION — before reading any notes, follow this procedure:
-  Step 1: Count staves in the first system top to bottom. Identify each clef: treble (spiral curl) = higher voice; bass (dotted C) = lower voice; treble-8 (spiral with "8" below) = Tenor.
-  Step 2: For each treble staff, check stem direction of the first few notes. Stems UP = higher voice (Soprano on top treble, or Tenor on treble-8). Stems DOWN = lower voice (Alto on bottom treble, or Bass on bass staff).
-  Step 3: Verify the identified staff has LYRICS underneath it (vocal parts always have text below notes).
-  Step 4: For grand-staff accompaniment (piano), IGNORE those staves entirely — read only vocal staves.
-  Result: Soprano=top treble stems up, Alto=bottom treble stems down, Tenor=treble-8 stems up OR bass staff stems up, Bass=bass staff stems down.
-- MAJOR vs MINOR — determine from visual evidence only. Do NOT apply a bias toward major. Check in order:
-  1. Look for the word "minor", "moll", "mineur", "mol", or "min." in the tempo marking or title text
-  2. Check if the 7th degree appears raised as a leading tone (e.g., G# in A minor) → likely minor
-  3. Check if the final chord has a raised 3rd vs the key (Picardy third) → piece is minor
-  4. Look at overall melodic character — minor keys have frequent half-steps near the tonic
-  5. Only if ALL above are inconclusive, report as the major key
 
-WATERMARKS — IGNORE COMPLETELY:
-- Diagonal or translucent text like "For perusal purposes only", "Preview copy", etc.
-- Look THROUGH watermark text to read the actual notes beneath it.`;
+KEY SIGNATURE: Count accidentals (♭ flats or ♯ sharps) that appear between the clef symbol and the time signature. These define the key signature. Do NOT count accidentals before individual notes. Key has EITHER flats OR sharps, never both.
+
+TIME SIGNATURE: Look for two numbers stacked vertically right after the key signature. The TOP number = beats per measure. The BOTTOM number = note value that gets one beat. Common values: 4/4, 3/4, 6/8, 2/4, 3/8. If you see a plain C symbol = 4/4. If you see C with a vertical line through it = 2/2 (cut time). Write exactly what you see (e.g., "3/4" not "3-4").
+
+TEMPO: Look for tempo markings, usually written in Italian above the first measure (Andante, Allegro, Moderato, Largo, Vivace, Presto, etc.) or as a metronome mark showing a note = number (e.g., ♩=120). If you see both a word and a number, report both (e.g., "Andante ♩=72"). If nothing is written, report "none".
+
+DYNAMICS: Look for dynamic markings — small italic letters usually below the staff: pp (very soft), p (soft), mp (medium soft), mf (medium loud), f (loud), ff (very loud), sfz (sudden accent), cresc (getting louder), dim/decrescendo (getting softer). Report the opening marking and any changes seen. If none visible, report "none".
+
+SATB STAFF IDENTIFICATION:
+  Step 1: Count staves in the first system top to bottom. Treble clef (spiral curl) = higher voice; bass clef (dotted C) = lower voice; treble-8 (spiral with "8" below) = Tenor.
+  Step 2: For each treble staff, check stem direction. Stems UP = higher voice (Soprano/Tenor). Stems DOWN = lower voice (Alto/Bass).
+  Step 3: Verify the staff has LYRICS underneath it. Vocal parts always have text syllables below notes.
+  Step 4: Grand-staff piano accompaniment (no lyrics) — IGNORE entirely.
+  Result: Soprano=top treble stems up, Alto=bottom treble stems down, Tenor=treble-8 stems up OR bass staff stems up, Bass=bass staff stems down.
+
+MAJOR vs MINOR — visual evidence only. Do NOT default to major:
+  1. Look for the word "minor", "moll", "mineur", or "min." in tempo or title
+  2. Check if the 7th degree appears raised (e.g., G# in A minor) → likely minor
+  3. Look at the final chord for a raised 3rd (Picardy third) → minor
+  4. Only if all above inconclusive, report as the major key`;
+
+  const timeSigPrompt = `You are a music reader identifying the time signature.
+
+${WATERMARK_NOTE}
+
+The time signature appears as TWO NUMBERS STACKED VERTICALLY, right after the key signature accidentals and before the first notes.
+- The TOP number tells you how many beats per measure (e.g., 3 means 3 beats).
+- The BOTTOM number tells you which note gets one beat (e.g., 4 means a quarter note).
+- A plain C symbol means 4/4 (common time).
+- A C with a vertical line through it means 2/2 (cut time / alla breve).
+- Report ONLY the fraction. Examples: "3/4" or "6/8" or "4/4". Do NOT guess — only report what you clearly see.
+- If you cannot see a time signature at all, default to "4/4" with confidence "uncertain".
+
+STEP BY STEP:
+Step 1: Find the clef at the left of the first staff.
+Step 2: Scan right past any flat/sharp accidentals (the key signature).
+Step 3: You should now see either two stacked numbers OR a C symbol.
+Step 4: Read the top number, then the bottom number.
+Step 5: Report as top/bottom (e.g., "3/4").`;
 
   const extractText = `Extract all musical data for the ${part} part. Skip title/cover pages. Be precise about accidental counting.`;
 
   // Launch extraction phases in parallel
-  // Key sig: 2 dedicated reads (Pro cropped + Flash full)
+  // Key sig: 3 dedicated reads (Pro cropped x2, Flash full)
+  // Time sig: 2 dedicated reads (Pro cropped, Flash full)
   // Full extraction: 2 reads (Pro + Flash)
-  // Total: 4 calls
+  // Total: 7 calls
   const allPromises = [
-    // KEY SIG: 2 dedicated reads
+    // KEY SIG read 1: Pro with key_region crop (tightest zoom on accidentals)
     callGemini(apiKey, keySigPrompt,
-      [{ text: 'Count the key signature accidentals carefully.' },
+      [{ text: 'Count the exact number of sharp or flat symbols in the key signature zone. Show your work.' },
        ...(keyRegionParts.length ? keyRegionParts : processedParts.slice(0, 1))],
-      { temperature: 0, maxOutputTokens: 128, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 4000 }
+      { temperature: 0, maxOutputTokens: 256, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 5000 }
     ),
+    // KEY SIG read 2: Pro with full processed image (independent read)
     callGemini(apiKey, keySigPrompt,
-      [{ text: 'Count the flats and sharps in the key signature.' }, ...processedParts.slice(0, 1)],
+      [{ text: 'Independent count: how many sharps or flats are in the key signature? Count carefully.' },
+       ...processedParts.slice(0, 1)],
+      { temperature: 0, maxOutputTokens: 256, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 5000 }
+    ),
+    // KEY SIG read 3: Flash with full image (tie-breaker)
+    callGemini(apiKey, keySigPrompt,
+      [{ text: 'Third independent read: count sharps or flats in the key signature.' },
+       ...processedParts.slice(0, 1)],
       { model: GEMINI_FLASH, temperature: 0, maxOutputTokens: 128, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 0 }
     ),
 
-    // FULL EXTRACTION: 2 reads (Pro + Flash)
+    // TIME SIG read 1: Pro with time_sig_region crop
+    callGemini(apiKey, timeSigPrompt,
+      [{ text: 'Read the two stacked numbers that form the time signature.' },
+       ...(timeSigRegionParts.length ? timeSigRegionParts : processedParts.slice(0, 1))],
+      { temperature: 0, maxOutputTokens: 128, responseSchema: TIME_SIG_SCHEMA, thinkingBudget: 2000 }
+    ),
+    // TIME SIG read 2: Flash with full image
+    callGemini(apiKey, timeSigPrompt,
+      [{ text: 'What is the time signature? Report as top_number/bottom_number.' },
+       ...processedParts.slice(0, 1)],
+      { model: GEMINI_FLASH, temperature: 0, maxOutputTokens: 64, responseSchema: TIME_SIG_SCHEMA, thinkingBudget: 0 }
+    ),
+
+    // FULL EXTRACTION: 2 reads (Pro + Flash) — key/time sig here are secondary votes only
     callGemini(apiKey, fullExtractPrompt,
       [{ text: extractText }, ...processedParts],
       { temperature: 0, maxOutputTokens: 4096, responseSchema: ANALYZE_SCHEMA, thinkingBudget: 12000 }
@@ -1678,15 +1825,18 @@ WATERMARKS — IGNORE COMPLETELY:
   }
   console.log(`[Solfai] ${successCount}/${results.length} Gemini calls succeeded`);
 
-  // Parse results — indices match the 4-call allPromises array:
-  //   0: key sig Pro (cropped)
-  //   1: key sig Flash (full)
-  //   2: full extraction Pro
-  //   3: full extraction Flash
+  // Parse results — indices match the 7-call allPromises array:
+  //   0: key sig Pro (key_region crop)
+  //   1: key sig Pro (full image)
+  //   2: key sig Flash (full image)
+  //   3: time sig Pro (time_sig_region crop)
+  //   4: time sig Flash (full image)
+  //   5: full extraction Pro
+  //   6: full extraction Flash
 
-  // Parse key signature votes (indices 0-1)
+  // Parse key signature votes (indices 0-2)
   const keyVotes = [];
-  for (const [i, weight] of [[0, WEIGHT_PRO], [1, WEIGHT_FLASH]]) {
+  for (const [i, weight] of [[0, WEIGHT_PRO], [1, WEIGHT_PRO], [2, WEIGHT_FLASH]]) {
     if (!results[i]) continue;
     try {
       const ks = JSON.parse(results[i]);
@@ -1718,9 +1868,25 @@ WATERMARKS — IGNORE COMPLETELY:
 
   console.log(`[Solfai] Key votes: ${keyVotes.map(v => `${v.flatCount}b/${v.sharpCount}s`).join(', ')} → ${votedFlats}b/${votedSharps}s`);
 
-  // Parse full extraction results (indices 2-3)
+  // Parse dedicated time sig votes (indices 3-4)
+  const timeSigDedicatedVotes = [];
+  for (const [i, weight] of [[3, WEIGHT_PRO], [4, WEIGHT_FLASH]]) {
+    if (!results[i]) continue;
+    try {
+      const ts = JSON.parse(results[i]);
+      if (ts.time_signature) {
+        if (ts.what_i_see) console.log(`[Solfai] Time sig read ${i-2}: "${ts.what_i_see}" → ${ts.time_signature} (${ts.confidence})`);
+        const confMult = ts.confidence === 'certain' ? 1.5 : ts.confidence === 'uncertain' ? 0.6 : 1.0;
+        timeSigDedicatedVotes.push({ value: ts.time_signature, weight: weight * confMult });
+      }
+    } catch (e) {
+      console.warn(`[Solfai] Time sig dedicated read ${i-2} parse failed`);
+    }
+  }
+
+  // Parse full extraction results (indices 5-6)
   const fullExtractions = [];
-  for (const [i, weight] of [[2, WEIGHT_PRO], [3, WEIGHT_FLASH]]) {
+  for (const [i, weight] of [[5, WEIGHT_PRO], [6, WEIGHT_FLASH]]) {
     if (!results[i]) { fullExtractions.push({}); continue; }
     try {
       fullExtractions.push(JSON.parse(results[i]));
@@ -1824,14 +1990,18 @@ WATERMARKS — IGNORE COMPLETELY:
   let lastNotePitch = null;
   try {
     const lastNotePrompt = `You are a music reading specialist. Find the VERY LAST SUNG NOTE in the ${part} vocal part.
+
+${WATERMARK_NOTE}
+
 Look at the FINAL measure — the measure just before the double barline at the end of the piece.
 TREBLE CLEF: Lines bottom→top E4 G4 B4 D5 F5. Spaces F4 A4 C5 E5. Middle C (C4) = space below first ledger line below staff.
 BASS CLEF: Lines G2 B2 D3 F3 A3. Spaces A2 C3 E3 G3. Middle C (C4) = first ledger line above bass staff.
 For SATB: Soprano=top treble stems up, Alto=bottom treble stems down, Tenor=treble-8/bass stems up, Bass=bottom bass stems down.
+
 Step 1: Find the double barline at the very end.
-Step 2: The note immediately before it is the last sung note.
-Step 3: Is the note head ON a line or IN a space? Count from bottom.
-Step 4: Apply any key signature accidentals.`;
+Step 2: Identify the note immediately before it (ignoring any rests).
+Step 3: Is the note head ON a line or IN a space? Count from the bottom.
+Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`;
 
     // 3-way vote: 2x Pro + 1x Flash
     const [lastRead1, lastRead2, lastRead3] = await Promise.allSettled([
@@ -1875,13 +2045,18 @@ Step 4: Apply any key signature accidentals.`;
     console.warn('[Solfai] Last note cross-validation failed:', e.message);
   }
 
-  // Consensus on other fields
-  let votedTime = weightedVote(
-    fullExtractions.map((ext, i) => ({
+  // Consensus on time signature — dedicated reads get higher weight than embedded in full extraction
+  const allTimeSigVotes = [
+    ...timeSigDedicatedVotes,  // dedicated reads (higher quality)
+    ...fullExtractions.map((ext, i) => ({
       value: ext.time_signature,
-      weight: i < 2 ? WEIGHT_PRO : WEIGHT_FLASH,
-    }))
-  ) || raw.time_signature;
+      weight: (i === 0 ? WEIGHT_PRO : WEIGHT_FLASH) * 0.7,  // slightly less weight than dedicated
+    })).filter(v => v.value),
+  ];
+  const timeSigVoteResult = weightedVoteWithMargin(allTimeSigVotes);
+  let votedTime = timeSigVoteResult.value || raw.time_signature;
+  const timeSigConfidence = timeSigVoteResult.margin;
+  console.log(`[Solfai] Time sig votes: ${allTimeSigVotes.map(v => v.value).join(', ')} → ${votedTime} (${Math.round(timeSigConfidence * 100)}% confidence)`);
 
   const votedTempo = weightedVote(
     fullExtractions.map((ext, i) => ({
@@ -1935,7 +2110,8 @@ Step 4: Apply any key signature accidentals.`;
   // ═══ PASS 2: Human analysis with Google Search grounding ═══
   const pass2SystemPrompt = `You are a patient, encouraging choir director writing a practice guide for a ${part} singer.
 Write in a warm, supportive tone. Reference specific measures when giving tips. Be practical and specific.
-If you can identify the piece, use Google Search to verify the key and get accurate composer biography and piece history.`;
+If you can identify the piece, use Google Search to verify the key and get accurate composer biography and piece history.
+${WATERMARK_NOTE}`;
 
   const pass2UserText = `Write a complete analysis for this ${part} singer.
 
@@ -1985,6 +2161,15 @@ Output ONLY valid JSON.`;
     analysis = { overview: '', practiceTips: [], pronunciation: { language: 'English', needsGuide: false, words: [] } };
   }
 
+  // Run validation
+  const firstNotesList = bestFirstNotes || [];
+  const extractionWarnings = validateExtraction(finalKey, votedTime, firstNotesList, part);
+  if (extractionWarnings.length) {
+    console.warn(`[Solfai] Validation warnings: ${extractionWarnings.map(w => w.message).join('; ')}`);
+  }
+
+  const timeSigConfLabel = timeSigConfidence >= 0.9 ? 'high' : timeSigConfidence >= 0.7 ? 'medium' : 'low';
+
   const structured = {
     keySignature: finalKey,
     keyConfident: keyResult.confident || keyAgreement,
@@ -1992,6 +2177,7 @@ Output ONLY valid JSON.`;
       ? `Visual count: ${keyResult.codeSaid} | AI read: ${keyResult.geminiSaid}`
       : null,
     timeSignature: votedTime || 'Not determined',
+    timeSigConfidence: timeSigConfLabel,
     tempo: votedTempo === 'none' ? 'No tempo marking' : (votedTempo || 'Not marked'),
     dynamics: raw.dynamics === 'none' ? 'None visible' : (raw.dynamics || 'None visible'),
     difficulty: {
@@ -2027,7 +2213,10 @@ Output ONLY valid JSON.`;
     _selfConsistency: {
       keysAgree: keyAgreement,
       totalKeyReads: allKeyVotes.length,
+      timeSigConfidence: timeSigConfLabel,
+      timeSigReads: allTimeSigVotes.length,
     },
+    _validationWarnings: extractionWarnings,
     _dbMatch: dbMatch ? { title: dbMatch.title, composer: dbMatch.composer, overrideApplied: dbOverrideApplied } : null,
     _pieceDbMatch: pieceDbEntry ? {
       id: pieceDbEntry.id,
@@ -2154,35 +2343,52 @@ async function handleSolfege(res, apiKey, imageParts, part) {
     } catch (e) { /* use full image */ }
   }
 
-  // Step 1: Staff ID + key sig extraction IN PARALLEL (3 key reads)
-  const [staffRaw, keySig1Raw, keySig2Raw, keySig3Raw] = await Promise.all([
-    callGemini(apiKey,
-      `You are reading sheet music. Which staff number (counting from top, starting at 1) has lyrics below it?
+  const solfegeKeySigPrompt = `You are a music engraver counting accidentals in a key signature.
+
+${WATERMARK_NOTE}
+
+YOUR ONLY JOB: Count the symbols between the CLEF and the TIME SIGNATURE on the first staff.
+- Sharp symbols look like a hashtag # (two vertical bars crossed by two horizontal lines).
+- Flat symbols look like a lowercase b with a rounded bottom.
+- Count carefully — do NOT guess. Do NOT name the key.
+- Do NOT count accidentals before individual notes.
+- Do NOT count natural signs (♮).
+- A key has EITHER sharps OR flats, NEVER both.
+
+Count step by step: "sharp 1, sharp 2..." or "flat 1, flat 2..." then report the total.
+
+Output ONLY JSON: {"sharps": N, "flats": N}`;
+
+  const solfegeStaffPrompt = `You are reading sheet music. Which staff number (counting from top, starting at 1) has lyrics below it?
+
+${WATERMARK_NOTE}
+
 For SATB: Soprano=staff 1 (top treble), Alto=staff 2 (bottom treble), Tenor=staff 3 (treble-8 or bass), Bass=staff 4 (bottom bass).
 Skip title/cover pages.
-Output ONLY JSON: {"vocal_staff_number": N, "total_staves": M, "clef": "treble" or "bass" or "treble-8", "part_confirmed": "${part}"}`,
+Output ONLY JSON: {"vocal_staff_number": N, "total_staves": M, "clef": "treble" or "bass" or "treble-8", "part_confirmed": "${part}"}`;
+
+  // Step 1: Staff ID + key sig extraction IN PARALLEL (3 key reads)
+  const [staffRaw, keySig1Raw, keySig2Raw, keySig3Raw] = await Promise.all([
+    callGemini(apiKey, solfegeStaffPrompt,
       [{ text: `Identify the ${part} vocal staff.` }, ...processedParts],
       { temperature: 0, maxOutputTokens: 256, thinkingBudget: 1500 }
     ),
-    callGemini(apiKey,
-      `Count the accidentals between the clef symbol and the time signature. These define the key signature.
-IGNORE any watermark text overlaid on the music.
-Flats look like ♭ and sharps look like ♯. Count each one carefully.
-Output ONLY JSON: {"sharps": N, "flats": N}`,
-      [{ text: 'Count key signature accidentals.' }, ...(keyRegionPart ? [keyRegionPart] : processedParts.slice(0, 1))],
-      { temperature: 0, maxOutputTokens: 64, thinkingBudget: 3000 }
+    // Key sig read 1: Pro with key_region crop (tightest zoom)
+    callGemini(apiKey, solfegeKeySigPrompt,
+      [{ text: 'Count the exact number of sharp # or flat b symbols in the key signature zone.' },
+       ...(keyRegionPart ? [keyRegionPart] : processedParts.slice(0, 1))],
+      { temperature: 0, maxOutputTokens: 128, thinkingBudget: 4000 }
     ),
-    callGemini(apiKey,
-      `Count the accidentals between the clef symbol and the time signature.
-Flats (♭) and sharps (♯) only. Ignore naturals and note-level accidentals.
-Output ONLY JSON: {"sharps": N, "flats": N}`,
-      [{ text: 'Second read: count key signature accidentals.' }, ...(keyRegionPart ? [keyRegionPart] : processedParts.slice(0, 1))],
-      { temperature: 0, maxOutputTokens: 64, thinkingBudget: 3000 }
+    // Key sig read 2: Pro with full image (independent)
+    callGemini(apiKey, solfegeKeySigPrompt,
+      [{ text: 'Independent read: count sharps or flats between clef and time signature.' },
+       ...processedParts.slice(0, 1)],
+      { temperature: 0, maxOutputTokens: 128, thinkingBudget: 4000 }
     ),
-    callGemini(apiKey,
-      `Count flats and sharps in the key signature (between clef and time signature).
-Output ONLY JSON: {"sharps": N, "flats": N}`,
-      [{ text: 'Count key signature.' }, ...processedParts.slice(0, 1)],
+    // Key sig read 3: Flash (tie-breaker)
+    callGemini(apiKey, solfegeKeySigPrompt,
+      [{ text: 'Third independent count: sharps or flats in key signature.' },
+       ...processedParts.slice(0, 1)],
       { model: GEMINI_FLASH, temperature: 0, maxOutputTokens: 64, thinkingBudget: 0 }
     ),
   ]);
@@ -2244,36 +2450,49 @@ Rules:
 Target: Staff #${staffInfo.vocal_staff_number} from the top — ${part} vocal part.
 ${clefRef}
 
+${WATERMARK_NOTE}
+
 STAFF IDENTIFICATION — verify you are on the correct staff before reading notes:
 - Count staves top to bottom in the first system.
 - Check stem direction: stems UP = higher voice (Soprano/Tenor); stems DOWN = lower voice (Alto/Bass).
 - Verify your staff has LYRICS underneath it (vocal staves always have text syllables below notes).
 - If you see a grand staff bracket with no lyrics = piano accompaniment — SKIP IT entirely.
 
-READING PROCEDURE FOR EACH NOTE:
-1. Is the note head ON a line or IN a space?
-2. Count from the bottom: which line (1-5) or space (1-4)?
-3. Look up the pitch name from the clef reference above
-4. Check for accidentals directly before the note (♯ ♭ ♮)
-5. Apply key signature accidentals if no natural cancels them
-6. Determine octave number from staff position
+NOTE READING PROCEDURE — apply to EVERY note individually:
+1. Is the note head ON a line (a line passes through the middle of the oval) or IN a space (the oval sits between two lines)?
+2. Count from the BOTTOM of the staff: bottom line = 1, first space = 1, second line = 2, etc.
+3. Look up pitch from the clef reference above.
+4. Check for accidentals DIRECTLY before this note (♯ ♭ ♮) — only if within the same measure.
+5. Apply key signature accidentals UNLESS a natural sign (♮) cancels them.
+6. Verify octave: notes above the top line are octave 5 (treble), notes below bottom line go down an octave.
+7. Ledger lines above top staff line: G5 (1 ledger), B5 (space above 1st ledger), D6 (2nd ledger). Below: C4 (1 ledger below bottom = middle C), A3 (space below 1st ledger).
 
 TIED NOTES vs REPEATED NOTES — CRITICAL:
-- TIE = curved line connecting two note heads of THE SAME pitch → count as ONE note (combine their durations)
-- SLUR = curved line over DIFFERENT pitches → these are separate notes, count each one
-- REPEAT = same pitch appears twice with no connecting curved line → count twice
-- Rule: if both note heads under a curve are the SAME pitch = tie = output once with combined duration
+- TIE = curved line connecting two note heads of THE SAME pitch → count as ONE note
+- SLUR = curved line over DIFFERENT pitches → these are SEPARATE notes, count each
+- Rule: same pitch + curved connection = tie = output only once
 
 ${outputFormat}`;
 
   const sysVerify = `You are double-checking a music transcription with extreme care.
 Staff #${staffInfo.vocal_staff_number} from the top — ${part} vocal part.
 ${clefRef}
-Read EVERY note twice. Pay special attention to:
-- Notes near middle of staff where line/space is confusable (B4 vs C5)
-- Key signature accidentals vs natural signs
-- Octave numbers — count ledger lines carefully
-- Tied notes (count only once) vs repeated notes
+
+${WATERMARK_NOTE}
+
+Read EVERY note TWICE before writing it. For each note:
+1. Confirm: is the note head ON a line or IN a space?
+2. Which line/space counting from the bottom?
+3. What pitch does that position name in this clef?
+4. Are there key signature accidentals applying to this note?
+5. Are there any accidentals (♯ ♭ ♮) directly before this note in this measure?
+
+Pay special attention to these common errors:
+- B4 vs C5: the 3rd line (B4) vs 3rd space (C5) look very similar — is the note ON the line or in the space?
+- Key signature accidentals: every note of that pitch class carries the accidental unless cancelled by ♮
+- Octave number: count carefully for notes on or near ledger lines
+- Tied notes: same pitch connected by a curve = count ONCE only
+
 ${outputFormat}`;
 
   function parseExtraction(raw) {
@@ -2478,7 +2697,8 @@ async function handleRhythm(res, apiKey, imageParts, part) {
   );
 
   const systemPrompt = `You are a rhythm coach helping a choir singer learn their part.
-Skip title/cover pages. IGNORE watermark text.
+Skip title/cover pages.
+${WATERMARK_NOTE}
 SATB: Soprano=top treble stems up, Alto=bottom treble stems down, Tenor=top bass/treble-8 stems up, Bass=bottom bass stems down.`;
 
   const userText = `For the ${part} voice, provide a complete rhythm guide:
@@ -2510,7 +2730,8 @@ async function handleChat(res, apiKey, messages, imageParts, part) {
 Always reference the actual sheet music. Only cite content you can see in the images.
 Be warm, specific, and practical. Use movable Do solfege.
 Never invent measures or notes not in the score.
-Skip title/cover pages. IGNORE watermark text.
+Skip title/cover pages.
+${WATERMARK_NOTE}
 SATB: Soprano=top treble stems up, Alto=bottom treble stems down, Tenor=top bass/treble-8 stems up, Bass=bottom bass stems down.`;
 
   const contents = [];
@@ -3944,7 +4165,7 @@ app.post('/api/extract-lyrics', async (req, res) => {
       })
     );
 
-    const systemPrompt = `You are an expert at reading sheet music lyrics. Extract ONLY the text/lyrics that appear below the music staves. Be precise — copy exactly what is printed, including hyphens for syllable breaks.`;
+    const systemPrompt = `You are an expert at reading sheet music lyrics. Extract ONLY the text/lyrics that appear below the music staves. Be precise — copy exactly what is printed, including hyphens for syllable breaks. ${WATERMARK_NOTE}`;
 
     const userText = `Extract all lyrics from this sheet music. Return ONLY valid JSON:
 {
