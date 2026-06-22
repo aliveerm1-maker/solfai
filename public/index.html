@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+  <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -336,25 +337,30 @@
 
     /* ═══ PITCH PLAYER ═══ */
     .pitch-player {
-      display: none; background: var(--card); border-radius: var(--radius-lg);
+      display: block; background: var(--card); border-radius: var(--radius-lg);
       padding: 28px; margin-bottom: 28px; box-shadow: var(--shadow-card);
     }
-    .pitch-player.show { display: block; animation: fadeUp 0.5s var(--transition) forwards; }
     .pitch-player-title {
       font-family: 'Cormorant Garamond', serif; font-size: 1.15rem;
       color: var(--gold); margin-bottom: 20px; font-weight: 600;
     }
     .piano-keys-container {
-      display: flex; gap: 1px; justify-content: center; margin-bottom: 20px;
-      position: relative; height: 110px; perspective: 400px;
+      display: flex; gap: 1px; justify-content: flex-start; margin-bottom: 8px;
+      position: relative; height: 110px; overflow-x: auto; overflow-y: visible;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+      padding-bottom: 14px;
     }
+    .piano-keys-container::-webkit-scrollbar { height: 5px; }
+    .piano-keys-container::-webkit-scrollbar-track { background: transparent; }
+    .piano-keys-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
     .piano-key {
       border-radius: 0 0 7px 7px; cursor: pointer; transition: all 0.12s;
       display: flex; align-items: flex-end; justify-content: center;
-      padding-bottom: 10px; font-size: 0.55rem; font-weight: 600; position: relative;
+      padding-bottom: 8px; font-size: 0.55rem; font-weight: 600; position: relative;
+      flex-shrink: 0;
     }
     .piano-key.white {
-      width: 38px; height: 100px;
+      width: 38px; height: 96px;
       background: linear-gradient(180deg, #faf8f2 0%, #ede8dc 60%, #ddd8cc 100%);
       border: 1px solid #c5c0b0; color: #888; z-index: 1;
       box-shadow: 0 4px 8px rgba(0,0,0,0.15), inset 0 -2px 3px rgba(0,0,0,0.05);
@@ -365,19 +371,23 @@
       color: #333; box-shadow: 0 0 24px rgba(212,168,83,0.45), inset 0 -2px 3px rgba(0,0,0,0.1);
     }
     .piano-key.black {
-      width: 26px; height: 66px;
+      width: 26px; height: 62px;
       background: linear-gradient(180deg, #2a2a2a 0%, #0a0a0a 100%);
       border: 1px solid #000; color: transparent; z-index: 2; margin: 0 -13px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 -2px 4px rgba(255,255,255,0.03);
     }
-    .piano-key.black:hover { background: linear-gradient(180deg, #3a3a3a, #151515); color: #888; }
+    .piano-key.black:hover { background: linear-gradient(180deg, #3a3a3a, #151515); }
     .piano-key.black.active {
       background: linear-gradient(180deg, #8a6e20, #6a5218);
-      color: #fff; box-shadow: 0 0 16px rgba(212,168,83,0.3);
+      box-shadow: 0 0 16px rgba(212,168,83,0.3);
     }
     .piano-key:active { transform: translateY(2px); }
-    .pitch-info { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-    .pitch-note-big { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 700; color: var(--gold); }
+    .piano-c-label {
+      position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+      font-size: 0.48rem; font-weight: 700; color: #888; pointer-events: none; white-space: nowrap;
+    }
+    .pitch-info { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+    .pitch-note-big { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 700; color: var(--gold); min-width: 60px; }
     .pitch-freq { font-size: 0.82rem; color: var(--text2); margin-bottom: 8px; }
     .pitch-play-btn {
       display: flex; align-items: center; gap: 8px; padding: 10px 24px;
@@ -387,6 +397,33 @@
     }
     .pitch-play-btn:hover { background: var(--gold); color: #06060e; border-color: var(--gold); }
     .pitch-play-btn.playing { background: var(--gold); color: #06060e; }
+    .pitch-set-btn {
+      padding: 10px 18px; background: rgba(82,183,136,0.1);
+      border: 1px solid rgba(82,183,136,0.25); border-radius: var(--radius-md);
+      color: #52b788; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem; font-weight: 500; transition: all 0.2s var(--transition); white-space: nowrap;
+    }
+    .pitch-set-btn:hover:not(:disabled) { background: #52b788; color: #06060e; border-color: #52b788; }
+    .pitch-set-btn:disabled { opacity: 0.35; cursor: default; }
+    .pitch-set-btn.saved { background: rgba(82,183,136,0.18); border-color: rgba(82,183,136,0.4); }
+    .pitch-guide {
+      margin-bottom: 20px; border: 1px solid var(--border);
+      border-radius: var(--radius-md); overflow: hidden;
+    }
+    .pitch-guide summary {
+      padding: 11px 16px; cursor: pointer; user-select: none; list-style: none;
+      font-size: 0.8rem; font-weight: 500; color: var(--text2);
+      background: var(--card2); display: flex; align-items: center; gap: 8px;
+    }
+    .pitch-guide summary::-webkit-details-marker { display: none; }
+    .pitch-guide summary::before { content: '▶'; font-size: 0.6rem; transition: transform 0.2s; flex-shrink: 0; }
+    .pitch-guide[open] summary::before { transform: rotate(90deg); }
+    .pitch-guide-body { padding: 16px 20px; background: var(--card); }
+    .pitch-guide-steps { margin: 0; padding-left: 20px; }
+    .pitch-guide-steps li { color: var(--text2); font-size: 0.82rem; line-height: 1.65; margin-bottom: 10px; }
+    .pitch-guide-steps li:last-child { margin-bottom: 0; }
+    .pitch-guide-steps strong { color: var(--text); }
+    .pitch-guide-staff-svg { max-width: 100%; display: block; margin: 12px auto 0; }
 
     /* ═══ TABS ═══ */
     .tab-bar {
@@ -1237,18 +1274,58 @@
         <div class="diff-grid" id="diffGrid"></div>
       </div>
 
-      <!-- Piano Pitch Player -->
+      <!-- Interactive Piano Keyboard -->
       <div class="pitch-player" id="pitchPlayer">
-        <div class="pitch-player-title">Your Starting Pitch</div>
+        <div class="pitch-player-title">Find Your Starting Pitch</div>
+
+        <details class="pitch-guide">
+          <summary>How to Find Your Starting Pitch</summary>
+          <div class="pitch-guide-body">
+            <ol class="pitch-guide-steps">
+              <li>Look at the <strong>first note of your vocal line</strong> on the score (skip any piano intro).</li>
+              <li>Is the note head <strong>on a line</strong> (a line passes through its center) or <strong>in a space</strong> (floating between two lines with no line through it)?</li>
+              <li>Count from the <strong>bottom</strong> of the treble clef staff using this guide:</li>
+            </ol>
+            <svg class="pitch-guide-staff-svg" viewBox="0 0 400 162" xmlns="http://www.w3.org/2000/svg">
+              <line x1="10" y1="24" x2="200" y2="24" stroke="#3a3a5c" stroke-width="1.5"/>
+              <line x1="10" y1="44" x2="200" y2="44" stroke="#3a3a5c" stroke-width="1.5"/>
+              <line x1="10" y1="64" x2="200" y2="64" stroke="#3a3a5c" stroke-width="1.5"/>
+              <line x1="10" y1="84" x2="200" y2="84" stroke="#3a3a5c" stroke-width="1.5"/>
+              <line x1="10" y1="104" x2="200" y2="104" stroke="#3a3a5c" stroke-width="1.5"/>
+              <line x1="55" y1="124" x2="105" y2="124" stroke="#3a3a5c" stroke-width="1.5"/>
+              <text x="108" y="37" text-anchor="middle" font-size="10.5" fill="#6a87d0" font-style="italic" font-family="DM Sans,sans-serif">E5 (space)</text>
+              <text x="108" y="57" text-anchor="middle" font-size="10.5" fill="#6a87d0" font-style="italic" font-family="DM Sans,sans-serif">C5 (space)</text>
+              <text x="108" y="77" text-anchor="middle" font-size="10.5" fill="#6a87d0" font-style="italic" font-family="DM Sans,sans-serif">A4 (space)</text>
+              <text x="108" y="97" text-anchor="middle" font-size="10.5" fill="#6a87d0" font-style="italic" font-family="DM Sans,sans-serif">F4 (space)</text>
+              <text x="80" y="116" text-anchor="middle" font-size="10" fill="#6a87d0" font-style="italic" font-family="DM Sans,sans-serif">D4</text>
+              <text x="80" y="138" text-anchor="middle" font-size="10" fill="#6a87d0" font-style="italic" font-family="DM Sans,sans-serif">B3</text>
+              <text x="208" y="29" font-size="12" fill="#d4a853" font-weight="700" font-family="DM Sans,sans-serif">F5 — 5th line</text>
+              <text x="208" y="49" font-size="12" fill="#a0a098" font-family="DM Sans,sans-serif">D5 — 4th line</text>
+              <text x="208" y="69" font-size="12" fill="#a0a098" font-family="DM Sans,sans-serif">B4 — 3rd line</text>
+              <text x="208" y="89" font-size="12" fill="#a0a098" font-family="DM Sans,sans-serif">G4 — 2nd line</text>
+              <text x="208" y="109" font-size="12" fill="#a0a098" font-family="DM Sans,sans-serif">E4 — 1st line</text>
+              <text x="208" y="129" font-size="12" fill="#d4a853" font-weight="700" font-family="DM Sans,sans-serif">C4 = Middle C (ledger line)</text>
+              <text x="10" y="150" font-size="9" fill="#4a4a6a" font-family="DM Sans,sans-serif">Lines (bottom→top): Every Good Boy Does Fine (E G B D F)</text>
+              <text x="10" y="162" font-size="9" fill="#4a4a6a" font-family="DM Sans,sans-serif">Spaces (bottom→top): FACE (F A C E) · Gold = most useful anchors</text>
+            </svg>
+            <ol class="pitch-guide-steps" style="margin-top:14px">
+              <li>Find that note on the piano below and <strong>click it</strong> to hear it.</li>
+              <li>Once you&rsquo;ve found your note, click <strong>Set as Starting Pitch</strong> to save it.</li>
+            </ol>
+          </div>
+        </details>
+
         <div class="piano-keys-container" id="pianoKeys"></div>
+
         <div class="pitch-info">
           <div class="pitch-note-big" id="pitchNoteName">&mdash;</div>
           <div>
             <div class="pitch-freq" id="pitchFreq"></div>
-            <button class="pitch-play-btn" id="pitchPlayBtn" onclick="playStartingPitch()">
-              <span id="pitchPlayIcon">&#9654;</span> Play pitch
+            <button class="pitch-play-btn" id="pitchPlayBtn" onclick="playStartingPitch()" style="display:none">
+              <span id="pitchPlayIcon">&#9654;</span> Play starting pitch
             </button>
           </div>
+          <button class="pitch-set-btn" id="pitchSetBtn" onclick="setStartingPitch()" disabled>&#10003; Set as Starting Pitch</button>
         </div>
       </div>
 
@@ -2075,7 +2152,6 @@ function renderStructured(s) {
     { label: 'TIME SIGNATURE', value: s.timeSignature },
     { label: 'TEMPO', value: s.tempo },
     { label: 'DYNAMICS', value: s.dynamics },
-    { label: 'STARTING PITCH', value: s.startingPitch },
   ].filter(c => c.value && c.value !== 'Not determined');
 
   $('infoGrid').innerHTML = meterHtml + cards.map((c, i) => `
@@ -2119,7 +2195,6 @@ function renderStructured(s) {
   } else { cb.innerHTML = '<div class="composer-bio" style="color:var(--muted)">No composer info found.</div>'; }
 
   renderPronunciation(s.pronunciation);
-  setupPitchPlayer(s.startingPitch);
 
   if (s.firstNotesSolfege?.length > 0) {
     const tab = $('tab-solfege');
@@ -2261,44 +2336,94 @@ function playPiano(frequency, duration = 2.5, btn = null) {
   if (btn) { btn.classList.add('playing'); setTimeout(() => btn.classList.remove('playing'), duration * 1000); }
 }
 
-function setupPitchPlayer(pitchStr) {
-  const player = $('pitchPlayer');
-  const parsed = parseNote(pitchStr);
-  if (!parsed) { player.classList.remove('show'); return; }
+// \u2500\u2500\u2500 Tone.js piano sampler (Salamander Grand Piano) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+let _tonePlayer = null, _toneLoaded = false;
+async function _ensurePianoSampler() {
+  await Tone.start();
+  if (_tonePlayer) return _tonePlayer;
+  _tonePlayer = new Tone.Sampler({
+    urls: {
+      A0:'A0.mp3', C1:'C1.mp3', 'D#1':'Ds1.mp3', 'F#1':'Fs1.mp3',
+      A1:'A1.mp3', C2:'C2.mp3', 'D#2':'Ds2.mp3', 'F#2':'Fs2.mp3',
+      A2:'A2.mp3', C3:'C3.mp3', 'D#3':'Ds3.mp3', 'F#3':'Fs3.mp3',
+      A3:'A3.mp3', C4:'C4.mp3', 'D#4':'Ds4.mp3', 'F#4':'Fs4.mp3',
+      A4:'A4.mp3', C5:'C5.mp3', 'D#5':'Ds5.mp3', 'F#5':'Fs5.mp3',
+      A5:'A5.mp3', C6:'C6.mp3',
+    },
+    baseUrl: 'https://tonejs.github.io/audio/salamander/',
+    onload: () => { _toneLoaded = true; },
+  }).toDestination();
+  return _tonePlayer;
+}
 
-  $('pitchNoteName').textContent = parsed.display;
-  $('pitchFreq').textContent = Math.round(parsed.freq) + ' Hz';
-  window._startingPitchFreq = parsed.freq;
-  window._startingPitchMidi = parsed.midi;
+let _selectedPianoNote = null;
 
-  const centerMidi = parsed.midi;
-  const startMidi = Math.max(21, centerMidi - 7);
-  const endMidi = Math.min(108, centerMidi + 7);
-  let keysHtml = '';
-
-  for (let m = startMidi; m <= endMidi; m++) {
-    const semi = m % 12;
-    const oct = Math.floor(m / 12) - 1;
-    const isBlack = [1, 3, 6, 8, 10].includes(semi);
-    const noteName = NOTE_NAMES[semi] + oct;
-    const isActive = m === centerMidi;
-    const freq = 440 * Math.pow(2, (m - 69) / 12);
-
+function initPianoKeyboard() {
+  const BLACK_SEMIS = new Set([1, 3, 6, 8, 10]);
+  const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  let html = '';
+  for (let midi = 48; midi <= 84; midi++) { // C3 to C6
+    const semi = midi % 12;
+    const oct = Math.floor(midi / 12) - 1;
+    const note = NAMES[semi] + oct;
+    const isBlack = BLACK_SEMIS.has(semi);
     if (isBlack) {
-      keysHtml += `<div class="piano-key black${isActive ? ' active' : ''}" onclick="playPiano(${freq.toFixed(2)}, 1.5)" title="${noteName}">${noteName.replace(/\d/, '')}</div>`;
+      html += `<div class="piano-key black" onclick="clickPianoKey('${note}',this)" data-note="${note}" title="${note}"></div>`;
     } else {
-      keysHtml += `<div class="piano-key white${isActive ? ' active' : ''}" onclick="playPiano(${freq.toFixed(2)}, 1.5)" title="${noteName}">${noteName}</div>`;
+      const cLabel = semi === 0 ? `<span class="piano-c-label">C${oct}</span>` : '';
+      html += `<div class="piano-key white" onclick="clickPianoKey('${note}',this)" data-note="${note}" title="${note}">${cLabel}</div>`;
     }
   }
+  $('pianoKeys').innerHTML = html;
+}
 
-  $('pianoKeys').innerHTML = keysHtml;
-  player.classList.add('show');
+function clickPianoKey(noteName, el) {
+  document.querySelectorAll('#pianoKeys .piano-key.active').forEach(k => k.classList.remove('active'));
+  el.classList.add('active');
+  _selectedPianoNote = noteName;
+  const parsed = parseNote(noteName);
+  if (parsed) {
+    $('pitchNoteName').textContent = parsed.display;
+    $('pitchFreq').textContent = Math.round(parsed.freq) + ' Hz';
+  }
+  $('pitchSetBtn').disabled = false;
+  // Play via Tone.js sampler; fall back to oscillator
+  _ensurePianoSampler().then(s => {
+    s.triggerAttackRelease(noteName, '2n');
+  }).catch(() => { if (parsed) playPiano(parsed.freq, 1.5); });
+}
+
+function setStartingPitch() {
+  if (!_selectedPianoNote) return;
+  const parsed = parseNote(_selectedPianoNote);
+  window._startingPitchFreq = parsed?.freq;
+  window._startingPitchMidi = parsed?.midi;
+  if (currentAnalysis) currentAnalysis.startingPitch = _selectedPianoNote;
+  const btn = $('pitchSetBtn');
+  btn.textContent = '\u2713 Saved \u2014 ' + _selectedPianoNote;
+  btn.classList.add('saved');
+  $('pitchPlayBtn').style.display = '';
+  setTimeout(() => { btn.textContent = '\u2713 Set as Starting Pitch'; }, 2200);
+  showToast('Starting pitch set: ' + _selectedPianoNote, 'success');
+  // Persist as correction so future analyses of the same scan remember it
+  const ih = currentAnalysis?._imageHash;
+  if (ih) {
+    fetch('/api/analyze', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ mode:'correct', imageHash:ih, field:'startingPitch', value:_selectedPianoNote,
+        pieceTitle: currentAnalysis?.pieceTitle||null, composerName: currentAnalysis?.composerName||null })
+    }).catch(()=>{});
+  }
 }
 
 function playStartingPitch() {
   if (!window._startingPitchFreq) return;
-  playPiano(window._startingPitchFreq, 2.0, $('pitchPlayBtn'));
-  $('pitchPlayIcon').textContent = '\u{1F50A}';
+  if (_selectedPianoNote && _tonePlayer) {
+    _ensurePianoSampler().then(s => s.triggerAttackRelease(_selectedPianoNote, '1n'))
+      .catch(() => playPiano(window._startingPitchFreq, 2.0, $('pitchPlayBtn')));
+  } else {
+    playPiano(window._startingPitchFreq, 2.0, $('pitchPlayBtn'));
+  }
+  $('pitchPlayIcon').textContent = '\uD83D\uDD0A';
   setTimeout(() => { $('pitchPlayIcon').textContent = '\u25B6'; }, 2000);
 }
 
@@ -2936,7 +3061,7 @@ function saveCard(btn) {
   input.replaceWith(ve); btn.textContent = '\u270E'; btn.onclick = () => editCard(btn);
   const ih = currentAnalysis?._imageHash;
   if (ih) {
-    const fm = { 'KEY SIGNATURE': 'keySignature', 'STARTING PITCH': 'startingPitch', 'TIME SIGNATURE': 'timeSignature', 'TEMPO': 'tempo', 'DYNAMICS': 'dynamics' };
+    const fm = { 'KEY SIGNATURE': 'keySignature', 'TIME SIGNATURE': 'timeSignature', 'TEMPO': 'tempo', 'DYNAMICS': 'dynamics' };
     if (fm[label]) fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'correct', imageHash: ih, field: fm[label], value: ve.textContent, pieceTitle: currentAnalysis?.pieceTitle || null, composerName: currentAnalysis?.composerName || null }) }).catch(() => {});
   }
 }
@@ -5575,7 +5700,7 @@ async function recordAudition() {
     if (currentAnalysis?.structured) {
       fd.append('pieceTitle', currentAnalysis.structured.pieceTitle || '');
       fd.append('keySignature', currentAnalysis.structured.keySignature || '');
-      fd.append('startingPitch', currentAnalysis.structured.startingPitch || '');
+      fd.append('startingPitch', currentAnalysis.startingPitch || currentAnalysis.structured?.startingPitch || '');
     }
 
     try {
@@ -5918,6 +6043,9 @@ function renderTeacherDash(data) {
     <button class="btn-secondary" style="margin-top:14px" onclick="showClsPanel('clsView')">&larr; Back</button>`;
   showClsPanel('clsDash');
 }
+
+// Build the piano keyboard once on load — it's always visible
+initPianoKeyboard();
 
 function leaveClass() {
   if (!confirm('Leave this class? Your practice history stays on your device.')) return;

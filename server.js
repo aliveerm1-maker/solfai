@@ -171,16 +171,6 @@ const ANALYZE_SCHEMA = {
       type: "STRING",
       description: "The tempo marking written on the score (e.g., 'Andante', 'Allegro q=120'). Write 'none' if not visible.",
     },
-    starting_pitch: {
-      type: "STRING",
-      description: "The first note SUNG by the vocal part (the staff with lyrics). Skip piano introductions. Find where lyrics begin. For SATB: Soprano=top treble stems up, Alto=bottom treble stems down, Tenor=top bass/treble-8 stems up, Bass=bottom bass stems down.",
-      enum: [
-        "C3", "C#3", "D3", "Eb3", "E3", "F3", "F#3", "G3", "Ab3", "A3", "Bb3", "B3",
-        "C4", "C#4", "D4", "Eb4", "E4", "F4", "F#4", "G4", "Ab4", "A4", "Bb4", "B4",
-        "C5", "C#5", "D5", "Eb5", "E5", "F5", "F#5", "G5", "Ab5", "A5", "Bb5", "B5",
-        "C6", "D6", "E6", "F6", "G6"
-      ]
-    },
     dynamics: {
       type: "STRING",
       description: "Opening dynamic marking (e.g., 'mp', 'f', 'pp') and any subsequent changes. Write 'none' if not visible."
@@ -221,7 +211,7 @@ const ANALYZE_SCHEMA = {
     difficulty_intervals: { type: "INTEGER", description: "Interval difficulty 1-10." },
     difficulty_text: { type: "INTEGER", description: "Text/language difficulty 1-10." },
   },
-  required: ["key_signature", "time_signature", "starting_pitch", "dynamics", "flat_count", "sharp_count", "difficulty_overall"]
+  required: ["key_signature", "time_signature", "dynamics", "flat_count", "sharp_count", "difficulty_overall"]
 };
 
 // Dedicated key signature extraction schema (simpler, focused)
@@ -247,41 +237,6 @@ const KEY_SIG_SCHEMA = {
     }
   },
   required: ["flat_count", "sharp_count", "confidence", "reasoning"]
-};
-
-// Dedicated starting pitch schema
-const PITCH_SCHEMA = {
-  type: "OBJECT",
-  properties: {
-    pitch: {
-      type: "STRING",
-      description: "The first sung note with octave number.",
-      enum: [
-        "C3", "C#3", "D3", "Eb3", "E3", "F3", "F#3", "G3", "Ab3", "A3", "Bb3", "B3",
-        "C4", "C#4", "D4", "Eb4", "E4", "F4", "F#4", "G4", "Ab4", "A4", "Bb4", "B4",
-        "C5", "C#5", "D5", "Eb5", "E5", "F5", "F#5", "G5", "Ab5", "A5", "Bb5", "B5",
-        "C6", "D6", "E6", "F6", "G6"
-      ]
-    },
-    line_or_space: {
-      type: "STRING",
-      description: "Is the note head ON a line or IN a space?",
-      enum: ["on_line", "in_space"]
-    },
-    which_line_or_space: {
-      type: "INTEGER",
-      description: "Which line or space from bottom (1=lowest). Lines 1-5, Spaces 1-4."
-    },
-    has_accidental: {
-      type: "BOOLEAN",
-      description: "Does this specific note have an accidental (sharp, flat, natural) directly before it?"
-    },
-    measure_number: {
-      type: "INTEGER",
-      description: "Which measure is this note in? (1 = first measure with this vocal part)"
-    }
-  },
-  required: ["pitch", "line_or_space", "which_line_or_space"]
 };
 
 // Dedicated last note schema for cross-validation
@@ -1088,34 +1043,6 @@ function validateDurations(measures, timeSig) {
   return warnings;
 }
 
-// ─── Starting Pitch Validation ────────────────────────────
-// Cross-check the starting pitch against the key signature
-function validateStartingPitch(pitch, tonic, voicePart) {
-  if (!pitch || pitch === 'Not determined') return pitch;
-
-  const range = VOCAL_RANGES[voicePart] || VOCAL_RANGES['Soprano'];
-  const midi = Note.midi(pitch);
-
-  // Check if in vocal range
-  if (midi !== null) {
-    if (midi < range.low - 5 || midi > range.high + 5) {
-      // Way out of range — try octave correction
-      if (midi < range.low && midi + 12 <= range.high + 3) {
-        const pc = Note.get(pitch).pc;
-        const oct = Note.get(pitch).oct;
-        return pc + (oct + 1);
-      } else if (midi > range.high && midi - 12 >= range.low - 3) {
-        const pc = Note.get(pitch).pc;
-        const oct = Note.get(pitch).oct;
-        return pc + (oct - 1);
-      }
-    }
-  }
-
-  // Correct enharmonic spelling for key
-  return correctEnharmonicForKey(pitch, tonic);
-}
-
 // ─── Image Quality Assessment ─────────────────────────────
 // Analyzes image quality before sending to Gemini: resolution, contrast, sharpness
 async function assessImageQuality(base64Data) {
@@ -1584,14 +1511,12 @@ function handleCorrection(res, body) {
 
 // ─── Composite Confidence Score ───────────────────────────
 // Numeric 0-100 score combining consensus agreement, image quality, database match, and call success rate
-function calculateCompositeConfidence({ keyAgreement, pitchAgreement, imageQuality, dbMatch, successCount, totalCalls }) {
+function calculateCompositeConfidence({ keyAgreement, imageQuality, dbMatch, successCount, totalCalls }) {
   let score = 0;
 
-  // Consensus agreement (40 points max)
-  if (keyAgreement) score += 20;
-  else score += 8;
-  if (pitchAgreement) score += 20;
-  else score += 8;
+  // Key consensus agreement (40 points)
+  if (keyAgreement) score += 40;
+  else score += 16;
 
   // Image quality (25 points max)
   score += Math.round((imageQuality / 100) * 25);
@@ -1644,7 +1569,6 @@ async function handleAnalyze(res, apiKey, imageParts, part, rawBase64, pdfPages)
   // Prepare specialized image crops IN PARALLEL
   const firstJpeg = imageParts.find(p => p.inlineData?.mimeType === 'image/jpeg');
   let keyRegionParts = [];
-  let firstSystemParts = [];
 
   let annotatedKeyParts = [];
   let first2MeasuresParts = [];
@@ -1658,7 +1582,6 @@ async function handleAnalyze(res, apiKey, imageParts, part, rawBase64, pdfPages)
       preprocessForGemini(firstJpeg.inlineData.data, 'first_2_measures').catch(() => null),
     ]);
     if (keyData) keyRegionParts = [{ inlineData: { mimeType: 'image/jpeg', data: keyData } }];
-    if (firstSysData) firstSystemParts = [{ inlineData: { mimeType: 'image/jpeg', data: firstSysData } }];
     if (hiContrast) {
       // Add high-contrast version to processed parts for Flash reads
       processedParts.push({ inlineData: { mimeType: 'image/jpeg', data: hiContrast } });
@@ -1667,10 +1590,7 @@ async function handleAnalyze(res, apiKey, imageParts, part, rawBase64, pdfPages)
     if (first2MData) first2MeasuresParts = [{ inlineData: { mimeType: 'image/jpeg', data: first2MData } }];
   }
 
-  // ═══ PHASE 1: Dedicated key signature extraction (3 reads) ═══
-  // ═══ PHASE 2: Full structured extraction (5-way consensus) ═══
-  // ═══ PHASE 3: Dedicated starting pitch extraction (3 reads) ═══
-  // All phases run IN PARALLEL for speed
+  // Extraction phases run in parallel
 
   const keySigPrompt = `You are an expert music engraver identifying the key signature.
 
@@ -1712,65 +1632,14 @@ CRITICAL RULES:
 
 WATERMARKS — IGNORE COMPLETELY:
 - Diagonal or translucent text like "For perusal purposes only", "Preview copy", etc.
-- Look THROUGH watermark text to read the actual notes beneath it.
-
-STARTING PITCH — TREBLE CLEF:
-Staff lines bottom→top: E4, G4, B4, D5, F5.
-Staff spaces bottom→top: F4, A4, C5, E5.
-Ledger lines BELOW treble staff:
-  Space below staff = D4. First ledger line below = C4 (MIDDLE C). Space below that = B3. Second ledger line below = A3.
-  *** CRITICAL: Middle C (C4) is in the SPACE below the first ledger line, NOT on the line. The line through D4, the space below it is C4. ***
-Ledger lines ABOVE treble staff:
-  Space above top line = G5. First ledger line above = A5. Space above that = B5. Second ledger line above = C6.
-Treble-8 clef (tenor voice, has "8" below spiral): subtract one octave from ALL pitches listed above.
-
-STARTING PITCH — BASS CLEF:
-Staff lines bottom→top: G2, B2, D3, F3, A3. Spaces: A2, C3, E3, G3.
-Ledger lines ABOVE bass staff:
-  Space above top line = B3. First ledger line above = C4 (MIDDLE C). Space above that = D4. Second ledger line above = E4.
-
-STARTING PITCH PROCEDURE:
-1. Find vocal staff (has lyrics underneath). Skip piano intro measures.
-2. Find VERY FIRST note with a lyric syllable below it.
-3. Is the note head ON a line (line passes through its center) or IN a space (floats between lines with no line through it)?
-4. Count from the bottom: which line (1-5) or space (1-4)?
-5. Look up the pitch from the reference above.
-6. Double-check: is it within vocal range? Soprano C4-G5, Alto G3-E5, Tenor C3-A4, Bass E2-E4.`;
-
-  const pitchPrompt = `You are a music reading specialist. Your ONLY task is to identify the FIRST SUNG NOTE.
-
-STEP BY STEP:
-1. Find the vocal staff — the staff with lyrics (text syllables) underneath the notes.
-2. SKIP any piano/organ introduction measures. Look for where the TEXT starts.
-3. The very first note that has a lyric syllable below it is the starting pitch.
-4. Determine if the note head is ON a line (line passes through its center) or IN a space (no line through it — floats between two lines). This is the most critical distinction.
-5. Look up pitch using these EXACT references:
-   TREBLE CLEF lines (1=bottom→5=top): E4, G4, B4, D5, F5
-   TREBLE CLEF spaces (1=bottom→4=top): F4, A4, C5, E5
-   Below treble staff: space below = D4, first ledger line below = C4 (MIDDLE C), space below that = B3
-   *** The first ledger line below treble staff = D4 is ON the line; C4 is IN the space BELOW that line ***
-   BASS CLEF lines: G2, B2, D3, F3, A3. Spaces: A2, C3, E3, G3.
-   Above bass staff: space above = B3, first ledger line above = C4 (MIDDLE C)
-6. Check for any accidental (♯, ♭, ♮) directly before this note.
-7. For treble-8 clef: subtract one octave from all pitches above.
-
-CRITICAL MISTAKES TO AVOID:
-- Middle C (C4) is in the SPACE below the first ledger line below treble clef. If you see a note floating below a small line with no line through it = C4, NOT D4.
-- Confusing 3rd staff line (B4) with 3rd staff space (C5) — these are adjacent and easy to confuse
-- Reading piano/accompaniment notes instead of the vocal part
-- Missing a key signature accidental that applies to this note
-- Off-by-one octave errors: always double-check against vocal range (Soprano C4-G5, Alto G3-E5, Tenor C3-A4, Bass E2-E4)
-
-For SATB: Soprano=top treble staff stems up, Alto=bottom treble stems down, Tenor=treble-8/bass stems up, Bass=bottom bass stems down.`;
+- Look THROUGH watermark text to read the actual notes beneath it.`;
 
   const extractText = `Extract all musical data for the ${part} part. Skip title/cover pages. Be precise about accidental counting.`;
 
-  // Launch ALL phases in parallel
-  // Reduced to 7 parallel calls to avoid rate limiting.
-  // Key sig: 2 reads (1 Pro cropped + 1 Flash full)
-  // Full extraction: 2 reads (1 Pro + 1 Flash)
-  // Starting pitch: 2 reads (1 Pro cropped + 1 Flash full)
-  // Total: 7 calls (was 11) — much less likely to hit rate limits
+  // Launch extraction phases in parallel
+  // Key sig: 2 dedicated reads (Pro cropped + Flash full)
+  // Full extraction: 2 reads (Pro + Flash)
+  // Total: 4 calls
   const allPromises = [
     // KEY SIG: 2 dedicated reads
     callGemini(apiKey, keySigPrompt,
@@ -1792,17 +1661,6 @@ For SATB: Soprano=top treble staff stems up, Alto=bottom treble stems down, Teno
       [{ text: `Independent verification: ${extractText} Double-check each value.` }, ...processedParts],
       { model: GEMINI_FLASH, temperature: 0, maxOutputTokens: 4096, responseSchema: ANALYZE_SCHEMA, thinkingBudget: 0 }
     ),
-
-    // STARTING PITCH: 2 dedicated reads
-    callGemini(apiKey, pitchPrompt,
-      [{ text: `Find the first sung note for the ${part} part.` },
-       ...(firstSystemParts.length ? firstSystemParts : processedParts.slice(0, 1))],
-      { temperature: 0, maxOutputTokens: 256, responseSchema: PITCH_SCHEMA, thinkingBudget: 6000 }
-    ),
-    callGemini(apiKey, pitchPrompt,
-      [{ text: `Find the starting pitch for ${part}.` }, ...processedParts.slice(0, 1)],
-      { model: GEMINI_FLASH, temperature: 0, maxOutputTokens: 256, responseSchema: PITCH_SCHEMA, thinkingBudget: 0 }
-    ),
   ];
 
   // Use allSettled so one failed call doesn't kill everything
@@ -1820,13 +1678,11 @@ For SATB: Soprano=top treble staff stems up, Alto=bottom treble stems down, Teno
   }
   console.log(`[Solfai] ${successCount}/${results.length} Gemini calls succeeded`);
 
-  // Parse results — indices match the 6-call allPromises array:
+  // Parse results — indices match the 4-call allPromises array:
   //   0: key sig Pro (cropped)
   //   1: key sig Flash (full)
   //   2: full extraction Pro
   //   3: full extraction Flash
-  //   4: pitch Pro (cropped)
-  //   5: pitch Flash (full)
 
   // Parse key signature votes (indices 0-1)
   const keyVotes = [];
@@ -1873,48 +1729,6 @@ For SATB: Soprano=top treble staff stems up, Alto=bottom treble stems down, Teno
       fullExtractions.push({});
     }
   }
-
-  // Parse starting pitch votes (indices 4-5)
-  const pitchVotes = [];
-  for (const [i, weight] of [[4, WEIGHT_PRO], [5, WEIGHT_FLASH]]) {
-    if (!results[i]) continue;
-    try {
-      const pd = JSON.parse(results[i]);
-      pitchVotes.push({ value: pd.pitch, weight, lineOrSpace: pd.line_or_space, whichNum: pd.which_line_or_space });
-    } catch (e) {
-      console.warn(`[Solfai] Pitch read ${i - 3} parse failed`);
-    }
-  }
-
-  // Also include pitch from full extractions
-  for (let i = 0; i < fullExtractions.length; i++) {
-    if (fullExtractions[i].starting_pitch) {
-      const weight = i < 2 ? WEIGHT_PRO : WEIGHT_FLASH;
-      pitchVotes.push({ value: fullExtractions[i].starting_pitch, weight: weight * 0.5 }); // lower weight since these aren't dedicated
-    }
-  }
-
-  // Weighted vote on starting pitch (with enharmonic grouping)
-  const pitchGroups = [];
-  for (const vote of pitchVotes) {
-    if (!vote.value) continue;
-    let found = false;
-    for (const group of pitchGroups) {
-      if (areEnharmonic(group.canonical, vote.value)) {
-        group.totalWeight += vote.weight;
-        group.count++;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      pitchGroups.push({ canonical: vote.value, totalWeight: vote.weight, count: 1 });
-    }
-  }
-  pitchGroups.sort((a, b) => b.totalWeight - a.totalWeight);
-  const votedPitch = pitchGroups[0]?.canonical || fullExtractions[0]?.starting_pitch || 'Not determined';
-
-  console.log(`[Solfai] Pitch votes: ${pitchVotes.map(v => v.value).join(', ')} → ${votedPitch}`);
 
   // Use primary Pro extraction as base, enriched by consensus
   const raw = fullExtractions[0];
@@ -1974,11 +1788,8 @@ For SATB: Soprano=top treble staff stems up, Alto=bottom treble stems down, Teno
   // Use real weighted margin (0.5=tie, 1.0=unanimous) instead of count equality
   const keyVoteResult = weightedVoteWithMargin(pairVotes);
   const keyConfidenceRatio = keyVoteResult.margin; // 1.0 = all agree, 0.5 = tie
-  const pitchVoteResult = weightedVoteWithMargin(pitchVotes.map(v => ({ value: v.value, weight: v.weight })));
-  const pitchConfidenceRatio = pitchVoteResult.margin;
 
   console.log(`[Solfai] Key confidence: ${Math.round(keyConfidenceRatio * 100)}% (${keyVoteResult.isUnanimous ? 'unanimous' : keyVoteResult.isTie ? 'TIE' : 'majority'})`);
-  console.log(`[Solfai] Pitch confidence: ${Math.round(pitchConfidenceRatio * 100)}%`);
 
   // Retry key if < 70% agreement and we have image data
   if (keyConfidenceRatio < 0.7 && firstJpeg) {
@@ -2006,29 +1817,6 @@ For SATB: Soprano=top treble staff stems up, Alto=bottom treble stems down, Teno
     } catch (e) {
       console.warn('[Solfai] Key retry failed:', e.message);
     }
-  }
-
-  // Validate starting pitch against key and range
-  const validatedPitch = validateStartingPitch(votedPitch, tonic, part);
-  let finalPitch = cached?.startingPitch || validatedPitch;
-
-  // Override starting pitch from database if available
-  if (dbMatch && !cached?.startingPitch) {
-    const partKey = part.toLowerCase() + 'Start';
-    const dbPitch = dbMatch[partKey] || dbMatch.sopranoStart;
-    if (dbPitch && !areEnharmonic(dbPitch, finalPitch)) {
-      console.log(`[Solfai] DB override: ${part} starting pitch "${finalPitch}" → "${dbPitch}"`);
-      finalPitch = dbPitch;
-      dbOverrideApplied = true;
-    }
-  }
-
-  // ═══ CROSS-VALIDATE starting pitch scale degree ═══
-  const startDegree = noteToScaleDegree(finalPitch.replace(/\d+$/, ''), tonic);
-  let startDegreeWarning = null;
-  if (startDegree !== null && ![1, 3, 5].includes(startDegree)) {
-    startDegreeWarning = `Starting pitch ${finalPitch} is scale degree ${startDegree} in ${tonic} — not Do(1), Mi(3), or Sol(5). Verify manually.`;
-    console.warn(`[Solfai] Warning: ${startDegreeWarning}`);
   }
 
   // ═══ CROSS-VALIDATE last note — 3-way vote with confidence gate ═══
@@ -2141,9 +1929,8 @@ Step 4: Apply any key signature accidentals.`;
 
   // Confidence report
   const keyAgreement = allKeyVotes.every(v => v.flatCount === finalFlats && v.sharpCount === finalSharps);
-  const pitchAgreement = pitchGroups.length > 0 && pitchGroups[0].count >= 3;
 
-  console.log(`[Solfai] Confidence: key=${keyAgreement ? 'unanimous' : 'voted'}, pitch=${pitchAgreement ? 'strong' : 'weak'}`);
+  console.log(`[Solfai] Confidence: key=${keyAgreement ? 'unanimous' : 'voted'}`);
 
   // ═══ PASS 2: Human analysis with Google Search grounding ═══
   const pass2SystemPrompt = `You are a patient, encouraging choir director writing a practice guide for a ${part} singer.
@@ -2156,7 +1943,6 @@ Verified musical data (consensus of ${allKeyVotes.length} independent reads):
 - Key: ${finalKey}${!keyResult.confident && keyResult.geminiSaid !== keyResult.codeSaid ? ` (Note: visual count suggests ${keyResult.codeSaid}, AI read ${keyResult.geminiSaid})` : ''}
 - Time Signature: ${votedTime}
 - Tempo: ${votedTempo}
-- Starting Pitch: ${finalPitch}${pitchAgreement ? '' : ' (low confidence — verify manually)'}
 - Composer: ${raw.composer_name || 'unknown'}
 - Title: ${raw.piece_title || 'unknown'}
 - Language: ${raw.lyrics_language || 'English'}
@@ -2208,8 +1994,6 @@ Output ONLY valid JSON.`;
     timeSignature: votedTime || 'Not determined',
     tempo: votedTempo === 'none' ? 'No tempo marking' : (votedTempo || 'Not marked'),
     dynamics: raw.dynamics === 'none' ? 'None visible' : (raw.dynamics || 'None visible'),
-    startingPitch: finalPitch,
-    pitchConfident: pitchAgreement,
     difficulty: {
       overall: raw.difficulty_overall || 5,
       rhythm: raw.difficulty_rhythm || 4,
@@ -2235,7 +2019,6 @@ Output ONLY valid JSON.`;
     },
     _confidenceScore: calculateCompositeConfidence({
       keyAgreement,
-      pitchAgreement,
       imageQuality: imageQuality.overall,
       dbMatch: !!dbMatch,
       successCount,
@@ -2243,9 +2026,7 @@ Output ONLY valid JSON.`;
     }),
     _selfConsistency: {
       keysAgree: keyAgreement,
-      pitchAgree: pitchAgreement,
       totalKeyReads: allKeyVotes.length,
-      totalPitchReads: pitchVotes.length,
     },
     _dbMatch: dbMatch ? { title: dbMatch.title, composer: dbMatch.composer, overrideApplied: dbOverrideApplied } : null,
     _pieceDbMatch: pieceDbEntry ? {
@@ -2259,8 +2040,6 @@ Output ONLY valid JSON.`;
       timeOverrideApplied: pieceDbTimeOverride,
     } : null,
     _crossValidation: {
-      startDegree,
-      startDegreeWarning,
       lastNotePitch,
       lastNoteWarning,
     },
@@ -2275,7 +2054,6 @@ function buildTextSummary(s, part) {
     `Time Signature: ${s.timeSignature}`,
     `Tempo: ${s.tempo}`,
     `Dynamics: ${s.dynamics}`,
-    `Starting Pitch (${part}): ${s.startingPitch}${s.pitchConfident === false ? ' ⚠️ Low confidence' : ''}`,
     `Difficulty Overall: ${s.difficulty.overall}/10`,
     `---`,
     `BREAKDOWN:`,
