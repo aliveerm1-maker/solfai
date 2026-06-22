@@ -2937,7 +2937,7 @@ function saveCard(btn) {
   const ih = currentAnalysis?._imageHash;
   if (ih) {
     const fm = { 'KEY SIGNATURE': 'keySignature', 'STARTING PITCH': 'startingPitch', 'TIME SIGNATURE': 'timeSignature', 'TEMPO': 'tempo', 'DYNAMICS': 'dynamics' };
-    if (fm[label]) fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'correct', imageHash: ih, field: fm[label], value: ve.textContent }) }).catch(() => {});
+    if (fm[label]) fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'correct', imageHash: ih, field: fm[label], value: ve.textContent, pieceTitle: currentAnalysis?.pieceTitle || null, composerName: currentAnalysis?.composerName || null }) }).catch(() => {});
   }
 }
 

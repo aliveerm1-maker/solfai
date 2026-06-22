@@ -73,6 +73,79 @@ function hashImage(base64Data) {
   return createHash('md5').update(chunk).digest('hex');
 }
 
+// ─── Piece Database (piece-database.json) ────────────────
+// The library's own catalog of ~1001 pieces with verified title/composer/voicing
+// and honest key/time fills. Loaded once at startup; mutated by user corrections.
+const PIECE_DB_FILE = join(__dirname, 'piece-database.json');
+let pieceDb = { _meta: {}, pieces: [] };
+
+function loadPieceDb() {
+  try {
+    if (existsSync(PIECE_DB_FILE)) {
+      pieceDb = JSON.parse(readFileSync(PIECE_DB_FILE, 'utf8'));
+      console.log(`[Solfai] Piece database: ${pieceDb.pieces?.length ?? 0} entries`);
+    }
+  } catch (err) {
+    console.error('[Solfai] Failed to load piece database:', err.message);
+  }
+}
+
+function savePieceDb() {
+  try {
+    const pieces = pieceDb.pieces || [];
+    pieceDb._meta = {
+      ...pieceDb._meta,
+      filled_key: pieces.filter(p => p.key !== null).length,
+      filled_time: pieces.filter(p => p.time !== null).length,
+      high_confidence: pieces.filter(p => p.confidence === 'high').length,
+      medium_confidence: pieces.filter(p => p.confidence === 'medium').length,
+      needs_verification: pieces.filter(p => p.confidence === 'low').length,
+      last_updated: new Date().toISOString().slice(0, 10),
+    };
+    writeFileSync(PIECE_DB_FILE, JSON.stringify(pieceDb, null, 2));
+  } catch (err) {
+    console.error('[Solfai] Failed to save piece database:', err.message);
+  }
+}
+
+function normStr(s) {
+  return (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+}
+
+function lookupPieceDb(title, composer) {
+  const pieces = pieceDb.pieces || [];
+  if (!pieces.length || !title || title === 'unknown') return null;
+  const nt = normStr(title);
+  const nc = normStr(composer);
+
+  // 1. Exact title + composer match
+  for (const p of pieces) {
+    if (!p.title) continue;
+    if (normStr(p.title) === nt) {
+      if (!nc || !p.composer ||
+          normStr(p.composer).includes(nc) || nc.includes(normStr(p.composer))) {
+        return p;
+      }
+    }
+  }
+
+  // 2. Fuzzy title match with optional composer boost
+  const tw = nt.split(/\s+/).filter(w => w.length > 2);
+  let best = null, bestScore = 0;
+  for (const p of pieces) {
+    if (!p.title) continue;
+    const pw = normStr(p.title).split(/\s+/).filter(w => w.length > 2);
+    if (!tw.length || !pw.length) continue;
+    const hits = tw.filter(w => pw.some(x => x.includes(w) || w.includes(x)));
+    let score = hits.length / Math.max(tw.length, pw.length);
+    if (nc && p.composer && normStr(p.composer).includes(nc)) score += 0.3;
+    if (score > bestScore && score >= 0.5) { bestScore = score; best = p; }
+  }
+  return best;
+}
+
+loadPieceDb();
+
 // ─── Response schema with enum constraints ────────────────
 const ANALYZE_SCHEMA = {
   type: "OBJECT",
@@ -1475,19 +1548,38 @@ app.post('/api/analyze', async (req, res) => {
 
 // ─── Correction endpoint ──────────────────────────────────
 function handleCorrection(res, body) {
-  const { imageHash, field, value } = body;
+  const { imageHash, field, value, pieceTitle, composerName } = body;
   if (!imageHash || !field || !value) {
     return res.status(400).json({ error: 'Missing correction data' });
   }
 
+  // 1. Save to per-image corrections cache (used on re-analysis of the same scan)
   const corrections = loadCorrections();
   if (!corrections[imageHash]) corrections[imageHash] = {};
   corrections[imageHash][field] = value;
   corrections[imageHash]._updated = new Date().toISOString();
   saveCorrections(corrections);
+  console.log(`[Solfai] Correction cached: ${field}="${value}" for hash ${imageHash}`);
 
-  console.log(`[Solfai] Correction saved: ${field}=${value} for hash ${imageHash}`);
-  return res.status(200).json({ ok: true });
+  // 2. Self-healing write-back to piece-database.json.
+  //    Only key/time corrections on identified pieces are written back; other
+  //    fields (tempo, dynamics, starting pitch) are image-specific and not
+  //    catalogued at the piece level.
+  let dbUpdated = false;
+  const dbField = field === 'keySignature' ? 'key' : field === 'timeSignature' ? 'time' : null;
+  if (dbField && pieceTitle && composerName) {
+    const match = lookupPieceDb(pieceTitle, composerName);
+    if (match) {
+      match[dbField] = value;
+      match.confidence = 'high';
+      match.source = `user correction (${new Date().toISOString().slice(0, 10)})`;
+      savePieceDb();
+      dbUpdated = true;
+      console.log(`[Solfai] Piece DB updated: #${match.id} "${match.title}" ${dbField}="${value}" → high`);
+    }
+  }
+
+  return res.status(200).json({ ok: true, dbUpdated });
 }
 
 // ─── Composite Confidence Score ───────────────────────────
@@ -1996,7 +2088,7 @@ Step 4: Apply any key signature accidentals.`;
   }
 
   // Consensus on other fields
-  const votedTime = weightedVote(
+  let votedTime = weightedVote(
     fullExtractions.map((ext, i) => ({
       value: ext.time_signature,
       weight: i < 2 ? WEIGHT_PRO : WEIGHT_FLASH,
@@ -2009,6 +2101,35 @@ Step 4: Apply any key signature accidentals.`;
       weight: i < 2 ? WEIGHT_PRO : WEIGHT_FLASH,
     }))
   ) || raw.tempo;
+
+  // ═══ PIECE DATABASE LOOKUP (piece-database.json) ═══
+  // The library's own catalog. Overrides key/time only when confidence is
+  // medium or high AND no user correction is already cached for this image.
+  const pieceDbEntry = lookupPieceDb(pieceTitle, composerName);
+  let pieceDbKeyOverride = false;
+  let pieceDbTimeOverride = false;
+
+  if (pieceDbEntry) {
+    console.log(`[Solfai] Piece DB match: #${pieceDbEntry.id} "${pieceDbEntry.title}" (${pieceDbEntry.confidence})`);
+    const confOk = pieceDbEntry.confidence === 'high' || pieceDbEntry.confidence === 'medium';
+
+    // Override key: only if DB has data, confidence is sufficient, user hasn't
+    // corrected it, and the hardcoded CHOIR_PIECE_DATABASE hasn't already overridden.
+    if (confOk && pieceDbEntry.key && !cached?.keySignature && !dbOverrideApplied) {
+      console.log(`[Solfai] Piece DB key override: "${finalKey}" → "${pieceDbEntry.key}"`);
+      finalKey = pieceDbEntry.key;
+      tonic = finalKey.split(' ')[0];
+      pieceDbKeyOverride = true;
+    }
+
+    // Override time: only if DB has data, confidence is sufficient, and user
+    // hasn't corrected it via the cached corrections map.
+    if (confOk && pieceDbEntry.time && !cached?.timeSignature) {
+      console.log(`[Solfai] Piece DB time override: "${votedTime}" → "${pieceDbEntry.time}"`);
+      votedTime = pieceDbEntry.time;
+      pieceDbTimeOverride = true;
+    }
+  }
 
   // Pre-calculate solfege from first_notes (use longest first_notes array)
   const bestFirstNotes = fullExtractions
@@ -2127,6 +2248,16 @@ Output ONLY valid JSON.`;
       totalPitchReads: pitchVotes.length,
     },
     _dbMatch: dbMatch ? { title: dbMatch.title, composer: dbMatch.composer, overrideApplied: dbOverrideApplied } : null,
+    _pieceDbMatch: pieceDbEntry ? {
+      id: pieceDbEntry.id,
+      title: pieceDbEntry.title,
+      composer: pieceDbEntry.composer,
+      arranger: pieceDbEntry.arranger,
+      voicing: pieceDbEntry.specific_voicing,
+      confidence: pieceDbEntry.confidence,
+      keyOverrideApplied: pieceDbKeyOverride,
+      timeOverrideApplied: pieceDbTimeOverride,
+    } : null,
     _crossValidation: {
       startDegree,
       startDegreeWarning,
