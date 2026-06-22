@@ -2,13 +2,14 @@
   "_meta": {
     "description": "Choir library key/time database. Values filled only where genuinely defensible from training knowledge of standard repertoire. null = unknown without checking the physical score. Nothing invented.",
     "schema": "id, title, composer, arranger, general_voicing, specific_voicing, a_cappella, instrumentation, notes, issue_flag, key, time, confidence (high|medium|low), source",
-    "total_pieces": 1001,
-    "filled_key": 67,
-    "filled_time": 65,
-    "high_confidence": 5,
+    "total_pieces": 1002,
+    "filled_key": 68,
+    "filled_time": 66,
+    "high_confidence": 6,
     "medium_confidence": 62,
     "needs_verification": 934,
-    "generated": "2026-06-22"
+    "generated": "2026-06-22",
+    "last_updated": "2026-06-22"
   },
   "pieces": [
     {
@@ -16026,6 +16027,22 @@
       "time": null,
       "confidence": "low",
       "source": "needs verification"
+    },
+    {
+      "id": 1002,
+      "title": "Tu lo sai",
+      "composer": "Torelli",
+      "arranger": null,
+      "general_voicing": null,
+      "specific_voicing": null,
+      "a_cappella": null,
+      "instrumentation": null,
+      "notes": null,
+      "issue_flag": null,
+      "key": "E major",
+      "time": "3/4",
+      "confidence": "high",
+      "source": "user verified"
     }
   ]
 }
