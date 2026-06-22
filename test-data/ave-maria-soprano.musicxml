@@ -19,34 +19,57 @@
         <time><beats>4</beats><beat-type>4</beat-type></time>
         <clef><sign>G</sign><line>2</line></clef>
       </attributes>
-      <!-- E4 quarter, F4 quarter, G4 quarter, A4 quarter = 4 beats -->
+      <!-- Tempo direction with text + BPM -->
+      <direction placement="above">
+        <direction-type>
+          <words font-style="italic">Andante con moto</words>
+        </direction-type>
+      </direction>
+      <direction placement="above">
+        <direction-type>
+          <metronome parentheses="no">
+            <beat-unit>quarter</beat-unit>
+            <per-minute>72</per-minute>
+          </metronome>
+        </direction-type>
+        <sound tempo="72"/>
+      </direction>
+      <!-- Opening dynamic -->
+      <direction placement="below">
+        <direction-type><dynamics><p/></dynamics></direction-type>
+      </direction>
+      <!-- E4 F4 G4 A4 = 4 beats -->
       <note>
         <pitch><step>E</step><octave>4</octave></pitch>
         <duration>4</duration><type>quarter</type>
-        <lyric><text>A</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>A</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>San</text></lyric>
       </note>
       <note>
         <pitch><step>F</step><octave>4</octave></pitch>
         <duration>4</duration><type>quarter</type>
-        <lyric><text>ve</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>ve</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>cta</text></lyric>
       </note>
       <note>
         <pitch><step>G</step><octave>4</octave></pitch>
         <duration>4</duration><type>quarter</type>
-        <lyric><text>Ma</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>Ma</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>Ma</text></lyric>
       </note>
       <note>
         <pitch><step>A</step><octave>4</octave></pitch>
         <duration>4</duration><type>quarter</type>
-        <lyric><text>ri</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>ri</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>ri</text></lyric>
       </note>
     </measure>
     <measure number="2">
-      <!-- C5 half, B4 quarter, A4 quarter = 4 beats -->
+      <!-- C5 half B4 quarter A4 quarter -->
       <note>
         <pitch><step>C</step><octave>5</octave></pitch>
         <duration>8</duration><type>half</type>
-        <lyric><text>a</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>a</text></lyric>
       </note>
       <note>
         <pitch><step>B</step><octave>4</octave></pitch>
@@ -55,60 +78,88 @@
       <note>
         <pitch><step>A</step><octave>4</octave></pitch>
         <duration>4</duration><type>quarter</type>
-        <lyric><text>gra</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>gra</text></lyric>
       </note>
     </measure>
     <measure number="3">
-      <!-- G4 dotted-half, F4 quarter = 4 beats -->
+      <!-- Rehearsal mark A -->
+      <direction placement="above">
+        <direction-type><rehearsal>A</rehearsal></direction-type>
+      </direction>
+      <!-- crescendo wedge -->
+      <direction placement="below">
+        <direction-type><wedge type="crescendo"/></direction-type>
+      </direction>
+      <!-- G4 dotted-half F4 quarter -->
       <note>
         <pitch><step>G</step><octave>4</octave></pitch>
         <duration>12</duration><type>half</type><dot/>
-        <lyric><text>ti</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>ti</text></lyric>
       </note>
       <note>
         <pitch><step>F</step><octave>4</octave></pitch>
         <duration>4</duration><type>quarter</type>
-        <lyric><text>a</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>a</text></lyric>
       </note>
     </measure>
     <measure number="4">
-      <!-- E4 whole = 4 beats -->
+      <!-- Dynamic change to mf -->
+      <direction placement="below">
+        <direction-type><dynamics><mf/></dynamics></direction-type>
+      </direction>
       <note>
         <pitch><step>E</step><octave>4</octave></pitch>
         <duration>16</duration><type>whole</type>
-        <lyric><text>ple</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>ple</text></lyric>
       </note>
     </measure>
     <measure number="5">
-      <!-- Triplet: D4 E4 F4 eighth-triplet (each = 1/12 of whole = 1/3 quarter) -->
+      <!-- Tempo change -->
+      <direction placement="above">
+        <direction-type><words>poco rit.</words></direction-type>
+      </direction>
+      <!-- Triplet eighth notes + dotted quarter + eighth = intentionally 3 beats to test warning -->
       <note>
         <pitch><step>D</step><octave>4</octave></pitch>
         <duration>2</duration><type>eighth</type>
         <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
-        <lyric><text>Do</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>Do</text></lyric>
       </note>
       <note>
         <pitch><step>E</step><octave>4</octave></pitch>
         <duration>2</duration><type>eighth</type>
         <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
-        <lyric><text>mi</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>mi</text></lyric>
       </note>
       <note>
         <pitch><step>F</step><octave>4</octave></pitch>
         <duration>2</duration><type>eighth</type>
         <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
-        <lyric><text>nus</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>nus</text></lyric>
       </note>
-      <!-- G4 dotted quarter + A4 eighth = 1.5+0.5 = 2 beats  -->
       <note>
         <pitch><step>G</step><octave>4</octave></pitch>
         <duration>6</duration><type>quarter</type><dot/>
-        <lyric><text>te</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>te</text></lyric>
       </note>
       <note>
         <pitch><step>A</step><octave>4</octave></pitch>
         <duration>2</duration><type>eighth</type>
-        <lyric><text>cum</text></lyric>
+        <lyric number="1"><syllabic>single</syllabic><text>cum</text></lyric>
+      </note>
+    </measure>
+    <measure number="6">
+      <!-- Rehearsal mark B + dynamic pp -->
+      <direction placement="above">
+        <direction-type><rehearsal>B</rehearsal></direction-type>
+      </direction>
+      <direction placement="below">
+        <direction-type><dynamics><pp/></dynamics></direction-type>
+      </direction>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>16</duration><type>whole</type>
+        <lyric number="1"><syllabic>single</syllabic><text>A</text></lyric>
       </note>
     </measure>
   </part>
@@ -120,10 +171,7 @@
         <time><beats>4</beats><beat-type>4</beat-type></time>
         <clef><sign>G</sign><line>2</line></clef>
       </attributes>
-      <note>
-        <pitch><step>C</step><octave>4</octave></pitch>
-        <duration>16</duration><type>whole</type>
-      </note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>16</duration><type>whole</type></note>
     </measure>
     <measure number="2">
       <note><pitch><step>E</step><octave>4</octave></pitch><duration>16</duration><type>whole</type></note>
@@ -136,6 +184,9 @@
     </measure>
     <measure number="5">
       <note><pitch><step>B</step><octave>3</octave></pitch><duration>16</duration><type>whole</type></note>
+    </measure>
+    <measure number="6">
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>16</duration><type>whole</type></note>
     </measure>
   </part>
 </score-partwise>

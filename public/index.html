@@ -2165,13 +2165,15 @@ function renderStructured(s) {
     { label: 'DYNAMICS', value: s.dynamics },
   ].filter(c => c.value && c.value !== 'Not determined');
 
-  $('infoGrid').innerHTML = meterHtml + cards.map((c, i) => `
-    <div class="info-card animate-in" style="animation-delay:${0.1 + i * 0.08}s">
-      <button class="edit-btn" onclick="editCard(this)">&#9998;</button>
+  $('infoGrid').innerHTML = meterHtml + cards.map((c, i) => {
+    const notFound = c.value === 'Not found in score';
+    return `<div class="info-card animate-in" style="animation-delay:${0.1 + i * 0.08}s">
+      ${notFound ? '' : `<button class="edit-btn" onclick="editCard(this)">&#9998;</button>`}
       <div class="info-label">${esc(c.label)}</div>
-      <div class="info-value">${esc(c.value)}</div>
+      <div class="info-value" ${notFound ? 'style="color:var(--muted);font-size:0.78rem;font-style:italic;font-weight:400;"' : ''}>${esc(c.value)}</div>
       ${c.warning ? `<div class="key-warning">${esc(c.warning)}</div>` : ''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   const d = s.difficulty || {};
   const diffs = [
@@ -2517,14 +2519,70 @@ function renderSolfegeStructured(s) {
   const dis = s.measures.filter(m => m.disagreement).length;
   const src = s.source === 'musicxml' ? 'MusicXML — High Accuracy' : s.source === 'manual' ? 'Manual (100% accurate)' : 'AI (dual-pass verified)';
   const keyLabel = s.keySignature || ((s.tonic || '?') + ' major');
-  let h = `<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;">
+
+  // ── Header badges row ──────────────────────────────────────
+  let h = `<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
     <div style="font-size:0.88rem;color:var(--gold);font-weight:500;">Key: ${esc(keyLabel)} &mdash; Do = ${esc(s.tonic || '?')}</div>
     ${s.timeSignature ? `<div style="font-size:0.78rem;color:var(--muted);">${esc(s.timeSignature)}</div>` : ''}
     <div style="font-size:0.78rem;color:var(--muted);">${s.measures.length} measures</div>
     <div class="confidence-badge ${s.source === 'musicxml' || s.source === 'manual' ? 'high' : 'medium'}">${src}</div>`;
   if (dis > 0) h += `<div class="confidence-badge medium">${dis} disagreement${dis > 1 ? 's' : ''}</div>`;
   if (s.durationWarnings?.length) h += `<div class="confidence-badge" style="background:rgba(212,168,83,0.15);color:var(--gold);border-color:rgba(212,168,83,0.3);">${s.durationWarnings.length} timing note${s.durationWarnings.length > 1 ? 's' : ''}</div>`;
-  h += '</div><div style="display:flex;flex-direction:column;gap:10px;">';
+  h += '</div>';
+
+  // ── MusicXML metadata panel (tempo, dynamics, rehearsals) ──
+  if (s.source === 'musicxml') {
+    const metaItems = [];
+
+    // Tempo
+    const tempoVal = s.tempo && s.tempo !== 'Not found in score' ? s.tempo : null;
+    if (tempoVal) {
+      metaItems.push(`<div style="display:flex;gap:6px;align-items:center;"><span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);width:68px;flex-shrink:0;">Tempo</span><span style="font-size:0.82rem;color:var(--text);">${esc(tempoVal)}</span></div>`);
+    } else {
+      metaItems.push(`<div style="display:flex;gap:6px;align-items:center;"><span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);width:68px;flex-shrink:0;">Tempo</span><span style="font-size:0.78rem;color:var(--muted);font-style:italic;">Not found in score</span></div>`);
+    }
+
+    // Opening dynamic + changes
+    const dynVal = s.dynamics && s.dynamics !== 'Not found in score' ? s.dynamics : null;
+    if (dynVal) {
+      metaItems.push(`<div style="display:flex;gap:6px;align-items:center;"><span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);width:68px;flex-shrink:0;">Dynamics</span><span style="font-size:0.82rem;color:var(--text);font-style:italic;">${esc(dynVal)}</span></div>`);
+    } else {
+      metaItems.push(`<div style="display:flex;gap:6px;align-items:center;"><span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);width:68px;flex-shrink:0;">Dynamics</span><span style="font-size:0.78rem;color:var(--muted);font-style:italic;">Not found in score</span></div>`);
+    }
+
+    // Rehearsal marks
+    if (s.rehearsalMarks?.length) {
+      const marksHtml = s.rehearsalMarks.map(r =>
+        `<span title="m.${r.measure}" style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border:1.5px solid var(--gold);border-radius:3px;font-size:0.72rem;font-weight:700;color:var(--gold);padding:0 4px;cursor:default;">${esc(r.mark)}</span>`
+      ).join('');
+      metaItems.push(`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;"><span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);width:68px;flex-shrink:0;">Rehearsal</span><div style="display:flex;gap:5px;flex-wrap:wrap;">${marksHtml}</div></div>`);
+    }
+
+    // Tempo changes (if more than one)
+    if (s.tempoChanges?.length > 1) {
+      const changeList = s.tempoChanges.slice(1, 5).map(t => {
+        const parts = [];
+        if (t.text) parts.push(t.text);
+        if (t.bpm) parts.push(`♩=${Math.round(t.bpm)}`);
+        return `<span style="font-size:0.75rem;color:var(--muted);">m.${t.measure}: ${esc(parts.join(' '))}</span>`;
+      }).join('<span style="color:var(--border);margin:0 3px;">·</span>');
+      metaItems.push(`<div style="display:flex;gap:6px;align-items:flex-start;"><span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);width:68px;flex-shrink:0;padding-top:2px;">Changes</span><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">${changeList}</div></div>`);
+    }
+
+    // Clef changes
+    if (s.clefChanges?.length) {
+      const clefHtml = s.clefChanges.map(c =>
+        `<span style="font-size:0.75rem;color:var(--muted);">m.${c.measure}: ${esc(c.from)}→${esc(c.to)}</span>`
+      ).join(', ');
+      metaItems.push(`<div style="display:flex;gap:6px;align-items:center;"><span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);width:68px;flex-shrink:0;">Clef</span><div>${clefHtml}</div></div>`);
+    }
+
+    if (metaItems.length) {
+      h += `<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 16px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px;">${metaItems.join('')}</div>`;
+    }
+  }
+
+  h += '<div style="display:flex;flex-direction:column;gap:10px;">';
 
   for (const m of s.measures) {
     const bc = m.disagreement ? 'rgba(212,168,83,0.4)' : 'var(--border)';
@@ -2563,7 +2621,12 @@ function renderSolfegeStructured(s) {
       }
       h += '</div>';
     }
-    if (m.lyrics) h += `<div style="font-size:0.82rem;color:var(--violet);font-style:italic;padding-top:8px;border-top:1px solid var(--border);">${esc(m.lyrics)}</div>`;
+    if (m.lyrics || m.lyrics2) {
+      h += `<div style="font-size:0.82rem;color:var(--violet);font-style:italic;padding-top:8px;border-top:1px solid var(--border);">`;
+      if (m.lyrics) h += esc(m.lyrics);
+      if (m.lyrics2) h += `<span style="color:var(--muted);margin-left:10px;font-size:0.75rem;">[v2: ${esc(m.lyrics2)}]</span>`;
+      h += `</div>`;
+    }
     if (m.disagreement && m.alt_notes) h += `<div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">Alt: ${esc((m.alt_notes||[]).join(' '))}</div>`;
     h += '</div>';
   }

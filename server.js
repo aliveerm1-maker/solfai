@@ -2666,6 +2666,7 @@ Most student singers score 40-75. Only score below 30 if clearly off-pitch or un
 // Pitch:    step + alter + octave → e.g. "F#4", "Bb3"
 // Duration: <type> fraction × dots × tuplet ratio
 // Validate: sum durations per measure vs time signature
+// Also extracts: tempo, dynamics, rehearsal marks, multi-verse lyrics, clef changes
 function parseMusicXML(xmlString, targetPart) {
   // ── Part list ─────────────────────────────────────────────
   const partList = [];
@@ -2705,6 +2706,15 @@ function parseMusicXML(xmlString, targetPart) {
   const beatTypeMatch = xmlString.match(/<beat-type>(\d+)<\/beat-type>/);
   if (beatsMatch && beatTypeMatch) timeSignature = `${beatsMatch[1]}/${beatTypeMatch[1]}`;
 
+  // ── Title & composer ──────────────────────────────────────
+  const SOFTWARE_NAMES = /music21|sibelius|finale|musescore|audiveris|lilypond|dorico|noteflight|flat\.io/i;
+  const titleMatch = xmlString.match(/<movement-title>([^<]+)<\/movement-title>/)
+    || xmlString.match(/<work-title>([^<]+)<\/work-title>/);
+  const pieceTitle = titleMatch ? titleMatch[1].trim() : null;
+  const composerRaw = (xmlString.match(/<creator[^>]*type="composer"[^>]*>([^<]+)<\/creator>/)
+    || xmlString.match(/<creator[^>]*>([^<]+)<\/creator>/) || [])[1]?.trim() || null;
+  const composerName = composerRaw && !SOFTWARE_NAMES.test(composerRaw) ? composerRaw : null;
+
   // ── Duration table (fraction of a whole note) ─────────────
   const TYPE_FRACTION = {
     'breve': 2, 'whole': 1, 'half': 0.5, 'quarter': 0.25,
@@ -2716,11 +2726,9 @@ function parseMusicXML(xmlString, targetPart) {
     if (!tm) return null;
     const base = TYPE_FRACTION[tm[1].trim()];
     if (base === undefined) return null;
-    // Dots: each adds half the previous added value
     const dotCount = (noteXml.match(/<dot\/>/g) || []).length;
     let dur = base, add = base / 2;
     for (let i = 0; i < dotCount; i++) { dur += add; add /= 2; }
-    // Tuplet: actual-notes / normal-notes (e.g. triplet = 3/2)
     const am = noteXml.match(/<actual-notes>(\d+)<\/actual-notes>/);
     const nm2 = noteXml.match(/<normal-notes>(\d+)<\/normal-notes>/);
     if (am && nm2) {
@@ -2730,6 +2738,61 @@ function parseMusicXML(xmlString, targetPart) {
     return dur;
   }
 
+  // ── Extract directions from a measure block ────────────────
+  // Returns { tempoChanges, dynamicChanges, rehearsalMarks }
+  const DYNAMIC_TAGS = ['ppppp','pppp','ppp','pp','mp','mf','ffff','fff','ff','sfzp','sfz','sfp','sf','fp','rfz','rf','fz','sff','pf','n','f','p'];
+  function extractDirections(measureXml, measureNum) {
+    const tempoEntries = [], dynEntries = [], rehearsals = [];
+    const dirRegex = /<direction[^>]*>([\s\S]*?)<\/direction>/g;
+    let dm;
+    while ((dm = dirRegex.exec(measureXml)) !== null) {
+      const dx = dm[1];
+
+      // Tempo: <words> text + optional <metronome>
+      const wordsM  = dx.match(/<words[^>]*>([^<]{1,80})<\/words>/);
+      const bpmM    = dx.match(/<per-minute>([\d.]+)<\/per-minute>/);
+      const buM     = dx.match(/<beat-unit>([^<]+)<\/beat-unit>/);
+      // <sound tempo> inside direction or measure
+      const soundM  = dx.match(/<sound[^>]+\btempo="([\d.]+)"/);
+
+      const wordsText = wordsM ? wordsM[1].trim() : null;
+      const bpm = bpmM ? parseFloat(bpmM[1]) : soundM ? parseFloat(soundM[1]) : null;
+      const beatUnit = buM ? buM[1].trim() : 'quarter';
+
+      if (wordsText || bpm !== null) {
+        tempoEntries.push({ measure: measureNum, text: wordsText, bpm, beatUnit });
+      }
+
+      // Dynamics block
+      const dynBlockM = dx.match(/<dynamics[^>]*>([\s\S]*?)<\/dynamics>/);
+      if (dynBlockM) {
+        for (const tag of DYNAMIC_TAGS) {
+          if (dynBlockM[1].includes(`<${tag}/>`)) {
+            dynEntries.push({ measure: measureNum, mark: tag });
+            break;
+          }
+        }
+      }
+      // Wedge (crescendo / diminuendo)
+      const wedgeM = dx.match(/<wedge[^>]+type="(crescendo|diminuendo|stop)"/);
+      if (wedgeM && wedgeM[1] !== 'stop') {
+        dynEntries.push({ measure: measureNum, mark: wedgeM[1] === 'crescendo' ? 'cresc.' : 'dim.' });
+      }
+
+      // Rehearsal mark
+      const rehearsalM = dx.match(/<rehearsal[^>]*>([^<]+)<\/rehearsal>/);
+      if (rehearsalM) rehearsals.push({ measure: measureNum, mark: rehearsalM[1].trim() });
+    }
+
+    // <sound tempo> at measure level (outside direction)
+    const msoundM = measureXml.match(/<sound[^>]+\btempo="([\d.]+)"/);
+    if (msoundM && !tempoEntries.some(t => t.bpm === parseFloat(msoundM[1]))) {
+      tempoEntries.push({ measure: measureNum, text: null, bpm: parseFloat(msoundM[1]), beatUnit: 'quarter' });
+    }
+
+    return { tempoEntries, dynEntries, rehearsals };
+  }
+
   // ── Part XML ──────────────────────────────────────────────
   const partRx = new RegExp(`<part\\s+id="${partId}"[^>]*>([\\s\\S]*?)<\\/part>`);
   const partMatch = xmlString.match(partRx);
@@ -2737,27 +2800,53 @@ function parseMusicXML(xmlString, targetPart) {
     return { error: `Could not find part "${targetPart}" in the MusicXML file.`, parts: partList };
   }
 
-  // Expected whole-note fractions per measure (4/4 = 1.0, 3/4 = 0.75, 6/8 = 0.75)
   const defaultExpected = getBeatsPerMeasure(timeSignature) / 4;
-
   const partXml = partMatch[1];
   const measures = [];
+  const allTempoChanges = [];
+  const allDynamicChanges = [];
+  const allRehearsalMarks = [];
+  const clefChanges = [];
+
+  // Track current clef (from measure 1 attributes)
+  let currentClef = 'treble';
 
   const measureRegex = /<measure[^>]*number="(\d+)"[^>]*>([\s\S]*?)<\/measure>/g;
   let mm;
   while ((mm = measureRegex.exec(partXml)) !== null) {
     const measureNum = parseInt(mm[1], 10);
     const measureXml = mm[2];
-    const notes = [], durations = [], lyrics = [];
+    const notes = [], durations = [];
+    const lyricsByVerse = {}; // { '1': ['A','ve'], '2': ['A','men'] }
     let totalDur = 0, hasValidDur = false;
 
-    // Per-measure time-sig override (e.g. pickup bar)
-    const mb = measureXml.match(/<beats>(\d+)<\/beats>/);
+    // Per-measure time-sig override
+    const mb  = measureXml.match(/<beats>(\d+)<\/beats>/);
     const mbt = measureXml.match(/<beat-type>(\d+)<\/beat-type>/);
-    const expected = (mb && mbt)
-      ? parseInt(mb[1]) / parseInt(mbt[1])
-      : defaultExpected;
+    const expected = (mb && mbt) ? parseInt(mb[1]) / parseInt(mbt[1]) : defaultExpected;
 
+    // Clef: initial clef in measure 1, then detect mid-piece changes
+    const clefM = measureXml.match(/<clef[^>]*>([\s\S]*?)<\/clef>/);
+    if (clefM) {
+      const signM = clefM[1].match(/<sign>([A-Z])<\/sign>/);
+      if (signM) {
+        const newClef = signM[1] === 'G' ? 'treble' : signM[1] === 'F' ? 'bass' : signM[1] === 'C' ? 'alto/tenor' : signM[1];
+        if (measureNum === 1) {
+          currentClef = newClef;
+        } else if (newClef !== currentClef) {
+          clefChanges.push({ measure: measureNum, from: currentClef, to: newClef });
+          currentClef = newClef;
+        }
+      }
+    }
+
+    // Direction elements (tempo, dynamics, rehearsal)
+    const { tempoEntries, dynEntries, rehearsals } = extractDirections(measureXml, measureNum);
+    allTempoChanges.push(...tempoEntries);
+    allDynamicChanges.push(...dynEntries);
+    allRehearsalMarks.push(...rehearsals);
+
+    // Notes
     const noteRegex = /<note>([\s\S]*?)<\/note>/g;
     let nm;
     while ((nm = noteRegex.exec(measureXml)) !== null) {
@@ -2786,11 +2875,19 @@ function parseMusicXML(xmlString, targetPart) {
         if (dur !== null) durations.push(dur);
       }
 
-      const lyricM = noteXml.match(/<lyric[\s\S]*?<text>([^<]*)<\/text>/);
-      if (lyricM) lyrics.push(lyricM[1]);
+      // Multi-verse lyrics: capture each <lyric number="N">
+      const lyricRx = /<lyric(?:\s[^>]*)?>[\s\S]*?<text>([^<]*)<\/text>[\s\S]*?<\/lyric>/g;
+      let lm;
+      while ((lm = lyricRx.exec(noteXml)) !== null) {
+        // Determine verse number from the outer <lyric number="N"> tag
+        const verseM = lm[0].match(/number="(\d+)"/);
+        const verse = verseM ? verseM[1] : '1';
+        if (!lyricsByVerse[verse]) lyricsByVerse[verse] = [];
+        lyricsByVerse[verse].push(lm[1]);
+      }
     }
 
-    // Measure validation: flag mismatch but never reject
+    // Duration validation
     let durationWarning = null;
     if (hasValidDur) {
       const diff = Math.abs(totalDur - expected);
@@ -2802,11 +2899,60 @@ function parseMusicXML(xmlString, targetPart) {
     }
 
     if (notes.length > 0 || durationWarning) {
-      measures.push({ num: measureNum, notes, durations, lyrics: lyrics.join(' '), durationWarning });
+      measures.push({
+        num: measureNum, notes, durations,
+        lyrics: lyricsByVerse['1']?.join(' ') || '',
+        lyrics2: lyricsByVerse['2']?.join(' ') || undefined,
+        durationWarning,
+      });
     }
   }
 
-  return { tonic, keySignature, timeSignature, mode, measures, partId, partList, sharpCount, flatCount };
+  // ── Fallback: if no tempo found in target part, scan the whole document ──
+  if (allTempoChanges.length === 0) {
+    const bpmM    = xmlString.match(/<per-minute>([\d.]+)<\/per-minute>/);
+    const soundM  = xmlString.match(/<sound[^>]+\btempo="([\d.]+)"/);
+    const wordsM  = xmlString.match(/<words[^>]*>([^<]{2,80})<\/words>/);
+    const bpm     = bpmM ? parseFloat(bpmM[1]) : soundM ? parseFloat(soundM[1]) : null;
+    const text    = wordsM ? wordsM[1].trim() : null;
+    if (bpm !== null || text) allTempoChanges.push({ measure: 1, text, bpm, beatUnit: 'quarter', global: true });
+  }
+
+  // ── Merge tempo entries from the same measure ─────────────
+  // Text and BPM often appear in adjacent <direction> elements
+  const mergedTempoChanges = [];
+  for (const t of allTempoChanges) {
+    const last = mergedTempoChanges[mergedTempoChanges.length - 1];
+    if (last && last.measure === t.measure) {
+      if (!last.text && t.text) last.text = t.text;
+      if (last.bpm === null && t.bpm !== null) { last.bpm = t.bpm; last.beatUnit = t.beatUnit; }
+    } else {
+      mergedTempoChanges.push({ ...t });
+    }
+  }
+
+  // ── Format the initial tempo for display ──────────────────
+  let tempoDisplay = null;
+  const firstTempo = mergedTempoChanges[0] || null;
+  if (firstTempo) {
+    const parts = [];
+    if (firstTempo.text) parts.push(firstTempo.text);
+    if (firstTempo.bpm) parts.push(`♩=${Math.round(firstTempo.bpm)}`);
+    tempoDisplay = parts.join(' ') || null;
+  }
+
+  return {
+    tonic, keySignature, timeSignature, mode,
+    measures, partId, partList, sharpCount, flatCount,
+    pieceTitle, composerName,
+    initialClef: currentClef,
+    tempo: { display: tempoDisplay, text: firstTempo?.text || null, bpm: firstTempo?.bpm || null },
+    tempoChanges: mergedTempoChanges,
+    openingDynamic: allDynamicChanges[0]?.mark || null,
+    dynamicChanges: allDynamicChanges,
+    rehearsalMarks: allRehearsalMarks,
+    clefChanges,
+  };
 }
 
 // ─── MusicXML Upload Route ────────────────────────────────
@@ -2856,18 +3002,24 @@ app.post('/api/parse-musicxml', musicxmlUpload.single('file'), async (req, res) 
       if (m.durationWarning) durationWarnings.push(`Measure ${m.num}: ${m.durationWarning}`);
     }
 
-    // ── Title / composer from XML header ────────────────────
-    const titleMatch = xmlString.match(/<movement-title>([^<]+)<\/movement-title>/)
-      || xmlString.match(/<work-title>([^<]+)<\/work-title>/);
-    const composerMatch = xmlString.match(/<creator[^>]*type="composer"[^>]*>([^<]+)<\/creator>/)
-      || xmlString.match(/<creator>([^<]+)<\/creator>/);
-    const pieceTitle = titleMatch ? titleMatch[1].trim() : '';
-    const composerName = composerMatch ? composerMatch[1].trim() : '';
-    const firstLyrics = result.measures.slice(0, 3).map(m => m.lyrics).filter(Boolean).join(' ');
+    // ── Use parser-extracted metadata ────────────────────────
+    const pieceTitle   = result.pieceTitle   || '';
+    const composerName = result.composerName || '';
+    const firstLyrics  = result.measures.slice(0, 3).map(m => m.lyrics).filter(Boolean).join(' ');
     const measureCount = result.measures.length;
-    const noteCount = result.measures.reduce((s, m) => s + (m.notes?.length || 0), 0);
+    const noteCount    = result.measures.reduce((s, m) => s + (m.notes?.length || 0), 0);
 
-    console.log(`[Solfai] MusicXML parsed: ${measureCount} measures, ${noteCount} notes, part=${selectedPart}, key=${result.keySignature}, time=${result.timeSignature}, warnings=${durationWarnings.length}`);
+    // ── Format tempo & dynamics strings for display ──────────
+    const tempoStr = result.tempo?.display || null;
+
+    let dynamicsStr = null;
+    if (result.openingDynamic) {
+      const extraChanges = result.dynamicChanges.length - 1;
+      dynamicsStr = result.openingDynamic
+        + (extraChanges > 0 ? ` (${extraChanges} change${extraChanges > 1 ? 's' : ''})` : '');
+    }
+
+    console.log(`[Solfai] MusicXML parsed: ${measureCount} measures, ${noteCount} notes, part=${selectedPart}, key=${result.keySignature}, time=${result.timeSignature}, tempo=${tempoStr || 'none'}, dynamics=${dynamicsStr || 'none'}, warnings=${durationWarnings.length}`);
 
     // ── Gemini: practice guide only (facts already known) ────
     let analysis = { overview: '', practiceTips: [], composerBio: null, pieceInfo: null,
@@ -2885,10 +3037,13 @@ Verified musical facts (parsed directly from MusicXML — 100% accurate, do NOT 
 - Key: ${result.keySignature}
 - Time signature: ${result.timeSignature}
 - Measures: ${measureCount}  Notes: ${noteCount}
+${tempoStr      ? `- Tempo: ${tempoStr}` : ''}
+${dynamicsStr   ? `- Opening dynamic: ${dynamicsStr}` : ''}
 ${pieceTitle    ? `- Title: "${pieceTitle}"` : ''}
 ${composerName  ? `- Composer: ${composerName}` : ''}
 ${firstLyrics   ? `- Opening lyrics: "${firstLyrics}"` : ''}
-${durationWarnings.length ? `- Duration notes (notation quirks): ${durationWarnings.slice(0,3).join('; ')}` : ''}
+${result.rehearsalMarks.length ? `- Rehearsal marks: ${result.rehearsalMarks.map(r => `${r.mark} (m.${r.measure})`).join(', ')}` : ''}
+${durationWarnings.length ? `- Duration notes: ${durationWarnings.slice(0,3).join('; ')}` : ''}
 
 Return ONLY this JSON (no markdown):
 {
@@ -2918,8 +3073,8 @@ Return ONLY this JSON (no markdown):
       keyConfident: true,
       keyWarning: null,
       timeSignature: result.timeSignature,
-      tempo: 'See score',
-      dynamics: 'See score',
+      tempo: tempoStr || 'Not found in score',
+      dynamics: dynamicsStr || 'Not found in score',
       tonic: result.tonic,
       difficulty: { overall: 5, rhythm: 4, range: 4, intervals: 4, text: 3 },
       firstNotesSolfege: result.measures[0]?.solfege?.slice(0, 3) || null,
@@ -2934,10 +3089,14 @@ Return ONLY this JSON (no markdown):
       pronunciation: analysis.pronunciation || { language: 'English', needsGuide: false, words: [] },
       staffNum: 1,
       totalStaves: result.partList.length,
-      clef: 'treble',
+      clef: result.initialClef || 'treble',
       measures: result.measures,
       disagreements: 0,
       durationWarnings,
+      rehearsalMarks: result.rehearsalMarks,
+      tempoChanges: result.tempoChanges,
+      dynamicChanges: result.dynamicChanges,
+      clefChanges: result.clefChanges,
       _confidenceScore: 100,
       _selfConsistency: { keysAgree: true, totalKeyReads: 1 },
       _dbMatch: null,
