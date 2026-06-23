@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="theme-color" content="#d4a853"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
   <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
@@ -17,36 +17,42 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #06060e; --surface: #0c0c18; --card: #111120; --card2: #16162a;
-      --border: #1e1e38; --border-light: #2a2a48;
+      --bg: #0F1117; --surface: #141620; --card: #1A1D27; --card2: #1f2235;
+      --border: #2D3148; --border-light: #363b5c;
+      /* Teal — primary interactive accent */
+      --teal: #0D9488; --teal-light: #14B8A6; --teal-dark: #0a7a70;
+      --teal-dim: rgba(13,148,136,0.12); --teal-glow: rgba(13,148,136,0.07);
+      /* Gold — logo wordmark and decorative only */
       --gold: #d4a853; --gold-light: #f0c878; --gold-warm: #c49340;
-      --gold-dim: rgba(212,168,83,0.12); --gold-glow: rgba(212,168,83,0.06);
+      --gold-dim: rgba(212,168,83,0.10); --gold-glow: rgba(212,168,83,0.05);
+      /* Violet — secondary accent */
       --violet: #8b7fd4; --violet-light: #a99be8;
       --violet-dim: rgba(139,127,212,0.12);
-      --text: #e8e4da; --text2: #918f88; --muted: #55536a;
-      --error: #d45c5c; --error-dim: rgba(212,92,92,0.1);
-      --success: #52b788; --success-dim: rgba(82,183,136,0.1);
-      --sidebar-w: 240px;
-      --radius-sm: 8px; --radius-md: 14px; --radius-lg: 20px; --radius-xl: 28px;
-      --shadow-card: 0 2px 20px rgba(0,0,0,0.3), 0 0 0 1px var(--border);
-      --shadow-hover: 0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(212,168,83,0.15);
+      /* Text */
+      --text: #F8F9FA; --text2: #9CA3AF; --muted: #6B7280;
+      --error: #f87171; --error-dim: rgba(248,113,113,0.1);
+      --success: #34d399; --success-dim: rgba(52,211,153,0.1);
+      --sidebar-w: 200px;
+      --radius-sm: 6px; --radius-md: 12px; --radius-lg: 18px; --radius-xl: 24px;
+      --shadow-card: 0 1px 12px rgba(0,0,0,0.35), 0 0 0 1px var(--border);
+      --shadow-hover: 0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px var(--teal-dim);
       --transition: cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     [data-theme="light"] {
-      --bg: #f5f2eb; --surface: #faf8f4; --card: #ffffff; --card2: #f0ede5;
-      --border: #ddd8cc; --border-light: #e8e3d8;
-      --text: #1a1a28; --text2: #6a6878; --muted: #9a98a8;
-      --shadow-card: 0 2px 16px rgba(0,0,0,0.06), 0 0 0 1px var(--border);
-      --shadow-hover: 0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(212,168,83,0.2);
+      --bg: #F9FAFB; --surface: #FFFFFF; --card: #FFFFFF; --card2: #F3F4F6;
+      --border: #E5E7EB; --border-light: #D1D5DB;
+      --text: #111827; --text2: #4B5563; --muted: #9CA3AF;
+      --shadow-card: 0 1px 8px rgba(0,0,0,0.06), 0 0 0 1px var(--border);
+      --shadow-hover: 0 8px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(13,148,136,0.2);
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text);
+      font-family: 'Inter', 'DM Sans', sans-serif; background: var(--bg); color: var(--text);
       min-height: 100vh; overflow-x: hidden; transition: background 0.4s var(--transition), color 0.4s var(--transition);
-      font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+      font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; font-feature-settings: 'cv11';
     }
 
     /* Subtle staff-line texture */
@@ -64,70 +70,88 @@
 
     /* Ambient glow orbs */
     .blob { position: fixed; border-radius: 50%; filter: blur(140px); pointer-events: none; z-index: 0; }
-    .blob-1 { width: 500px; height: 500px; background: var(--gold); top: -180px; left: -120px; opacity: 0.08; }
-    .blob-2 { width: 400px; height: 400px; background: var(--violet); bottom: -150px; right: -100px; opacity: 0.06; }
-    .blob-3 { width: 300px; height: 300px; background: var(--gold-warm); top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.03; }
-    [data-theme="light"] .blob { opacity: 0.04; }
+    .blob-1 { width: 500px; height: 500px; background: var(--teal); top: -180px; left: -120px; opacity: 0.06; }
+    .blob-2 { width: 400px; height: 400px; background: var(--violet); bottom: -150px; right: -100px; opacity: 0.05; }
+    .blob-3 { width: 300px; height: 300px; background: var(--teal-dark); top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.03; }
+    [data-theme="light"] .blob { opacity: 0.03; }
 
     /* ═══ SIDEBAR ═══ */
     .sidebar {
       position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh;
-      background: linear-gradient(180deg, rgba(8,8,16,0.97) 0%, rgba(6,6,14,0.99) 100%);
-      backdrop-filter: blur(24px) saturate(1.2);
+      background: var(--surface);
       border-right: 1px solid var(--border); z-index: 100;
       display: flex; flex-direction: column; padding: 0;
       transition: width 0.35s var(--transition), background 0.4s var(--transition);
     }
-    [data-theme="light"] .sidebar { background: linear-gradient(180deg, rgba(250,248,244,0.98), rgba(245,242,235,0.99)); }
+    [data-theme="light"] .sidebar { background: var(--surface); }
 
     .sidebar-logo {
-      padding: 32px 24px 28px; display: flex; align-items: center; gap: 14px;
+      padding: 28px 20px 24px; display: flex; align-items: center; gap: 12px;
       border-bottom: 1px solid var(--border); cursor: pointer;
     }
     .sidebar-logo-icon {
-      width: 40px; height: 40px; border-radius: 12px;
+      width: 34px; height: 34px; border-radius: 10px;
       background: linear-gradient(135deg, var(--gold), var(--gold-warm));
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.15rem; flex-shrink: 0;
-      box-shadow: 0 4px 16px rgba(212,168,83,0.25);
+      font-size: 1rem; flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(212,168,83,0.2);
     }
     .sidebar-logo-text {
-      font-family: 'Cormorant Garamond', serif; font-size: 1.65rem; font-weight: 700;
+      font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 700;
       letter-spacing: -0.02em;
       background: linear-gradient(135deg, var(--gold), var(--gold-light));
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
 
-    .sidebar-nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; overflow-x: hidden; min-height: 0; }
+    .sidebar-nav { flex: 1; padding: 16px 10px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; overflow-x: hidden; min-height: 0; }
     .sidebar-nav::-webkit-scrollbar { width: 3px; }
     .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
     .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
     .sidebar-item {
-      display: flex; align-items: center; gap: 14px; padding: 11px 16px;
-      border-radius: var(--radius-md); color: var(--text2); text-decoration: none;
-      font-size: 0.88rem; font-weight: 400; cursor: pointer;
-      transition: all 0.2s var(--transition); white-space: nowrap; overflow: hidden;
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      border-radius: var(--radius-sm); color: var(--muted); text-decoration: none;
+      font-size: 0.875rem; font-weight: 400; cursor: pointer;
+      transition: all 0.15s var(--transition); white-space: nowrap; overflow: hidden;
       position: relative;
     }
     .sidebar-item::before {
       content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-      width: 3px; height: 0; background: var(--gold); border-radius: 0 2px 2px 0;
-      transition: height 0.25s var(--transition);
+      width: 2px; height: 0; background: var(--teal); border-radius: 0 2px 2px 0;
+      transition: height 0.2s var(--transition);
     }
-    .sidebar-item:hover { background: var(--gold-dim); color: var(--text); }
-    .sidebar-item.active { background: var(--gold-dim); color: var(--gold); font-weight: 500; }
-    .sidebar-item.active::before { height: 20px; }
-    .sidebar-item-icon { font-size: 1.1rem; flex-shrink: 0; width: 24px; text-align: center; opacity: 0.8; }
+    .sidebar-item:hover { color: var(--text2); }
+    .sidebar-item.active { color: var(--teal); font-weight: 500; }
+    .sidebar-item.active::before { height: 18px; }
+    .sidebar-item-icon { font-size: 1rem; flex-shrink: 0; width: 20px; text-align: center; opacity: 0.7; }
     .sidebar-item.active .sidebar-item-icon { opacity: 1; }
     .sidebar-item-label { overflow: hidden; text-overflow: ellipsis; }
-    .sidebar-divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 14px 20px; }
+    .sidebar-divider { height: 1px; background: var(--border); margin: 10px 14px; }
     .sidebar-bottom {
-      padding: 16px 12px; border-top: 1px solid var(--border);
-      display: flex; flex-direction: column; gap: 2px;
+      padding: 12px 10px 16px; border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 1px;
     }
-    .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: var(--radius-md); }
-    .sidebar-user img { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--gold-dim); }
-    .sidebar-user-name { font-size: 0.82rem; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-sm); }
+    .sidebar-user img { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); }
+    .sidebar-user-name { font-size: 0.8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-settings-btn {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      border-radius: var(--radius-sm); color: var(--muted); cursor: pointer;
+      font-size: 0.875rem; transition: color 0.15s; position: relative;
+    }
+    .sidebar-settings-btn:hover { color: var(--text2); }
+    .settings-dropdown {
+      display: none; position: absolute; bottom: calc(100% + 4px); left: 10px;
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 6px; min-width: 180px; z-index: 200;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .settings-dropdown.open { display: block; animation: fadeUp 0.15s var(--transition); }
+    .settings-dropdown-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+      border-radius: var(--radius-sm); color: var(--text2); font-size: 0.82rem;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .settings-dropdown-item:hover { background: var(--card2); color: var(--text); }
 
     /* ═══ MAIN CONTENT ═══ */
     .main-content {
@@ -153,45 +177,45 @@
     .icon-btn {
       background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
       color: var(--text2); font-size: 0.85rem; padding: 7px 12px; cursor: pointer;
-      transition: all 0.2s var(--transition);
+      transition: all 0.15s var(--transition);
     }
-    .icon-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+    .icon-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
 
-    .app-section { display: none; padding: 36px 40px 80px; max-width: 920px; margin: 0 auto; }
-    .app-section.active { display: block; animation: fadeUp 0.5s var(--transition) forwards; }
-    .section-header { margin-bottom: 36px; }
+    .app-section { display: none; padding: 40px 44px 80px; max-width: 900px; margin: 0 auto; }
+    .app-section.active { display: block; animation: fadeUp 0.4s var(--transition) forwards; }
+    .section-header { margin-bottom: 40px; }
     .section-label {
       font-size: 0.68rem; letter-spacing: 4px; text-transform: uppercase;
-      color: var(--gold); margin-bottom: 10px; font-weight: 500;
+      color: var(--teal); margin-bottom: 10px; font-weight: 500;
     }
     .section-title {
       font-family: 'Cormorant Garamond', serif;
-      font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 600;
+      font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 600;
       line-height: 1.15; letter-spacing: -0.02em;
     }
-    .section-desc { font-size: 0.88rem; color: var(--text2); font-weight: 300; margin-top: 6px; }
+    .section-desc { font-size: 0.875rem; color: var(--text2); font-weight: 400; margin-top: 6px; }
 
     /* ═══ BUTTONS ═══ */
     .btn-primary {
-      background: linear-gradient(135deg, var(--gold), var(--gold-warm));
-      color: #06060e; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+      background: var(--teal);
+      color: #ffffff; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
       padding: 13px 32px; border: none; border-radius: var(--radius-md); cursor: pointer;
-      transition: all 0.25s var(--transition);
-      box-shadow: 0 4px 20px rgba(212,168,83,0.2);
+      transition: all 0.15s var(--transition);
+      box-shadow: 0 2px 12px rgba(13,148,136,0.25);
     }
     .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(212,168,83,0.35);
+      background: var(--teal-light);
+      box-shadow: 0 4px 20px rgba(13,148,136,0.35);
     }
-    .btn-primary:active:not(:disabled) { transform: translateY(0); }
+    .btn-primary:active:not(:disabled) { background: var(--teal-dark); }
     .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
 
     .btn-secondary {
-      background: var(--card); border: 1px solid var(--border); color: var(--text2);
-      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; padding: 12px 24px;
-      border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s var(--transition);
+      background: transparent; border: 1px solid var(--border); color: var(--text2);
+      font-family: 'Inter', sans-serif; font-size: 0.82rem; padding: 8px 18px;
+      border-radius: 100px; cursor: pointer; transition: all 0.15s var(--transition);
     }
-    .btn-secondary:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+    .btn-secondary:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
 
     .btn-violet {
       background: linear-gradient(135deg, var(--violet), #6b5fc4);
@@ -222,37 +246,37 @@
     @keyframes micPulse { 0%,100%{box-shadow:0 0 0 0 rgba(212,92,92,0.4)} 50%{box-shadow:0 0 0 14px rgba(212,92,92,0)} }
 
     /* ═══ PART SELECTOR ═══ */
-    .part-selector { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
-    .part-selector-label { font-size: 0.75rem; color: var(--text2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: 500; }
+    .part-selector { display: flex; gap: 6px; margin-bottom: 28px; flex-wrap: wrap; }
+    .part-selector-label { font-size: 0.72rem; color: var(--text2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: 500; }
     .part-btn {
-      padding: 8px 20px; border-radius: 100px; border: 1px solid var(--border);
-      background: transparent; color: var(--text2); font-family: 'DM Sans', sans-serif;
-      font-size: 0.82rem; cursor: pointer; transition: all 0.2s var(--transition); font-weight: 400;
+      padding: 7px 18px; border-radius: 100px; border: 1px solid var(--border);
+      background: transparent; color: var(--text2); font-family: 'Inter', sans-serif;
+      font-size: 0.82rem; cursor: pointer; transition: all 0.15s var(--transition); font-weight: 400;
     }
-    .part-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .part-btn:hover { border-color: var(--teal); color: var(--teal); }
     .part-btn.active {
-      background: var(--gold); border-color: var(--gold); color: #06060e; font-weight: 600;
-      box-shadow: 0 2px 12px rgba(212,168,83,0.25);
+      background: var(--teal); border-color: var(--teal); color: #ffffff; font-weight: 500;
+      box-shadow: 0 2px 8px rgba(13,148,136,0.25);
     }
 
     /* ═══ UPLOAD ═══ */
     .upload-zone {
-      border: 2px dashed var(--border); border-radius: var(--radius-xl);
-      padding: 56px 40px; text-align: center; cursor: pointer;
-      transition: all 0.3s var(--transition); background: var(--card);
+      border: 2px dashed var(--border); border-radius: var(--radius-lg);
+      padding: 52px 40px; text-align: center; cursor: pointer;
+      transition: all 0.2s var(--transition); background: transparent;
       position: relative; overflow: hidden;
     }
-    .upload-zone::before {
-      content: ''; position: absolute; inset: 0;
-      background: radial-gradient(ellipse at center, var(--gold-glow), transparent 70%);
-      opacity: 0; transition: opacity 0.3s;
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--teal); background: var(--teal-dim);
     }
-    .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
-    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--gold); }
     .upload-zone input { display: none; }
-    .upload-icon { font-size: 3rem; margin-bottom: 16px; display: block; filter: grayscale(0.3); }
-    .upload-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; }
-    .upload-sub { color: var(--text2); font-size: 0.82rem; font-weight: 300; }
+    .upload-icon {
+      display: flex; align-items: center; justify-content: center;
+      width: 48px; height: 48px; margin: 0 auto 20px; color: var(--muted);
+    }
+    .upload-icon svg { width: 40px; height: 40px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+    .upload-title { font-size: 1rem; font-weight: 500; margin-bottom: 6px; color: var(--text); }
+    .upload-sub { color: var(--muted); font-size: 0.82rem; }
     .preview-img {
       max-width: 100%; max-height: 220px; border-radius: var(--radius-md);
       margin: 20px auto 0; display: none; object-fit: contain;
@@ -264,7 +288,7 @@
     .loading.show { display: block; }
     .spinner {
       width: 36px; height: 36px; border: 2.5px solid var(--border);
-      border-top-color: var(--gold); border-radius: 50%;
+      border-top-color: var(--teal); border-radius: 50%;
       animation: spin 0.75s linear infinite; margin: 0 auto 18px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -283,10 +307,10 @@
     .results-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
     .results-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--gold); font-weight: 600; }
 
-    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin-bottom: 24px; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 32px; }
     .info-card {
-      background: var(--card); border-radius: var(--radius-md); padding: 18px 16px;
-      transition: all 0.4s var(--transition); position: relative;
+      background: var(--card); border-radius: var(--radius-md); padding: 24px 22px;
+      transition: all 0.25s var(--transition); position: relative;
       opacity: 0; transform: translateY(14px);
       box-shadow: var(--shadow-card);
     }
@@ -294,22 +318,24 @@
     .info-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
     .info-card:hover .edit-btn { opacity: 1; }
     .edit-btn {
-      position: absolute; top: 10px; right: 10px; background: none; border: none;
-      color: var(--muted); font-size: 0.65rem; cursor: pointer; opacity: 0;
-      padding: 3px 8px; border-radius: 6px; transition: all 0.2s;
+      position: absolute; top: 14px; right: 14px; background: none; border: none;
+      color: var(--muted); font-size: 0.7rem; cursor: pointer; opacity: 0;
+      padding: 4px; border-radius: 4px; transition: all 0.15s;
+      line-height: 1; display: flex; align-items: center;
     }
-    .edit-btn:hover { color: var(--gold); background: var(--gold-dim); opacity: 1 !important; }
+    .edit-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .edit-btn:hover { color: var(--teal); opacity: 1 !important; }
     .info-label {
-      font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px;
-      color: var(--muted); margin-bottom: 8px; font-weight: 500;
+      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--muted); margin-bottom: 10px; font-weight: 500;
     }
     .info-value {
-      font-family: 'Cormorant Garamond', serif; font-size: 1.25rem;
-      font-weight: 600; color: var(--text); line-height: 1.2;
+      font-family: 'Cormorant Garamond', serif; font-size: 1.6rem;
+      font-weight: 600; color: var(--text); line-height: 1.15;
     }
     .info-edit-input {
-      font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 600;
-      color: var(--text); background: var(--surface); border: 1px solid var(--gold);
+      font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 600;
+      color: var(--text); background: var(--surface); border: 1px solid var(--teal);
       border-radius: 6px; padding: 4px 8px; width: 100%; outline: none;
     }
 
@@ -391,12 +417,12 @@
     .pitch-freq { font-size: 0.82rem; color: var(--text2); margin-bottom: 8px; }
     .pitch-play-btn {
       display: flex; align-items: center; gap: 8px; padding: 10px 24px;
-      background: var(--gold-dim); border: 1px solid rgba(212,168,83,0.25);
-      border-radius: var(--radius-md); color: var(--gold); cursor: pointer;
-      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; transition: all 0.2s var(--transition);
+      background: var(--teal-dim); border: 1px solid rgba(13,148,136,0.25);
+      border-radius: var(--radius-md); color: var(--teal); cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 0.85rem; transition: all 0.15s var(--transition);
     }
-    .pitch-play-btn:hover { background: var(--gold); color: #06060e; border-color: var(--gold); }
-    .pitch-play-btn.playing { background: var(--gold); color: #06060e; }
+    .pitch-play-btn:hover { background: var(--teal); color: #ffffff; border-color: var(--teal); }
+    .pitch-play-btn.playing { background: var(--teal); color: #ffffff; }
     .pitch-set-btn {
       padding: 10px 18px; background: rgba(82,183,136,0.1);
       border: 1px solid rgba(82,183,136,0.25); border-radius: var(--radius-md);
@@ -431,14 +457,14 @@
       border-bottom: 1px solid var(--border); overflow-x: auto;
     }
     .tab-btn {
-      padding: 12px 20px; background: none; border: none; color: var(--muted);
-      font-family: 'DM Sans', sans-serif; font-size: 0.8rem; cursor: pointer;
-      transition: all 0.2s; border-bottom: 2px solid transparent;
-      margin-bottom: -1px; white-space: nowrap; font-weight: 500;
-      letter-spacing: 0.02em;
+      padding: 11px 20px; background: none; border: none; color: var(--muted);
+      font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer;
+      transition: all 0.15s; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; white-space: nowrap; font-weight: 400;
+      letter-spacing: 0.01em;
     }
-    .tab-btn:hover { color: var(--text); }
-    .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .tab-btn:hover { color: var(--text2); }
+    .tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); font-weight: 500; }
     .tab-content { display: none; padding-top: 28px; }
     .tab-content.active { display: block; animation: fadeUp 0.35s var(--transition) forwards; }
 
@@ -448,7 +474,7 @@
       line-height: 1.85; font-size: 0.9rem; color: var(--text2); font-weight: 300;
       box-shadow: var(--shadow-card);
     }
-    .content-box.gold-border { border-left: 3px solid var(--gold); }
+    .content-box.gold-border { border-left: 3px solid var(--teal); }
     .content-box.violet-border { border-left: 3px solid var(--violet); }
     .content-box p { margin-bottom: 14px; }
     .content-box p:last-child { margin-bottom: 0; }
@@ -498,12 +524,12 @@
     .pron-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
     .pron-word { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 600; }
     .pron-speak-btn {
-      background: var(--gold-dim); border: 1px solid rgba(212,168,83,0.2);
+      background: var(--teal-dim); border: 1px solid rgba(13,148,136,0.2);
       border-radius: 50%; width: 28px; height: 28px; min-width: 28px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem; transition: all 0.2s; color: var(--gold);
+      font-size: 0.75rem; transition: all 0.15s; color: var(--teal);
     }
-    .pron-speak-btn:hover { background: var(--gold); color: #06060e; }
+    .pron-speak-btn:hover { background: var(--teal); color: #ffffff; }
     .pron-ipa { font-size: 0.75rem; color: var(--violet); font-style: italic; }
     .pron-approx { font-size: 0.72rem; color: var(--text2); font-weight: 300; }
 
@@ -555,7 +581,7 @@
       border: 1px solid var(--border); border-radius: 100px; color: var(--text2);
       cursor: pointer; transition: all 0.2s var(--transition); font-weight: 400;
     }
-    .pill:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+    .pill:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
     .chat-input-area {
       padding: 14px 20px 18px; border-top: 1px solid var(--border);
       display: flex; gap: 10px; align-items: flex-end; background: var(--surface);
@@ -584,7 +610,7 @@
     .practice-progress.show { display: block; }
     .progress-bar-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 12px; }
     .progress-bar-fill {
-      height: 100%; background: linear-gradient(90deg, var(--success), var(--gold));
+      height: 100%; background: linear-gradient(90deg, var(--success), var(--teal));
       border-radius: 3px; transition: width 0.5s var(--transition);
     }
     .practice-card {
@@ -594,7 +620,7 @@
     .practice-card.show { display: block; animation: fadeUp 0.5s var(--transition) forwards; }
     .practice-solfege {
       font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 700;
-      color: var(--gold); letter-spacing: 6px; margin: 16px 0;
+      color: var(--teal); letter-spacing: 6px; margin: 16px 0;
     }
     .practice-notes { font-size: 0.85rem; color: var(--text2); font-family: monospace; margin-bottom: 8px; }
     .practice-lyrics {
@@ -634,7 +660,7 @@
     .pitch-detected-note { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 700; text-align: center; }
     .pitch-cents { font-size: 0.88rem; font-weight: 500; text-align: center; }
     .pitch-cents.in-tune { color: var(--success); }
-    .pitch-cents.close { color: var(--gold); }
+    .pitch-cents.close { color: #fbbf24; }
     .pitch-cents.off { color: var(--error); }
     .pitch-history {
       background: var(--card); border-radius: var(--radius-lg); padding: 22px;
@@ -647,53 +673,52 @@
     }
     .pitch-stats-grid { display: flex; gap: 28px; flex-wrap: wrap; }
     .stat-item { display: flex; flex-direction: column; gap: 4px; }
-    .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 700; color: var(--gold); }
+    .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 700; color: var(--teal); }
     .stat-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; }
 
     /* ═══ CONFIDENCE BADGES ═══ */
     .confidence-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; padding: 3px 12px; border-radius: 100px; margin-top: 6px; font-weight: 500; }
     .confidence-badge.high { background: var(--success-dim); border: 1px solid rgba(82,183,136,0.25); color: var(--success); }
-    .confidence-badge.medium { background: var(--gold-dim); border: 1px solid rgba(212,168,83,0.2); color: var(--gold); }
+    .confidence-badge.medium { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); color: #fbbf24; }
     .confidence-badge.low { background: var(--error-dim); border: 1px solid rgba(212,92,92,0.2); color: var(--error); }
 
     /* ═══ CONFIDENCE METER (circular gauge) ═══ */
+    /* ═══ CONFIDENCE METER — slim progress bar style ═══ */
     .confidence-meter {
-      display: flex; align-items: center; gap: 18px; padding: 18px 22px;
-      background: var(--card); border-radius: var(--radius-md); box-shadow: var(--shadow-card);
-      margin-bottom: 20px;
+      padding: 16px 22px; background: var(--card); border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card); margin-bottom: 24px;
     }
-    .confidence-ring {
-      position: relative; width: 80px; height: 80px; flex-shrink: 0;
+    .confidence-meter-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
     }
-    .confidence-ring svg { transform: rotate(-90deg); }
-    .confidence-ring-bg { fill: none; stroke: var(--border); stroke-width: 6; }
-    .confidence-ring-fill {
-      fill: none; stroke-width: 6; stroke-linecap: round;
-      transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.4s;
+    .confidence-label {
+      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 2px;
+      color: var(--muted); font-weight: 500;
     }
     .confidence-ring-score {
-      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 1.4rem; color: var(--text);
+      font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 700; color: var(--text);
     }
-    .confidence-details { flex: 1; }
-    .confidence-label {
-      font-size: 0.65rem; text-transform: uppercase; letter-spacing: 3px;
-      color: var(--gold); margin-bottom: 6px; font-weight: 500;
+    .confidence-bar-track { height: 4px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    .confidence-bar-fill {
+      height: 100%; border-radius: 99px; background: var(--teal);
+      transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .confidence-text { font-size: 0.82rem; color: var(--text2); line-height: 1.5; }
-    .confidence-factors {
-      display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap;
-    }
+    .confidence-details { margin-top: 10px; }
+    .confidence-text { font-size: 0.8rem; color: var(--text2); line-height: 1.5; }
+    .confidence-factors { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
     .confidence-factor {
-      font-size: 0.68rem; padding: 2px 10px; border-radius: 100px;
-      background: var(--card2); color: var(--text2); border: 1px solid var(--border);
+      font-size: 0.65rem; padding: 2px 10px; border-radius: 100px;
+      background: var(--card2); color: var(--muted); border: 1px solid var(--border);
     }
+    /* Legacy ring selectors — kept for JS compat */
+    .confidence-ring { display: none; }
+    .confidence-ring-bg, .confidence-ring-fill { display: none; }
 
     /* ═══ IMAGE QUALITY WARNING ═══ */
     .quality-warning {
       display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px;
-      background: rgba(212,168,83,0.08); border: 1px solid rgba(212,168,83,0.2);
-      border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.82rem; color: var(--gold);
+      background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.18);
+      border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.82rem; color: #fbbf24;
     }
     .quality-warning-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
 
@@ -716,7 +741,7 @@
     /* Button ripple */
     .ripple-btn { position: relative; overflow: hidden; }
     .ripple-btn .ripple {
-      position: absolute; border-radius: 50%; background: rgba(212,168,83,0.25);
+      position: absolute; border-radius: 50%; background: rgba(13,148,136,0.2);
       transform: scale(0); animation: rippleAnim 0.6s ease-out;
       pointer-events: none;
     }
@@ -737,8 +762,8 @@
       transition: background 0.4s, box-shadow 0.4s;
     }
     .loading-step.active .loading-step-dot {
-      background: var(--gold);
-      box-shadow: 0 0 12px rgba(212,168,83,0.5);
+      background: var(--teal);
+      box-shadow: 0 0 12px rgba(13,148,136,0.45);
     }
     .loading-step.done .loading-step-dot {
       background: var(--success);
@@ -747,7 +772,7 @@
       font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
       transition: color 0.3s;
     }
-    .loading-step.active .loading-step-label { color: var(--gold); }
+    .loading-step.active .loading-step-label { color: var(--teal); }
     .loading-step.done .loading-step-label { color: var(--success); }
     .loading-step-line {
       position: absolute; top: 5px; left: 50%; width: 100%; height: 2px;
@@ -785,7 +810,7 @@
     }
     .cheatsheet-panel.open { left: 0; }
     .cheatsheet-section { margin-bottom: 28px; }
-    .cheatsheet-section-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 3px; color: var(--gold); margin-bottom: 14px; font-weight: 500; }
+    .cheatsheet-section-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 3px; color: var(--teal); margin-bottom: 14px; font-weight: 500; }
     .cheatsheet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .cheatsheet-item { background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; box-shadow: var(--shadow-card); }
     .cheatsheet-item-title { font-size: 0.82rem; font-weight: 600; margin-bottom: 3px; }
@@ -806,8 +831,8 @@
     .shortcut-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .shortcut-key {
       background: var(--card); border: 1px solid var(--border); border-radius: 6px;
-      padding: 4px 12px; font-family: 'DM Sans', monospace; font-size: 0.82rem;
-      color: var(--gold); min-width: 42px; text-align: center; font-weight: 500;
+      padding: 4px 12px; font-family: 'Inter', monospace; font-size: 0.82rem;
+      color: var(--teal); min-width: 42px; text-align: center; font-weight: 500;
     }
     .shortcut-desc { font-size: 0.85rem; color: var(--text2); }
 
@@ -820,7 +845,7 @@
       border-top: 1px solid var(--border); color: var(--muted);
       font-size: 0.78rem; font-weight: 300; letter-spacing: 0.03em;
     }
-    footer span { color: var(--gold); font-weight: 500; }
+    footer span { color: var(--teal); font-weight: 500; }
 
     @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
 
@@ -833,12 +858,12 @@
     @media (max-width: 768px) {
       .sidebar {
         position: fixed; top: auto; bottom: 0; left: 0; right: 0;
-        width: 100%; height: 64px; flex-direction: row;
+        width: 100%; height: 60px; flex-direction: row;
         border-right: none; border-top: 1px solid var(--border);
         padding: 0; z-index: 100;
-        background: rgba(6,6,14,0.97);
+        background: var(--surface);
       }
-      [data-theme="light"] .sidebar { background: rgba(245,242,235,0.98); }
+      [data-theme="light"] .sidebar { background: var(--surface); }
       .sidebar-logo { display: none; }
       .sidebar-nav { flex-direction: row; padding: 0; gap: 0; flex: 1; justify-content: space-around; align-items: center; }
       .sidebar-item {
@@ -875,7 +900,7 @@
     .onboarding-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 48px 44px; max-width: 480px; width: 90%; text-align: center; box-shadow: 0 24px 80px rgba(0,0,0,0.5); }
     .onboarding-step-dots { display: flex; gap: 8px; justify-content: center; margin-top: 24px; }
     .onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
-    .onboarding-dot.active { background: var(--gold); }
+    .onboarding-dot.active { background: var(--teal); }
 
     /* ═══ SKELETON LOADING ═══ */
     .skeleton { background: linear-gradient(90deg, var(--card) 25%, var(--card2) 50%, var(--card) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md); }
@@ -915,7 +940,7 @@
     .curwen-sign-label { font-size: 0.5rem; color: var(--muted); text-align: center; line-height: 1; margin-top: 1px; }
 
     /* ═══ TENDENCY TONE ARROWS ═══ */
-    .tendency-arrow { display: inline-flex; align-items: center; font-size: 0.6rem; color: var(--gold); animation: tendencyPulse 1.5s ease-in-out infinite; margin: 0 1px; vertical-align: middle; }
+    .tendency-arrow { display: inline-flex; align-items: center; font-size: 0.6rem; color: var(--teal); animation: tendencyPulse 1.5s ease-in-out infinite; margin: 0 1px; vertical-align: middle; }
     .tendency-arrow.resolve { color: var(--success); }
     @keyframes tendencyPulse { 0%,100%{opacity:0.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.15)} }
 
@@ -939,7 +964,7 @@
     .annotation-toolbar { display: none; gap: 8px; align-items: center; padding: 10px 16px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); margin-top: 8px; flex-wrap: wrap; }
     .annotation-toolbar.show { display: flex; }
     .annotation-toolbar button { padding: 6px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--card2); color: var(--text2); font-size: 0.78rem; cursor: pointer; transition: all 0.2s; }
-    .annotation-toolbar button:hover, .annotation-toolbar button.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+    .annotation-toolbar button:hover, .annotation-toolbar button.active { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
     .annotation-color-picker { width: 28px; height: 28px; border: none; border-radius: 50%; cursor: pointer; background: none; padding: 0; }
 
     /* ═══ PITCH VISUALIZATION SCROLLING GRAPH ═══ */
@@ -953,12 +978,12 @@
     .practice-analytics-section { padding: 36px 40px 80px; max-width: 920px; margin: 0 auto; }
     .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
     .analytics-stat-card { background: var(--card); border-radius: var(--radius-md); padding: 20px 18px; box-shadow: var(--shadow-card); text-align: center; }
-    .analytics-stat-value { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 700; color: var(--gold); }
+    .analytics-stat-value { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 700; color: var(--teal); }
     .analytics-stat-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-top: 4px; font-weight: 500; }
     .heatmap-calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 14px; }
     .heatmap-day { width: 100%; aspect-ratio: 1; border-radius: 4px; background: var(--card2); transition: background 0.2s; position: relative; }
     .heatmap-day.practiced { background: var(--success); opacity: 0.8; }
-    .heatmap-day.today { border: 2px solid var(--gold); }
+    .heatmap-day.today { border: 2px solid var(--teal); }
     .heatmap-day-label { font-size: 0.5rem; color: var(--muted); text-align: center; padding: 2px 0; }
     .heatmap-month-title { font-size: 0.72rem; color: var(--text2); margin-bottom: 8px; font-weight: 500; }
     .analytics-chart-container { background: var(--card); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-card); margin-bottom: 24px; }
@@ -966,14 +991,14 @@
 
     /* ═══ QUICK ACTIONS BAR ═══ */
     .quick-actions-bar { display: flex; gap: 8px; align-items: center; padding: 8px 36px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-    .quick-action-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 100px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 0.78rem; cursor: pointer; transition: all 0.2s var(--transition); white-space: nowrap; }
-    .quick-action-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+    .quick-action-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 100px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: 'Inter', sans-serif; font-size: 0.78rem; cursor: pointer; transition: all 0.15s var(--transition); white-space: nowrap; }
+    .quick-action-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
     .quick-action-btn .qa-icon { font-size: 0.9rem; }
 
     /* ═══ ACHIEVEMENT BADGES ═══ */
     .achievements-container { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
     .achievement-badge { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 16px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); min-width: 100px; text-align: center; box-shadow: var(--shadow-card); transition: all 0.3s var(--transition); opacity: 0.4; }
-    .achievement-badge.unlocked { opacity: 1; border-color: var(--gold); }
+    .achievement-badge.unlocked { opacity: 1; border-color: var(--teal); }
     .achievement-badge.unlocked:hover { box-shadow: var(--shadow-hover); transform: translateY(-3px); }
     .achievement-icon { font-size: 1.8rem; }
     .achievement-name { font-size: 0.72rem; font-weight: 600; color: var(--text); }
@@ -992,7 +1017,7 @@
     @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
     .ear-training-score { display: flex; gap: 20px; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
     .ear-score-item { font-size: 0.82rem; color: var(--text2); }
-    .ear-score-item strong { color: var(--gold); font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; }
+    .ear-score-item strong { color: var(--teal); font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; }
     .ear-training-difficulty { display: flex; gap: 6px; margin-top: 12px; }
 
     /* ═══ VIDEO RECORDING OVERLAY ═══ */
@@ -1006,22 +1031,22 @@
     /* ═══ PRACTICE GOALS ═══ */
     .practice-goal-bar { background: var(--card); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 18px; box-shadow: var(--shadow-card); }
     .goal-progress-track { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 8px; }
-    .goal-progress-fill { height: 100%; background: linear-gradient(90deg, var(--violet), var(--gold)); border-radius: 4px; transition: width 0.5s var(--transition); }
-    .goal-time-display { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 700; color: var(--gold); }
+    .goal-progress-fill { height: 100%; background: linear-gradient(90deg, var(--teal), var(--teal-light)); border-radius: 4px; transition: width 0.5s var(--transition); }
+    .goal-time-display { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 700; color: var(--teal); }
 
     /* ═══ SCALE WARM-UP ═══ */
     .warmup-section { background: var(--card); border-radius: var(--radius-xl); padding: 28px; margin-top: 24px; box-shadow: var(--shadow-card); }
-    .warmup-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--gold); font-weight: 600; margin-bottom: 18px; }
+    .warmup-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--teal); font-weight: 600; margin-bottom: 18px; }
     .warmup-notes { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
     .warmup-note { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 40px; padding: 8px 6px; border-radius: var(--radius-sm); background: var(--card2); cursor: pointer; transition: all 0.2s; }
-    .warmup-note:hover, .warmup-note.playing { background: var(--gold-dim); border-color: var(--gold); }
+    .warmup-note:hover, .warmup-note.playing { background: var(--teal-dim); border-color: var(--teal); }
     .warmup-note-name { font-size: 0.75rem; color: var(--text2); font-family: monospace; }
     .warmup-note-solfege { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 700; }
 
     /* ═══ DAILY CHALLENGE ═══ */
-    .daily-challenge-card { background: linear-gradient(135deg, var(--card), var(--card2)); border: 1px solid var(--gold-dim); border-radius: var(--radius-xl); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow-card); }
+    .daily-challenge-card { background: linear-gradient(135deg, var(--card), var(--card2)); border: 1px solid var(--teal-dim); border-radius: var(--radius-xl); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow-card); }
     .daily-challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    .daily-challenge-badge { font-size: 0.62rem; background: var(--gold-dim); border: 1px solid rgba(212,168,83,0.2); color: var(--gold); padding: 4px 12px; border-radius: 100px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
+    .daily-challenge-badge { font-size: 0.62rem; background: var(--teal-dim); border: 1px solid rgba(13,148,136,0.2); color: var(--teal); padding: 4px 12px; border-radius: 100px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
   </style>
 </head>
 <body>
@@ -1109,50 +1134,48 @@
   </div>
   <nav class="sidebar-nav">
     <div class="sidebar-item active" onclick="switchSection('analyze')" data-section="analyze">
-      <span class="sidebar-item-icon">&#x1F3B5;</span>
+      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"/></svg></span>
       <span class="sidebar-item-label">Analyze</span>
     </div>
     <div class="sidebar-item" onclick="switchSection('practice')" data-section="practice">
-      <span class="sidebar-item-icon">&#x1F3AF;</span>
+      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></span>
       <span class="sidebar-item-label">Practice</span>
     </div>
     <div class="sidebar-item" onclick="switchSection('vocal-coach')" data-section="vocal-coach">
-      <span class="sidebar-item-icon">&#x1F3A4;</span>
+      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg></span>
       <span class="sidebar-item-label">Vocal Coach</span>
     </div>
     <div class="sidebar-item" onclick="switchSection('pitch-guide')" data-section="pitch-guide">
-      <span class="sidebar-item-icon">&#x1F50A;</span>
+      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></span>
       <span class="sidebar-item-label">Pitch Guide</span>
-    </div>
-    <div class="sidebar-item" onclick="switchSection('analytics')" data-section="analytics">
-      <span class="sidebar-item-icon">&#x1F4CA;</span>
-      <span class="sidebar-item-label">Analytics</span>
-    </div>
-    <div class="sidebar-item" onclick="switchSection('class')" data-section="class">
-      <span class="sidebar-icon">&#x1F465;</span><span class="sidebar-label">My Class</span>
-    </div>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-item" onclick="openCheatsheet()">
-      <span class="sidebar-item-icon">&#x1F4D6;</span>
-      <span class="sidebar-item-label">Reference</span>
-    </div>
-    <div class="sidebar-item" onclick="openHistory()">
-      <span class="sidebar-item-icon">&#x1F4DA;</span>
-      <span class="sidebar-item-label">History</span>
     </div>
   </nav>
   <div class="sidebar-bottom">
-    <div class="sidebar-item" onclick="showShortcuts()">
-      <span class="sidebar-item-icon">&#x2328;</span>
-      <span class="sidebar-item-label">Shortcuts</span>
-    </div>
-    <div class="sidebar-item" onclick="cycleFontSize()">
-      <span class="sidebar-item-icon">Aa</span>
-      <span class="sidebar-item-label" id="fontSizeLabel">Normal</span>
-    </div>
-    <div class="sidebar-item" onclick="toggleTheme()" id="themeToggle">
-      <span class="sidebar-item-icon" id="themeIcon">&#x1F319;</span>
-      <span class="sidebar-item-label" id="themeLabel">Dark Mode</span>
+    <div class="sidebar-settings-btn" id="settingsBtn" onclick="toggleSettingsDropdown()">
+      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+      <span class="sidebar-item-label">Settings</span>
+      <div class="settings-dropdown" id="settingsDropdown">
+        <div class="settings-dropdown-item" onclick="openCheatsheet()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Reference
+        </div>
+        <div class="settings-dropdown-item" onclick="openHistory()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          History
+        </div>
+        <div class="settings-dropdown-item" onclick="showShortcuts()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg>
+          Shortcuts
+        </div>
+        <div class="settings-dropdown-item" onclick="cycleFontSize()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+          <span id="fontSizeLabel">Normal Size</span>
+        </div>
+        <div class="settings-dropdown-item" onclick="toggleTheme()" id="themeToggle">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <span id="themeLabel">Dark Mode</span>
+        </div>
+      </div>
     </div>
     <div id="userArea" class="sidebar-user"></div>
   </div>
@@ -1182,7 +1205,6 @@
   <!-- ═══ ANALYZE SECTION ═══ -->
   <section class="app-section active" id="section-analyze">
     <div class="section-header">
-      <div class="section-label">AI Analysis</div>
       <h2 class="section-title">Analyze your sheet music</h2>
       <div class="section-desc">Upload a photo, PDF, or MusicXML file of your score</div>
     </div>
@@ -1198,9 +1220,11 @@
 
     <div class="upload-zone" id="uploadZone">
       <input type="file" id="fileInput" accept="image/*,.pdf,.musicxml,.mxl,.xml" capture="environment"/>
-      <span class="upload-icon">&#x1F3BC;</span>
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
       <div class="upload-title">Drop your sheet music here</div>
-      <div class="upload-sub">or click to browse &middot; JPG, PNG, PDF, MusicXML supported</div>
+      <div class="upload-sub">or click to browse &middot; JPG, PNG, PDF, MusicXML</div>
       <div class="annotation-wrapper" id="annotationWrapper">
         <img class="preview-img" id="previewImg" alt="preview"/>
         <canvas class="annotation-canvas hidden" id="annotationCanvas"></canvas>
@@ -1227,9 +1251,9 @@
       <button class="btn-primary" id="analyzeBtn" disabled style="flex:1">Analyze Sheet Music</button>
     </div>
 
-    <div style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;padding:12px 16px;background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.25);border-radius:var(--radius-md);font-size:0.78rem;color:var(--muted);">
-      <span style="font-size:1rem;flex-shrink:0;">&#127932;</span>
-      <div><strong style="color:var(--text);">For highest accuracy:</strong> Convert your PDF in <a href="https://musescore.org" target="_blank" rel="noopener noreferrer" style="color:var(--gold);">MuseScore (free)</a> or <a href="https://musescore.com" target="_blank" rel="noopener noreferrer" style="color:var(--gold);">musescore.com</a> and upload the MusicXML file here — notes, key, and time signature are read exactly as written.</div>
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;padding:12px 16px;background:var(--teal-dim);border:1px solid rgba(13,148,136,0.2);border-radius:var(--radius-md);font-size:0.78rem;color:var(--muted);">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--teal)" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div><strong style="color:var(--text);">For highest accuracy:</strong> Convert your PDF in <a href="https://musescore.org" target="_blank" rel="noopener noreferrer" style="color:var(--teal);">MuseScore (free)</a> or <a href="https://musescore.com" target="_blank" rel="noopener noreferrer" style="color:var(--teal);">musescore.com</a> and upload the MusicXML file here — notes, key, and time signature are read exactly as written.</div>
     </div>
 
     <div class="loading" id="loading">
@@ -1261,14 +1285,18 @@
       <div class="print-header">Solfai Analysis</div>
       <div class="results-header">
         <div class="results-title">Music Analysis</div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <button class="btn-secondary" style="padding:7px 16px;font-size:0.78rem;" onclick="shareAnalysis()" title="Share">&#x1F517; Share</button>
-          <button class="btn-secondary" style="padding:7px 16px;font-size:0.78rem;" onclick="exportAsPDF()" title="Print/PDF">&#x1F5A8; Print</button>
-          <button class="btn-secondary" style="padding:7px 16px;font-size:0.78rem;" onclick="exportMusicXML()" id="exportMusicXMLBtn" style="display:none;" title="Export MusicXML">&#x1F3BC; MusicXML</button>
-          <button class="btn-secondary" style="padding:7px 16px;font-size:0.78rem;" onclick="extractLyrics()" id="extractLyricsBtn">&#x1F4DC; Extract Lyrics</button>
-          <button class="btn-secondary" style="padding:7px 16px;font-size:0.78rem;" onclick="loadHistoricalContext()" id="historicalContextBtn">&#x1F4DA; Historical Context</button>
-          <button class="btn-secondary" style="padding:7px 16px;font-size:0.78rem;" onclick="getPracticeCoach()" id="practiceCoachBtn">&#x1F9D1;&#x200D;&#x1F3EB; Coach Tips</button>
-          <div style="font-size:0.68rem;color:var(--muted);font-weight:300;">hover to edit</div>
+        <div style="display:flex;align-items:center;gap:8px;position:relative;">
+          <button class="btn-secondary" onclick="shareAnalysis()" title="Share">Share</button>
+          <button class="btn-secondary" onclick="exportAsPDF()" title="Export">Export</button>
+          <div style="position:relative;">
+            <button class="btn-secondary" id="moreActionsBtn" onclick="toggleMoreActions()" title="More">•••</button>
+            <div id="moreActionsDropdown" style="display:none;position:absolute;right:0;top:calc(100%+6px);background:var(--card);border:1px solid var(--border);border-radius:var(--radius-md);padding:6px;min-width:170px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+              <button onclick="extractLyrics()" id="extractLyricsBtn" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;background:none;border:none;color:var(--text2);font-size:0.82rem;text-align:left;cursor:pointer;border-radius:var(--radius-sm);transition:all 0.15s;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'">Extract Lyrics</button>
+              <button onclick="loadHistoricalContext()" id="historicalContextBtn" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;background:none;border:none;color:var(--text2);font-size:0.82rem;text-align:left;cursor:pointer;border-radius:var(--radius-sm);transition:all 0.15s;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'">Historical Context</button>
+              <button onclick="getPracticeCoach()" id="practiceCoachBtn" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;background:none;border:none;color:var(--text2);font-size:0.82rem;text-align:left;cursor:pointer;border-radius:var(--radius-sm);transition:all 0.15s;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'">Coach Tips</button>
+              <button onclick="exportMusicXML()" id="exportMusicXMLBtn" style="display:none;align-items:center;gap:8px;width:100%;padding:9px 12px;background:none;border:none;color:var(--text2);font-size:0.82rem;text-align:left;cursor:pointer;border-radius:var(--radius-sm);">MusicXML</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="info-grid" id="infoGrid"></div>
@@ -1368,7 +1396,7 @@
         </div>
         <div id="fullPieceProgress" style="display:none;margin-bottom:12px;">
           <div style="height:4px;background:var(--card2);border-radius:2px;overflow:hidden;">
-            <div id="fullPieceProgressFill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--gold-light));transition:width 0.2s;border-radius:2px;"></div>
+            <div id="fullPieceProgressFill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--teal),var(--teal-light));transition:width 0.2s;border-radius:2px;"></div>
           </div>
           <div id="fullPieceProgressText" style="font-size:0.7rem;color:var(--muted);margin-top:4px;"></div>
         </div>
@@ -1391,7 +1419,7 @@
               </select>
             </label>
           </div>
-          <textarea id="manualNotesInput" rows="3" placeholder="C4 D4 E4 F4 | G4 A4 B4 C5" style="width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:14px;border-radius:var(--radius-sm);font-family:monospace;font-size:0.85rem;resize:vertical;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+          <textarea id="manualNotesInput" rows="3" placeholder="C4 D4 E4 F4 | G4 A4 B4 C5" style="width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:14px;border-radius:var(--radius-sm);font-family:monospace;font-size:0.85rem;resize:vertical;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border)'"></textarea>
           <button class="btn-secondary" onclick="submitManualNotes()" style="margin-top:12px;">Calculate Solfege</button>
         </div>
       </div>
@@ -1471,7 +1499,7 @@
     </div>
     <div id="speedControl" style="display:none;align-items:center;gap:12px;margin-bottom:18px;">
       <span style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;">Speed:</span>
-      <input type="range" id="speedSlider" min="25" max="150" value="100" style="flex:1;accent-color:var(--gold);" oninput="$('speedLabel').textContent=this.value+'%'">
+      <input type="range" id="speedSlider" min="25" max="150" value="100" style="flex:1;accent-color:var(--teal);" oninput="$('speedLabel').textContent=this.value+'%'">
       <span id="speedLabel" style="font-size:0.82rem;color:var(--gold);font-weight:600;min-width:40px;">100%</span>
     </div>
     <div id="practiceStreakCounter" style="display:none;background:var(--card);border-radius:var(--radius-md);padding:14px 18px;margin-bottom:18px;box-shadow:var(--shadow-card);display:none;">
@@ -1499,7 +1527,7 @@
         <button class="btn-secondary" onclick="startRhythmClapping()" id="btnRhythmClap">&#x1F44F; Rhythm Clap</button>
         <button class="btn-secondary" onclick="exportAudioWAV()" id="btnExportAudio">&#x1F4E5; Export Audio</button>
         <label style="display:flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--muted);cursor:pointer;">
-          <input type="checkbox" id="countInToggle" checked style="accent-color:var(--gold);"> Count-in
+          <input type="checkbox" id="countInToggle" checked style="accent-color:var(--teal);"> Count-in
         </label>
       </div>
     </div>
@@ -1632,7 +1660,7 @@
       <button class="btn-secondary" onclick="openVideoRecording()" style="padding:10px 18px;">&#x1F4F9; Video Record</button>
     </div>
     <div class="coach-evaluating" id="coachEvaluating">
-      <div class="mini-spinner" style="border-top-color:var(--gold)"></div>
+      <div class="mini-spinner" style="border-top-color:var(--teal)"></div>
       <span>Analyzing your performance...</span>
     </div>
     <div class="coach-results" id="coachResults">
@@ -1688,8 +1716,8 @@
           <text x="16" y="162" font-size="10" fill="var(--muted)" text-anchor="middle" font-family="DM Sans">-50</text>
           <text x="264" y="162" font-size="10" fill="var(--muted)" text-anchor="middle" font-family="DM Sans">+50</text>
           <text x="140" y="158" font-size="10" fill="var(--success)" text-anchor="middle" font-family="DM Sans">0</text>
-          <line id="pitchNeedle" x1="140" y1="140" x2="140" y2="30" stroke="var(--gold)" stroke-width="3" stroke-linecap="round" transform="rotate(0, 140, 140)"/>
-          <circle cx="140" cy="140" r="6" fill="var(--gold)"/>
+          <line id="pitchNeedle" x1="140" y1="140" x2="140" y2="30" stroke="var(--teal)" stroke-width="3" stroke-linecap="round" transform="rotate(0, 140, 140)"/>
+          <circle cx="140" cy="140" r="6" fill="var(--teal)"/>
         </svg>
       </div>
       <div class="pitch-detected-note" id="pitchNoteDisplay">&mdash;</div>
@@ -1705,7 +1733,7 @@
       <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin-bottom:14px;font-weight:500;">Real-Time Pitch Overlay</div>
       <canvas id="pitchVizCanvas" width="800" height="160"></canvas>
       <div class="pitch-viz-legend">
-        <div class="pitch-viz-legend-item"><div class="pitch-viz-legend-dot" style="background:var(--gold)"></div> Your pitch</div>
+        <div class="pitch-viz-legend-item"><div class="pitch-viz-legend-dot" style="background:var(--teal)"></div> Your pitch</div>
         <div class="pitch-viz-legend-item"><div class="pitch-viz-legend-dot" style="background:var(--success)"></div> Target</div>
       </div>
     </div>
@@ -1734,7 +1762,7 @@
         <div id="saResult" style="font-size:1.3rem;font-weight:700;margin-top:10px;min-height:1.8rem;transition:color 0.3s"></div>
       </div>
       <div style="background:var(--surface);border-radius:999px;height:5px;margin-bottom:12px;overflow:hidden">
-        <div id="saProgress" style="height:100%;background:var(--gold);border-radius:999px;width:0%;transition:width 0.4s"></div>
+        <div id="saProgress" style="height:100%;background:var(--teal);border-radius:999px;width:0%;transition:width 0.4s"></div>
       </div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px">
         <div class="stat-item"><div class="stat-value" id="saCorrect">0</div><div class="stat-label">Correct</div></div>
@@ -1869,6 +1897,30 @@ function switchSection(name) {
   if (name === 'class') initClassSection();
   if (name === 'practice') buildWeakPanel();
 }
+
+// ═══════════════════════════════════════════════════════════════
+// SETTINGS DROPDOWN + MORE ACTIONS DROPDOWN
+// ═══════════════════════════════════════════════════════════════
+function toggleSettingsDropdown() {
+  const dd = document.getElementById('settingsDropdown');
+  if (!dd) return;
+  dd.classList.toggle('open');
+}
+function toggleMoreActions() {
+  const dd = document.getElementById('moreActionsDropdown');
+  if (!dd) return;
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#settingsBtn')) {
+    const dd = document.getElementById('settingsDropdown');
+    if (dd) dd.classList.remove('open');
+  }
+  if (!e.target.closest('#moreActionsBtn') && !e.target.closest('#moreActionsDropdown')) {
+    const dd = document.getElementById('moreActionsDropdown');
+    if (dd) dd.style.display = 'none';
+  }
+});
 
 // ═══════════════════════════════════════════════════════════════
 // THEME
@@ -2122,9 +2174,7 @@ async function handleMusicXML() {
 function renderStructured(s) {
   // ═══ CONFIDENCE METER ═══
   const confidenceScore = s._confidenceScore || 0;
-  const circumference = 2 * Math.PI * 34;
-  const offset = circumference * (1 - confidenceScore / 100);
-  const meterColor = confidenceScore >= 75 ? 'var(--success)' : confidenceScore >= 50 ? 'var(--gold)' : 'var(--error)';
+  const meterColor = confidenceScore >= 75 ? 'var(--success)' : confidenceScore >= 50 ? '#fbbf24' : 'var(--error)';
   const meterLabel = confidenceScore >= 75 ? 'High Confidence' : confidenceScore >= 50 ? 'Moderate Confidence' : 'Low Confidence';
 
   const factors = [];
@@ -2135,17 +2185,15 @@ function renderStructured(s) {
   else if (s._imageQuality?.tier === 'poor') factors.push('Poor image');
 
   let meterHtml = `<div class="confidence-meter animate-in">
-    <div class="confidence-ring">
-      <svg width="80" height="80" viewBox="0 0 80 80">
-        <circle class="confidence-ring-bg" cx="40" cy="40" r="34"/>
-        <circle class="confidence-ring-fill" cx="40" cy="40" r="34"
-          stroke="${meterColor}" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/>
-      </svg>
-      <div class="confidence-ring-score">${confidenceScore}</div>
+    <div class="confidence-meter-header">
+      <span class="confidence-label">${meterLabel}</span>
+      <span class="confidence-ring-score">${confidenceScore}%</span>
+    </div>
+    <div class="confidence-bar-track">
+      <div class="confidence-bar-fill" style="width:${confidenceScore}%;background:${meterColor};"></div>
     </div>
     <div class="confidence-details">
-      <div class="confidence-label">${meterLabel}</div>
-      <div class="confidence-text">Analysis confidence based on AI consensus, image quality${s._dbMatch ? ', and database verification' : ''}.</div>
+      <div class="confidence-text">AI consensus, image quality${s._dbMatch ? ', database match' : ''}.</div>
       <div class="confidence-factors">${factors.map(f => `<span class="confidence-factor">${esc(f)}</span>`).join('')}</div>
     </div>
   </div>`;
@@ -2240,7 +2288,7 @@ function renderPronunciation(pron) {
     return;
   }
   const langCode = getLangCode(pron.language);
-  let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><span style="font-size:0.72rem;background:var(--gold-dim);border:1px solid rgba(212,168,83,0.2);color:var(--gold);padding:5px 16px;border-radius:100px;font-weight:500;">${esc(pron.language)}</span><button class="pitch-play-btn" onclick="speakAllWords()">Hear all</button></div><div class="pron-grid">`;
+  let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><span style="font-size:0.72rem;background:var(--teal-dim);border:1px solid rgba(13,148,136,0.2);color:var(--teal);padding:5px 16px;border-radius:100px;font-weight:500;">${esc(pron.language)}</span><button class="pitch-play-btn" onclick="speakAllWords()">Hear all</button></div><div class="pron-grid">`;
   for (const w of pron.words) {
     h += `<div class="pron-card"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="pron-word">${esc(w.word)}</span><button class="pron-speak-btn" onclick="speakWord('${escJs(w.word)}','${escJs(langCode)}',this)">&#x1F50A;</button></div><div class="pron-ipa">${esc(w.ipa || '')}</div><div class="pron-approx">${esc(w.approx || '')}</div></div>`;
   }
@@ -2605,7 +2653,7 @@ function renderSolfegeStructured(s) {
     if (m.confidence === 'high' && !m.disagreement) h += `<span class="confidence-badge high">confident</span>`;
     else if (m.disagreement) h += `<span class="confidence-badge medium">reviewed</span>`;
     if (m.durationWarning) h += `<span title="${esc(m.durationWarning)}" style="font-size:0.65rem;color:var(--gold);cursor:help;" >&#x26A0; timing</span>`;
-    h += `<button onclick="editMeasureSolfege(${m.num})" style="background:none;border:none;color:var(--muted);font-size:0.7rem;cursor:pointer;padding:2px 8px;border-radius:4px;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'">&crarr; edit</button></div>`;
+    h += `<button onclick="editMeasureSolfege(${m.num})" style="background:none;border:none;color:var(--muted);font-size:0.7rem;cursor:pointer;padding:2px 8px;border-radius:4px;" onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--muted)'">&crarr; edit</button></div>`;
 
     const notes = m.notes || [], sol = m.solfege || [];
     if (notes.length) {
@@ -3279,7 +3327,7 @@ function setSolfegeSystem(sys) {
 // ═══════════════════════════════════════════════════════════════
 function toggleLoop() {
   loopActive = !loopActive;
-  if (loopActive) { loopStart = practiceIndex; loopEnd = Math.min(practiceIndex + 3, practiceData.length - 1); showToast(`Looping measures ${loopStart+1}-${loopEnd+1}`, 'info'); $('btnLoop').style.borderColor='var(--gold)'; $('btnLoop').style.color='var(--gold)'; }
+  if (loopActive) { loopStart = practiceIndex; loopEnd = Math.min(practiceIndex + 3, practiceData.length - 1); showToast(`Looping measures ${loopStart+1}-${loopEnd+1}`, 'info'); $('btnLoop').style.borderColor='var(--teal)'; $('btnLoop').style.color='var(--teal)'; }
   else { showToast('Loop off', 'info'); $('btnLoop').style.borderColor=''; $('btnLoop').style.color=''; }
 }
 
@@ -3297,7 +3345,7 @@ function toggleMetronome() {
       setTimeout(() => ctx.close(), 200);
     }, ms);
     showToast(`Metronome: ${bpm} BPM`, 'info');
-    $('btnMetronome').style.borderColor='var(--gold)'; $('btnMetronome').style.color='var(--gold)';
+    $('btnMetronome').style.borderColor='var(--teal)'; $('btnMetronome').style.color='var(--teal)';
   } else { clearInterval(metronomeTid); showToast('Metronome off', 'info'); $('btnMetronome').style.borderColor=''; $('btnMetronome').style.color=''; }
 }
 
