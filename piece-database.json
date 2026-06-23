@@ -2,7 +2,7 @@
   "_meta": {
     "description": "Choir library key/time database. Values filled only where genuinely defensible from training knowledge of standard repertoire. null = unknown without checking the physical score. Nothing invented.",
     "schema": "id, title, composer, arranger, general_voicing, specific_voicing, a_cappella, instrumentation, notes, issue_flag, key, time, confidence (high|medium|low), source",
-    "total_pieces": 1002,
+    "total_pieces": 1003,
     "filled_key": 68,
     "filled_time": 66,
     "high_confidence": 6,
@@ -16043,6 +16043,22 @@
       "time": "3/4",
       "confidence": "high",
       "source": "user verified"
+    },
+    {
+      "id": 1003,
+      "title": "Didn't My Lord Deliver Daniel",
+      "composer": "Traditional",
+      "arranger": "Berg",
+      "general_voicing": "Treble",
+      "specific_voicing": "SSA",
+      "a_cappella": null,
+      "instrumentation": null,
+      "notes": null,
+      "issue_flag": null,
+      "key": "Bb major",
+      "time": "4/4",
+      "confidence": "medium",
+      "source": "training knowledge"
     }
   ]
 }

@@ -576,7 +576,7 @@ function lookupPiece(title, composer) {
   return bestMatch;
 }
 
-function resolveKeyFromCounts(flatCount, sharpCount, keySignatureVotes = []) {
+function resolveKeyFromCounts(flatCount, sharpCount, keySignatureVotes = [], pieceTitle = '') {
   let code;
   if (sharpCount > 0) code = `${sharpCount}s`;
   else if (flatCount > 0) code = `${flatCount}b`;
@@ -584,25 +584,34 @@ function resolveKeyFromCounts(flatCount, sharpCount, keySignatureVotes = []) {
 
   const entry = KEY_FROM_COUNT[code];
   if (!entry) {
-    // Fallback: use weighted vote directly
-    const voted = weightedVote(keySignatureVotes.map(v => ({ value: v.key_signature, weight: v.weight })));
-    return { key: voted || 'Unknown', confident: false, geminiSaid: voted, codeSaid: 'Unknown' };
+    // Count out of range — default to C major rather than trusting raw Gemini text strings
+    return { key: 'C major', confident: false, codeSaid: 'C major', minorVoteRatio: 0 };
+  }
+
+  // Genre/title heuristic: force major for spiritual/gospel/folk repertoire where
+  // minor is essentially never correct, before any vote counting happens.
+  const titleLower = (pieceTitle || '').toLowerCase();
+  const forceMajor = /spiritual|gospel|hymn|folk|traditional|march|anthem|alleluia|daniel|joshua|elijah|swing|low|nobody|water|deep river|swing low/i.test(titleLower);
+  if (forceMajor) {
+    console.log(`[Solfai] Genre heuristic forced major for title "${pieceTitle}"`);
+    const accLabel = sharpCount > 0 ? `${sharpCount} sharp${sharpCount > 1 ? 's' : ''}` :
+      flatCount > 0 ? `${flatCount} flat${flatCount > 1 ? 's' : ''}` : 'no sharps or flats';
+    return { key: `${entry.major} (${accLabel})`, confident: true, codeSaid: entry.major, minorVoteRatio: 0 };
   }
 
   // Count weighted votes for minor vs major across ALL extractions
   let minorWeight = 0, majorWeight = 0, totalWeight = 0;
-  for (const v of keySignatureVotes) {
+  for (const v of (keySignatureVotes || [])) {
     const isMinor = (v.key_signature || '').toLowerCase().includes('minor');
     totalWeight += v.weight;
     if (isMinor) minorWeight += v.weight;
     else majorWeight += v.weight;
   }
 
-  // Major-biased decision: minor only wins with a clear majority (>65%).
-  // Reason: minor is rarer in choral repertoire and was being mis-picked on close
-  // votes (e.g. 2 flats reading as G minor instead of Bb major).
+  // Major-biased decision: minor only wins with a strong supermajority (>80%).
+  // Raised from 65% — minor was being mis-picked on ambiguous scores.
   const minorRatio = totalWeight > 0 ? minorWeight / totalWeight : 0;
-  const keyName = (totalWeight > 0 && minorRatio > 0.65) ? entry.minor : entry.major;
+  const keyName = (totalWeight > 0 && minorRatio > 0.80) ? entry.minor : entry.major;
 
   const accLabel = sharpCount > 0 ? `${sharpCount} sharp${sharpCount > 1 ? 's' : ''}` :
     flatCount > 0 ? `${flatCount} flat${flatCount > 1 ? 's' : ''}` : 'no sharps or flats';
@@ -1918,21 +1927,22 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
 
   console.log(`[Solfai] Combined key votes (${allKeyVotes.length} total): ${finalFlats}b/${finalSharps}s`);
 
+  // ═══ DATABASE LOOKUP — validate/override AI values ═══
+  // Declared early so pieceTitle can be passed into resolveKeyFromCounts for genre heuristic.
+  const pieceTitle = raw.piece_title || 'unknown';
+  const composerName = raw.composer_name || 'unknown';
+
   // Code-calculated key from voted flat/sharp count.
   // Pass ALL fullExtraction votes so resolveKeyFromCounts can do weighted major/minor decision.
   const keySignatureVotes = fullExtractions.map((ext, i) => ({
     key_signature: ext.key_signature,
     weight: i === 0 ? WEIGHT_PRO : WEIGHT_FLASH,
   }));
-  const keyResult = resolveKeyFromCounts(finalFlats, finalSharps, keySignatureVotes);
+  const keyResult = resolveKeyFromCounts(finalFlats, finalSharps, keySignatureVotes, pieceTitle);
 
   // Apply cached corrections
   let finalKey = cached?.keySignature || keyResult.key;
   let tonic = finalKey.split(' ')[0];
-
-  // ═══ DATABASE LOOKUP — validate/override AI values ═══
-  const pieceTitle = raw.piece_title || 'unknown';
-  const composerName = raw.composer_name || 'unknown';
   const dbMatch = lookupPiece(pieceTitle, composerName);
   let dbOverrideApplied = false;
 
