@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -10,6 +10,13 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="theme-color" content="#d4a853"/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script>
+    (() => {
+      const saved = localStorage.getItem('solfai-theme');
+      const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
   <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
@@ -1046,6 +1053,591 @@
     .daily-challenge-card { background: linear-gradient(135deg, var(--card), var(--card2)); border: 1px solid var(--teal-dim); border-radius: var(--radius-xl); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow-card); }
     .daily-challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .daily-challenge-badge { font-size: 0.62rem; background: var(--teal-dim); border: 1px solid rgba(13,148,136,0.2); color: var(--teal); padding: 4px 12px; border-radius: 100px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
+    /* Premium Solfai redesign overrides */
+    :root {
+      --bg: #F7F3EC;
+      --bg-soft: #FBF8F2;
+      --surface: #FFFFFF;
+      --surface-muted: #F4EFE7;
+      --surface-raised: #FFFFFF;
+      --card: var(--surface);
+      --card2: var(--surface-muted);
+      --border: rgba(17, 24, 39, 0.10);
+      --border-light: rgba(17, 24, 39, 0.16);
+      --text: #111827;
+      --text2: #4B5563;
+      --muted: #7C8491;
+      --teal: #0E8F87;
+      --teal-light: #11A79E;
+      --teal-dark: #0B756F;
+      --teal-dim: rgba(14, 143, 135, 0.12);
+      --violet: #7C3AED;
+      --violet-light: #A855F7;
+      --violet-dim: rgba(124, 58, 237, 0.10);
+      --gold: #E7B85D;
+      --gold-light: #F2C166;
+      --error: #DC2626;
+      --success: #0E8F87;
+      --sidebar-w: 240px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-card: 0 14px 40px rgba(32, 24, 14, 0.08), 0 0 0 1px var(--border);
+      --shadow-hover: 0 18px 48px rgba(32, 24, 14, 0.12), 0 0 0 1px rgba(14, 143, 135, 0.24);
+    }
+    [data-theme="dark"] {
+      --bg: #07101A;
+      --bg-soft: #0A1420;
+      --surface: #0F1A26;
+      --surface-muted: #121F2D;
+      --surface-raised: #172332;
+      --card: var(--surface);
+      --card2: var(--surface-muted);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-light: rgba(255, 255, 255, 0.14);
+      --text: #F8FAFC;
+      --text2: #CBD5E1;
+      --muted: #8492A6;
+      --teal: #00B8AD;
+      --teal-light: #2DD4BF;
+      --teal-dark: #0E8F87;
+      --teal-dim: rgba(0, 184, 173, 0.16);
+      --violet: #A855F7;
+      --violet-light: #C084FC;
+      --violet-dim: rgba(168, 85, 247, 0.14);
+      --gold: #F2C166;
+      --gold-light: #F7D98A;
+      --error: #F87171;
+      --success: #00B8AD;
+      --shadow-card: 0 20px 48px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border);
+      --shadow-hover: 0 24px 60px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(0, 184, 173, 0.24);
+    }
+    [data-theme="light"] {
+      --bg: #F7F3EC; --surface: #FFFFFF; --card: #FFFFFF; --card2: #F4EFE7;
+      --border: rgba(17, 24, 39, 0.10); --border-light: rgba(17, 24, 39, 0.16);
+      --text: #111827; --text2: #4B5563; --muted: #7C8491;
+    }
+    body {
+      background:
+        radial-gradient(circle at 20% -10%, rgba(231, 184, 93, 0.12), transparent 30%),
+        linear-gradient(135deg, var(--bg) 0%, var(--bg-soft) 100%);
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0;
+    }
+    [data-theme="dark"] body {
+      background:
+        radial-gradient(circle at 18% -12%, rgba(0, 184, 173, 0.10), transparent 30%),
+        linear-gradient(135deg, #07101A 0%, #09131F 58%, #0A111B 100%);
+    }
+    body::before, body::after, .blob { display: none !important; }
+    button, input, textarea, select { font-family: 'Inter', sans-serif; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, .sidebar-item:focus-visible {
+      outline: 2px solid var(--teal);
+      outline-offset: 3px;
+    }
+    .sidebar {
+      width: var(--sidebar-w);
+      padding: 24px 18px;
+      background: color-mix(in srgb, var(--surface) 90%, transparent);
+      backdrop-filter: blur(18px);
+      border-right: 1px solid var(--border);
+      gap: 18px;
+    }
+    .sidebar-logo {
+      padding: 0 4px 20px;
+      border-bottom: 0;
+      gap: 14px;
+    }
+    .sidebar-logo-icon {
+      width: 44px;
+      height: 58px;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .solfai-mark { width: 44px; height: 58px; display: block; }
+    .sidebar-logo-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.72rem;
+      line-height: 1;
+      letter-spacing: 0.22em;
+      color: var(--text);
+      background: none;
+      -webkit-text-fill-color: currentColor;
+    }
+    .sidebar-logo-subtitle {
+      margin-top: 6px;
+      font-size: 0.56rem;
+      letter-spacing: 0.16em;
+      color: var(--teal);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .sidebar-nav { padding: 8px 0; gap: 8px; }
+    .sidebar-item {
+      min-height: 48px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      color: var(--text2);
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+    .sidebar-item:hover { background: var(--surface-muted); color: var(--text); }
+    .sidebar-item.active {
+      background: var(--teal-dim);
+      color: var(--text);
+      box-shadow: inset 3px 0 0 var(--teal);
+    }
+    .sidebar-item::before { display: none; }
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 0;
+      border-top: 0;
+      gap: 12px;
+    }
+    .usage-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: var(--shadow-card);
+    }
+    .usage-user-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .usage-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--teal), var(--violet));
+      color: #fff; font-size: 0.78rem; font-weight: 700;
+    }
+    .usage-name { color: var(--text); font-weight: 700; font-size: 0.85rem; }
+    .usage-plan, .usage-label { color: var(--muted); font-size: 0.72rem; }
+    .usage-count { color: var(--text); font-weight: 700; font-size: 0.9rem; margin: 8px 0; }
+    .usage-track { height: 7px; border-radius: 999px; background: var(--surface-muted); overflow: hidden; }
+    .usage-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--teal), var(--violet)); }
+    .theme-switch {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .theme-switch:hover { border-color: var(--teal); color: var(--text); background: var(--teal-dim); }
+    .sidebar-settings-btn { border: 1px solid var(--border); background: transparent; border-radius: 8px; min-height: 44px; }
+    .main-content { margin-left: var(--sidebar-w); }
+    .top-bar {
+      position: sticky;
+      height: auto;
+      min-height: 90px;
+      padding: 26px 32px 18px;
+      background: color-mix(in srgb, var(--bg) 86%, transparent);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+    }
+    [data-theme="light"] .top-bar, [data-theme="dark"] .top-bar { background: color-mix(in srgb, var(--bg) 86%, transparent); }
+    .top-bar-title {
+      font-size: 1.65rem;
+      line-height: 1.1;
+      color: var(--text);
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+    .top-bar-subtitle { margin-top: 6px; color: var(--text2); font-size: 0.93rem; }
+    .top-bar-actions { gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+    .search-box {
+      height: 44px;
+      width: min(260px, 34vw);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--muted);
+      padding: 0 12px;
+    }
+    .search-box input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 0.82rem;
+    }
+    .icon-btn {
+      min-width: 44px;
+      height: 44px;
+      border-radius: 9px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .quick-practice-btn {
+      min-height: 44px;
+      border-radius: 8px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+      box-shadow: 0 12px 28px rgba(14, 143, 135, 0.22);
+      font-family: 'Inter', sans-serif;
+    }
+    [data-theme="dark"] .quick-practice-btn { background: linear-gradient(135deg, var(--violet), #6D28D9); }
+    .quick-actions-bar { display: none !important; }
+    .app-section {
+      max-width: 1280px;
+      padding: 28px 32px 64px;
+      margin: 0 auto;
+    }
+    .section-header { margin-bottom: 18px; }
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .section-desc { color: var(--text2); }
+    #section-analyze.active {
+      display: block;
+      max-width: 1280px;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(300px, 0.92fr) minmax(480px, 1.68fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .analyze-card,
+    .content-box,
+    .practice-card,
+    .pitch-player,
+    .chat-container,
+    .analytics-stat-card,
+    .analytics-chart-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow-card);
+    }
+    .upload-card { padding: 24px; }
+    .card-kicker {
+      font-size: 0.68rem;
+      color: var(--teal);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .card-title {
+      color: var(--text);
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin: 0;
+    }
+    .card-copy { color: var(--text2); font-size: 0.84rem; margin: 8px 0 18px; }
+    .part-selector-label { margin-top: 4px; color: var(--muted); font-weight: 800; letter-spacing: 0.08em; }
+    .part-selector { margin-bottom: 18px; }
+    .part-btn {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text2);
+      min-height: 34px;
+    }
+    .part-btn.active { background: var(--teal-dim); color: var(--teal); border-color: color-mix(in srgb, var(--teal) 35%, transparent); }
+    .upload-zone {
+      min-height: 230px;
+      padding: 26px 20px;
+      border: 1.5px dashed color-mix(in srgb, var(--teal) 42%, var(--border));
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--teal-dim) 28%, transparent);
+      box-shadow: none;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--teal);
+      background: var(--teal-dim);
+      transform: translateY(-1px);
+    }
+    .upload-icon { color: var(--teal); background: transparent; box-shadow: none; }
+    .upload-title { color: var(--text); font-weight: 800; }
+    .upload-sub { color: var(--text2); }
+    .choose-file-btn {
+      margin-top: 16px;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 18px;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(14, 143, 135, 0.18);
+    }
+    .analyze-submit-row { display: flex; gap: 12px; margin-top: 18px; }
+    .accuracy-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: var(--teal-dim);
+      border: 1px solid color-mix(in srgb, var(--teal) 22%, transparent);
+      border-radius: 10px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .accuracy-note strong { color: var(--text); }
+    .accuracy-note a { color: var(--teal); }
+    .analysis-state-card, .results-card {
+      padding: 24px;
+      min-height: 300px;
+    }
+    .results-placeholder {
+      padding: 24px;
+      min-height: 300px;
+    }
+    .results-placeholder.is-hidden { display: none; }
+    .placeholder-subtitle {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .placeholder-grid .info-card {
+      opacity: 1;
+      transform: none;
+    }
+    .info-desc {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+    .placeholder-piano {
+      box-shadow: none;
+      margin-bottom: 16px;
+    }
+    .placeholder-keyboard {
+      height: 96px;
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      align-items: end;
+      position: relative;
+    }
+    .placeholder-keyboard span {
+      height: 88px;
+      border-radius: 0 0 5px 5px;
+      background: linear-gradient(180deg, #fff, #E9E4DA);
+      border: 1px solid rgba(17, 24, 39, 0.18);
+    }
+    .placeholder-keyboard span:nth-child(4) {
+      background: linear-gradient(180deg, var(--teal-light), var(--teal));
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--teal) 20%, transparent);
+    }
+    [data-theme="dark"] .placeholder-keyboard span {
+      background: linear-gradient(180deg, #F8FAFC, #C9D1D9);
+    }
+    [data-theme="dark"] .placeholder-keyboard span:nth-child(4) {
+      background: linear-gradient(180deg, var(--teal-light), var(--teal));
+    }
+    .placeholder-overview {
+      box-shadow: none;
+      background: var(--surface-muted);
+    }
+    .loading.show { display: block; }
+    .results.show { display: block; }
+    .results > div:first-child { display: none; }
+    .results-header {
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 18px;
+    }
+    .results-title::before {
+      content: "";
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      margin-right: 10px;
+      vertical-align: middle;
+      border-radius: 50%;
+      background: var(--teal-dim);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--teal) 25%, transparent);
+    }
+    .info-grid {
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 12px;
+    }
+    .info-card, .diff-card {
+      padding: 16px;
+      border-radius: 10px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    .info-label, .diff-label { color: var(--muted); letter-spacing: 0.02em; }
+    .info-value, .diff-value, .pitch-note-big, .analytics-stat-value { color: var(--teal); font-family: 'Inter', sans-serif; letter-spacing: 0; }
+    .pitch-player {
+      padding: 20px;
+      margin: 24px 0;
+    }
+    .pitch-player-title {
+      color: var(--text);
+      font-size: 0.98rem;
+      font-weight: 800;
+    }
+    .piano-keys-container {
+      background: color-mix(in srgb, var(--surface-muted) 72%, transparent);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 14px 12px;
+      overflow-x: auto;
+    }
+    .piano-key.white {
+      width: 38px;
+      height: 118px;
+      background: linear-gradient(180deg, #fff, #ECE8DF);
+      border: 1px solid rgba(17, 24, 39, 0.20);
+      color: #374151;
+      border-radius: 0 0 6px 6px;
+    }
+    [data-theme="dark"] .piano-key.white {
+      background: linear-gradient(180deg, #F8FAFC, #C9D1D9);
+      color: #111827;
+    }
+    .piano-key.black {
+      width: 25px;
+      height: 76px;
+      margin: 0 -12px;
+      background: linear-gradient(180deg, #2C3440, #05080D);
+      border-radius: 0 0 5px 5px;
+      z-index: 2;
+    }
+    .piano-key.active {
+      background: linear-gradient(180deg, var(--teal-light), var(--teal)) !important;
+      color: #fff !important;
+      box-shadow: inset 0 -8px 18px rgba(0,0,0,0.15), 0 0 0 2px color-mix(in srgb, var(--teal) 35%, transparent);
+    }
+    .pitch-play-btn, .pitch-set-btn, .btn-primary {
+      border-radius: 8px;
+      background: var(--teal);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(14, 143, 135, 0.18);
+    }
+    .btn-secondary {
+      border-radius: 8px;
+      border-color: var(--border-light);
+      color: var(--teal);
+      background: transparent;
+    }
+    .btn-secondary:hover { background: var(--teal-dim); border-color: var(--teal); }
+    .tab-bar {
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      color: var(--text2);
+      padding: 12px 2px;
+      border-radius: 0;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      color: var(--teal);
+      background: transparent;
+      box-shadow: inset 0 -2px 0 var(--teal);
+    }
+    .content-box {
+      padding: 20px;
+      color: var(--text2);
+    }
+    .library-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.7fr);
+      gap: 20px;
+    }
+    .library-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .library-list { display: grid; gap: 10px; }
+    .library-row {
+      width: 100%;
+      min-height: 64px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-muted);
+      color: var(--text);
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .library-thumb {
+      width: 44px; height: 44px; border-radius: 7px;
+      background:
+        repeating-linear-gradient(0deg, rgba(17,24,39,.24) 0 1px, transparent 1px 7px),
+        linear-gradient(135deg, rgba(231,184,93,.28), rgba(14,143,135,.18));
+    }
+    .library-main { display: grid; gap: 3px; min-width: 0; }
+    .library-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+    .library-main small, .empty-state { color: var(--muted); font-size: 0.78rem; }
+    .library-more { color: var(--muted); letter-spacing: 0.12em; }
+    .resource-actions { display: grid; gap: 10px; margin-top: 16px; }
+    footer { display: none; }
+    @media (max-width: 1100px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        height: auto;
+        padding: 12px;
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+      }
+      .sidebar-logo { min-width: 176px; padding: 0; }
+      .sidebar-logo-icon { width: 32px; height: 42px; }
+      .sidebar-logo-text { font-size: 1.15rem; }
+      .sidebar-logo-subtitle { font-size: 0.46rem; }
+      .sidebar-nav { flex-direction: row; padding: 0; }
+      .sidebar-item { min-width: 46px; }
+      .sidebar-item-label { display: none; }
+      .sidebar-bottom { flex-direction: row; margin-left: auto; }
+      .usage-card, .sidebar-settings-btn .sidebar-item-label { display: none; }
+      .theme-switch { width: 44px; padding: 0; justify-content: center; }
+      .theme-switch #themeLabel { display: none; }
+      .main-content { margin-left: 0; }
+      .top-bar { padding: 18px 16px; align-items: flex-start; gap: 16px; }
+      .top-bar-actions { width: 100%; justify-content: flex-start; }
+      .search-box { width: 100%; order: 3; }
+      .app-section { padding: 20px 16px 44px; }
+      .info-grid, .library-grid { grid-template-columns: 1fr; }
+      .piano-key.white { width: 31px; height: 94px; }
+      .piano-key.black { width: 21px; height: 62px; margin: 0 -10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+    }
   </style>
 </head>
 <body>
@@ -1128,8 +1720,24 @@
 <!-- ═══ SIDEBAR ═══ -->
 <aside class="sidebar">
   <div class="sidebar-logo" onclick="switchSection('analyze')">
-    <div class="sidebar-logo-icon">&#9834;</div>
-    <div class="sidebar-logo-text">Solfai</div>
+    <div class="sidebar-logo-icon" aria-hidden="true">
+      <svg class="solfai-mark" viewBox="0 0 46 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="solfaiMarkGradient" x1="9" y1="8" x2="38" y2="54" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#00B8AD"/>
+            <stop offset=".48" stop-color="#8B5CF6"/>
+            <stop offset="1" stop-color="#E7B85D"/>
+          </linearGradient>
+        </defs>
+        <path d="M24 7c-5 5-6.5 11-2.5 17 3.5 5.2 2 11-4.5 13.8-7 3-12.5-.6-12.5-6.4 0-5.5 5.1-9.3 11.9-8.4 9.8 1.2 21.2 12.6 21.2 24.2 0 8-5.6 12.5-12.6 12.5-6.2 0-10.7-3.7-10.7-8.8 0-4.5 3.8-7.8 8.6-7.8 5.9 0 9.4 4 9.4 9.9" stroke="url(#solfaiMarkGradient)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M24 7v44" stroke="url(#solfaiMarkGradient)" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M24 25c6-5 12-4 15 1M24 34c-5-3.5-10-3.2-14 .8" stroke="url(#solfaiMarkGradient)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-text">SOLFAI</div>
+      <div class="sidebar-logo-subtitle">AI SHEET MUSIC ANALYSIS</div>
+    </div>
   </div>
   <nav class="sidebar-nav">
     <div class="sidebar-item active" onclick="switchSection('analyze')" data-section="analyze">
@@ -1144,12 +1752,28 @@
       <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg></span>
       <span class="sidebar-item-label">Vocal Coach</span>
     </div>
-    <div class="sidebar-item" onclick="switchSection('pitch-guide')" data-section="pitch-guide">
-      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></span>
-      <span class="sidebar-item-label">Pitch Guide</span>
+    <div class="sidebar-item" onclick="switchSection('library')" data-section="library">
+      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5z"/><path d="M8 7h6M8 11h6"/></svg></span>
+      <span class="sidebar-item-label">Library</span>
     </div>
   </nav>
   <div class="sidebar-bottom">
+    <div class="usage-card" aria-label="Monthly analysis usage">
+      <div class="usage-user-row">
+        <div class="usage-avatar">AV</div>
+        <div>
+          <div class="usage-name">Ali Veer</div>
+          <div class="usage-plan">Pro Plan</div>
+        </div>
+      </div>
+      <div class="usage-label">Analyses this month</div>
+      <div class="usage-count">23 / 50</div>
+      <div class="usage-track"><div class="usage-fill" style="width:46%"></div></div>
+    </div>
+    <button class="theme-switch" id="themeToggle" onclick="toggleTheme()" type="button" aria-label="Toggle theme">
+      <span id="themeIcon" aria-hidden="true">☾</span>
+      <span id="themeLabel">Dark Mode</span>
+    </button>
     <div class="sidebar-settings-btn" id="settingsBtn" onclick="toggleSettingsDropdown()">
       <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       <span class="sidebar-item-label">Settings</span>
@@ -1170,9 +1794,9 @@
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
           <span id="fontSizeLabel">Normal Size</span>
         </div>
-        <div class="settings-dropdown-item" onclick="toggleTheme()" id="themeToggle">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          <span id="themeLabel">Dark Mode</span>
+        <div class="settings-dropdown-item" onclick="switchSection('pitch-guide')">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+          Pitch Guide
         </div>
       </div>
     </div>
@@ -1185,8 +1809,22 @@
 
   <!-- Top bar -->
   <div class="top-bar">
-    <div class="top-bar-title" id="topBarTitle">Analyze</div>
+    <div class="top-bar-heading">
+      <div class="top-bar-title" id="topBarTitle">Good evening, Ali</div>
+      <div class="top-bar-subtitle">Let's analyze something beautiful today.</div>
+    </div>
     <div class="top-bar-actions">
+      <label class="search-box" aria-label="Search">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" placeholder="Search anything..." />
+      </label>
+      <button class="icon-btn notification-btn" type="button" title="Notifications" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+      </button>
+      <button class="btn-violet quick-practice-btn" onclick="switchSection('practice')" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        Quick Practice
+      </button>
       <button class="icon-btn" id="exportBtn" onclick="window.print()" style="display:none" title="Export PDF">&#128424;</button>
     </div>
   </div>
@@ -1204,9 +1842,15 @@
   <!-- ═══ ANALYZE SECTION ═══ -->
   <section class="app-section active" id="section-analyze">
     <div class="section-header">
-      <h2 class="section-title">Analyze your sheet music</h2>
-      <div class="section-desc">Upload a photo, PDF, or MusicXML file of your score</div>
+      <h2 class="section-title">Analyze a new piece</h2>
+      <div class="section-desc">Upload a sheet music file and Solfai will analyze it instantly.</div>
     </div>
+
+    <div class="dashboard-grid">
+      <div class="analyze-card upload-card">
+        <div class="card-kicker">New score</div>
+        <h3 class="card-title">Analyze a new piece</h3>
+        <p class="card-copy">Upload a sheet music file and our AI will analyze it instantly.</p>
 
     <div class="part-selector-label">I sing:</div>
     <div class="part-selector">
@@ -1224,6 +1868,7 @@
       </div>
       <div class="upload-title">Drop your sheet music here</div>
       <div class="upload-sub">or click to browse &middot; JPG, PNG, PDF, MusicXML</div>
+      <button class="choose-file-btn" type="button">Choose File</button>
       <div class="annotation-wrapper" id="annotationWrapper">
         <img class="preview-img" id="previewImg" alt="preview"/>
         <canvas class="annotation-canvas hidden" id="annotationCanvas"></canvas>
@@ -1255,7 +1900,39 @@
       <div><strong style="color:var(--text);">For highest accuracy:</strong> Convert your PDF in <a href="https://musescore.org" target="_blank" rel="noopener noreferrer" style="color:var(--teal);">MuseScore (free)</a> or <a href="https://musescore.com" target="_blank" rel="noopener noreferrer" style="color:var(--teal);">musescore.com</a> and upload the MusicXML file here — notes, key, and time signature are read exactly as written.</div>
     </div>
 
-    <div class="loading" id="loading">
+      </div>
+
+    <div class="analyze-card results-placeholder" id="resultsPlaceholder" aria-live="polite">
+      <div class="results-header">
+        <div>
+          <div class="results-title">Analysis Ready</div>
+          <div class="placeholder-subtitle">Upload a score to unlock musical insights.</div>
+        </div>
+      </div>
+      <div class="info-grid placeholder-grid">
+        <div class="info-card visible"><div class="info-label">Key</div><div class="info-value">--</div><div class="info-desc">Detected after upload</div></div>
+        <div class="info-card visible"><div class="info-label">Time Signature</div><div class="info-value">--</div><div class="info-desc">Meter</div></div>
+        <div class="info-card visible"><div class="info-label">Tempo</div><div class="info-value">--</div><div class="info-desc">Estimated BPM</div></div>
+        <div class="info-card visible"><div class="info-label">Difficulty</div><div class="info-value">--</div><div class="info-desc">Vocal demand</div></div>
+        <div class="info-card visible"><div class="info-label">Range</div><div class="info-value">--</div><div class="info-desc">Lowest to highest</div></div>
+        <div class="info-card visible"><div class="info-label">Starting Pitch</div><div class="info-value">--</div><div class="info-desc">First entrance</div></div>
+        <div class="info-card visible"><div class="info-label">Composer</div><div class="info-value">--</div><div class="info-desc">If present</div></div>
+        <div class="info-card visible"><div class="info-label">Duration</div><div class="info-value">--</div><div class="info-desc">Estimated</div></div>
+      </div>
+      <div class="pitch-player placeholder-piano">
+        <div class="pitch-player-title">Starting Pitch</div>
+        <div class="placeholder-keyboard" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="pitch-freq">Waiting for an analyzed piece.</div>
+      </div>
+      <div class="content-box placeholder-overview">
+        <div class="card-title">Overview</div>
+        <p>Analysis summary, solfege, rhythm, pronunciation, and practice guidance will appear here after upload.</p>
+      </div>
+    </div>
+
+    <div class="loading analyze-card analysis-state-card" id="loading">
       <div class="spinner"></div>
       <div>Solfai is reading your music...</div>
       <div class="loading-sub" id="loadingSub">Preprocessing image...</div>
@@ -1279,7 +1956,7 @@
       </div>
     </div>
 
-    <div class="results" id="results">
+    <div class="results analyze-card results-card" id="results">
       <div style="height:1px;background:linear-gradient(90deg, transparent, var(--border), transparent);margin:36px 0;"></div>
       <div class="print-header">Solfai Analysis</div>
       <div class="results-header">
@@ -1472,6 +2149,7 @@
         </div>
         <div id="guestCounter" style="display:none;text-align:center;font-size:0.75rem;color:var(--muted);padding:6px 0;"></div>
       </div>
+    </div>
     </div>
   </section>
 
@@ -1681,6 +2359,36 @@
   </section>
 
   <!-- ═══ PITCH GUIDE SECTION ═══ -->
+  <!-- Library Section -->
+  <section class="app-section" id="section-library">
+    <div class="section-header">
+      <div class="section-label">Saved Work</div>
+      <h2 class="section-title">Library</h2>
+      <div class="section-desc">Review recent analyses and reopen practice resources.</div>
+    </div>
+    <div class="library-grid">
+      <div class="content-box library-card">
+        <div class="library-card-head">
+          <div>
+            <div class="card-kicker">Recent Analyses</div>
+            <h3 class="card-title">Your saved pieces</h3>
+          </div>
+          <button class="btn-secondary" onclick="openHistory()">View all</button>
+        </div>
+        <div id="libraryHistoryList" class="library-list"><div class="empty-state">No analyses yet.</div></div>
+      </div>
+      <div class="content-box library-card">
+        <div class="card-kicker">Resources</div>
+        <h3 class="card-title">Study tools</h3>
+        <div class="resource-actions">
+          <button class="btn-secondary" onclick="openCheatsheet()">Choir Quick Reference</button>
+          <button class="btn-secondary" onclick="switchSection('pitch-guide')">Pitch Guide</button>
+          <button class="btn-secondary" onclick="showShortcuts()">Keyboard Shortcuts</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="app-section" id="section-pitch-guide">
     <div class="section-header">
       <div class="section-label">Real-Time Detection</div>
@@ -1885,7 +2593,7 @@ const $ = id => document.getElementById(id);
 // ═══════════════════════════════════════════════════════════════
 // NAV & SECTIONS (sidebar version)
 // ═══════════════════════════════════════════════════════════════
-const sectionTitles = { analyze: 'Analyze', practice: 'Practice', 'vocal-coach': 'Vocal Coach', 'pitch-guide': 'Pitch Guide', analytics: 'Analytics', class: 'My Class' };
+const sectionTitles = { analyze: 'Good evening, Ali', practice: 'Practice', 'vocal-coach': 'Vocal Coach', library: 'Library', 'pitch-guide': 'Pitch Guide', analytics: 'Analytics', class: 'My Class' };
 
 function switchSection(name) {
   document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
@@ -1893,8 +2601,16 @@ function switchSection(name) {
   $('section-' + name)?.classList.add('active');
   document.querySelector(`.sidebar-item[data-section="${name}"]`)?.classList.add('active');
   $('topBarTitle').textContent = sectionTitles[name] || name;
+  const topSub = document.querySelector('.top-bar-subtitle');
+  if (topSub) topSub.textContent = name === 'analyze' ? "Let's analyze something beautiful today." : 'Everything stays in rhythm.';
   if (name === 'class') initClassSection();
+  if (name === 'library') syncLibraryHistory();
   if (name === 'practice') buildWeakPanel();
+}
+
+function setResultsPlaceholderVisible(visible) {
+  const placeholder = $('resultsPlaceholder');
+  if (placeholder) placeholder.classList.toggle('is-hidden', !visible);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1936,6 +2652,11 @@ if (savedTheme) {
   document.documentElement.setAttribute('data-theme', savedTheme);
   $('themeIcon').textContent = savedTheme === 'dark' ? '\u{1F319}' : '\u{2600}';
   $('themeLabel').textContent = savedTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
+} else {
+  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', systemTheme);
+  $('themeIcon').textContent = systemTheme === 'dark' ? '\u{1F319}' : '\u{2600}';
+  $('themeLabel').textContent = systemTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2056,6 +2777,7 @@ analyzeBtn.addEventListener('click', async () => {
   if (musicxmlFile) return handleMusicXML();
   showError('');
   analyzeBtn.disabled = true;
+  setResultsPlaceholderVisible(false);
   $('loading').classList.add('show');
   $('results').classList.remove('show');
   $('chatSection').style.display = 'none';
@@ -2092,6 +2814,7 @@ analyzeBtn.addEventListener('click', async () => {
     setTimeout(() => {
       $('loading').classList.remove('show');
       $('results').classList.add('show');
+      setResultsPlaceholderVisible(false);
       $('chatSection').style.display = 'block';
       $('exportBtn').style.display = 'block';
     }, 600);
@@ -2122,6 +2845,7 @@ analyzeBtn.addEventListener('click', async () => {
 
     analyzeBtn._retried = false;
     $('loading').classList.remove('show');
+    setResultsPlaceholderVisible(true);
     showError(err.message);
     analyzeBtn.disabled = false;
   }
@@ -2129,6 +2853,7 @@ analyzeBtn.addEventListener('click', async () => {
 
 async function handleMusicXML() {
   showError(''); analyzeBtn.disabled = true;
+  setResultsPlaceholderVisible(false);
   $('loading').classList.add('show'); $('results').classList.remove('show');
   $('loadingSub').textContent = 'Parsing MusicXML + generating practice guide…';
   try {
@@ -2140,6 +2865,7 @@ async function handleMusicXML() {
     const data = await resp.json();
     $('loading').classList.remove('show');
     $('results').classList.add('show');
+    setResultsPlaceholderVisible(false);
     if (data.structured) {
       // Populate solfege tab
       _solfegeStructured = data.structured;
@@ -2162,6 +2888,7 @@ async function handleMusicXML() {
     analyzeBtn.disabled = false;
   } catch (err) {
     $('loading').classList.remove('show');
+    setResultsPlaceholderVisible(true);
     showError(err.message);
     analyzeBtn.disabled = false;
   }
@@ -3253,6 +3980,7 @@ function saveToHistory(data) {
     if (hist.length > 20) hist.splice(20);
     localStorage.setItem(key, JSON.stringify(hist));
     renderHistory();
+    syncLibraryHistory();
   } catch (e) {}
 }
 
@@ -3264,6 +3992,27 @@ function renderHistory() {
   el.innerHTML = hist.map((h, i) => `<div class="history-item" onclick="loadHistory(${i})"><div style="font-size:0.9rem;font-weight:500;">${esc(h.title)}</div><div style="font-size:0.75rem;color:var(--muted);">${esc(h.part)} &middot; ${esc(h.date)}</div></div>`).join('');
 }
 
+function syncLibraryHistory() {
+  const el = $('libraryHistoryList');
+  if (!el) return;
+  if (!window.currentUser) {
+    el.innerHTML = '<div class="empty-state">Sign in to save analyses to your library.</div>';
+    return;
+  }
+  const hist = JSON.parse(localStorage.getItem('solfai-history-' + currentUser.uid) || '[]');
+  if (!hist.length) {
+    el.innerHTML = '<div class="empty-state">No analyses yet.</div>';
+    return;
+  }
+  el.innerHTML = hist.slice(0, 6).map((h, i) => `
+    <button class="library-row" type="button" onclick="loadHistory(${i})">
+      <span class="library-thumb" aria-hidden="true"></span>
+      <span class="library-main"><strong>${esc(h.title)}</strong><small>${esc(h.part)} · ${esc(h.date)}</small></span>
+      <span class="library-more" aria-hidden="true">...</span>
+    </button>
+  `).join('');
+}
+
 function loadHistory(i) {
   if (!window.currentUser) return;
   const hist = JSON.parse(localStorage.getItem('solfai-history-' + currentUser.uid) || '[]');
@@ -3271,6 +4020,7 @@ function loadHistory(i) {
     try {
       const s = JSON.parse(hist[i].raw);
       currentAnalysis = s; renderStructured(s);
+      setResultsPlaceholderVisible(false);
       $('results').classList.add('show'); $('chatSection').style.display = 'block';
       closeHistory(); switchSection('analyze');
       setTimeout(animateInfoCards, 100); setTimeout(animateDiffBars, 300);
@@ -3286,6 +4036,7 @@ function showShortcuts() { $('shortcutsOverlay').classList.add('show'); }
 function closeShortcuts() { $('shortcutsOverlay').classList.remove('show'); }
 
 renderHistory();
+syncLibraryHistory();
 
 // ═══════════════════════════════════════════════════════════════
 // TOAST NOTIFICATIONS
@@ -3498,7 +4249,7 @@ document.addEventListener('keydown', (e) => {
     case '1': switchSection('analyze'); break;
     case '2': switchSection('practice'); break;
     case '3': switchSection('vocal-coach'); break;
-    case '4': switchSection('pitch-guide'); break;
+    case '4': switchSection('library'); break;
     case '5': switchSection('analytics'); break;
   }
 });
