@@ -169,8 +169,8 @@
     }
     [data-theme="light"] .top-bar { background: rgba(245,242,235,0.88); }
     .top-bar-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.2rem; font-weight: 600; color: var(--text); letter-spacing: 0.01em;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem; font-weight: 500; color: var(--text2); letter-spacing: 0.01em;
     }
     .top-bar-actions { display: flex; align-items: center; gap: 8px; }
 
@@ -181,17 +181,17 @@
     }
     .icon-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
 
-    .app-section { display: none; padding: 40px 44px 80px; max-width: 900px; margin: 0 auto; }
+    .app-section { display: none; padding: 32px 44px 60px; max-width: 860px; margin: 0 auto; }
     .app-section.active { display: block; animation: fadeUp 0.4s var(--transition) forwards; }
-    .section-header { margin-bottom: 40px; }
+    .section-header { margin-bottom: 28px; }
     .section-label {
-      font-size: 0.68rem; letter-spacing: 4px; text-transform: uppercase;
-      color: var(--teal); margin-bottom: 10px; font-weight: 500;
+      font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--teal); margin-bottom: 8px; font-weight: 600;
     }
     .section-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 600;
-      line-height: 1.15; letter-spacing: -0.02em;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.25rem; font-weight: 600;
+      line-height: 1.3; letter-spacing: -0.01em; color: var(--text);
     }
     .section-desc { font-size: 0.875rem; color: var(--text2); font-weight: 400; margin-top: 6px; }
 
@@ -261,8 +261,8 @@
 
     /* ═══ UPLOAD ═══ */
     .upload-zone {
-      border: 2px dashed var(--border); border-radius: var(--radius-lg);
-      padding: 52px 40px; text-align: center; cursor: pointer;
+      border: 1.5px dashed var(--border-light); border-radius: var(--radius-lg);
+      padding: 44px 40px; text-align: center; cursor: pointer;
       transition: all 0.2s var(--transition); background: transparent;
       position: relative; overflow: hidden;
     }
@@ -305,7 +305,7 @@
     .results { display: none; }
     .results.show { display: block; animation: fadeUp 0.5s var(--transition) forwards; }
     .results-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
-    .results-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--gold); font-weight: 600; }
+    .results-title { font-family: 'Inter', sans-serif; font-size: 1rem; color: var(--text); font-weight: 600; letter-spacing: -0.01em; }
 
     .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 32px; }
     .info-card {
