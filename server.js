@@ -188,6 +188,11 @@ const ANALYZE_SCHEMA = {
       items: { type: "STRING" },
       description: "First 12 note letter names with octave for the selected vocal part only (e.g., ['C4','E4','G4']). Include accidentals: 'Bb4', 'F#4'."
     },
+    last_notes: {
+      type: "ARRAY",
+      items: { type: "STRING" },
+      description: "Last 6 note letter names with octave for the selected vocal part (the final notes of the piece, e.g. ['G4','D4','C4']). Include accidentals: 'Bb4', 'F#4'. The very last note is the most important — pieces almost always end on the tonic."
+    },
     first_lyrics: {
       type: "STRING",
       description: "The first line of lyrics visible under the vocal part, copied exactly as written."
@@ -576,7 +581,101 @@ function lookupPiece(title, composer) {
   return bestMatch;
 }
 
-function resolveKeyFromCounts(flatCount, sharpCount, keySignatureVotes = [], pieceTitle = '') {
+// ─── Mode Detection (music theory, not AI voting) ─────────
+// A key signature maps to exactly one relative major/minor pair (e.g. 1 flat =
+// F major OR D minor). Which one it is can be COMPUTED from the actual notes far
+// more reliably than guessed by the AI. Per the project rule "code calculates, AI
+// extracts": the notes are extracted by Gemini, but the major/minor decision is
+// pure music theory done here in code.
+//
+// Evidence, in priority order:
+//   1. Final note  — pieces overwhelmingly end on the tonic.
+//   2. First note  — pieces frequently begin on the tonic.
+//   3. Raised leading tone — minor keys almost always contain the raised 7th
+//      (e.g. G# in A minor) as an accidental that is NOT in the relative major scale.
+//   4. Tonic frequency — count notes on the major tonic vs the minor tonic.
+function detectModeFromNotes(flatCount, sharpCount, allNotes = [], firstNotes = [], lastNote = null, trace = null) {
+  let code;
+  if (sharpCount > 0) code = `${sharpCount}s`;
+  else if (flatCount > 0) code = `${flatCount}b`;
+  else code = '0';
+
+  const entry = KEY_FROM_COUNT[code];
+  if (!entry) {
+    return { mode: 'major', confidence: 0.0, evidence: { reason: 'no_key_entry_default_major' } };
+  }
+
+  const majorTonic = entry.major.split(' ')[0]; // 'F major' → 'F'
+  const minorTonic = entry.minor.split(' ')[0]; // 'D minor' → 'D'
+  const majorChroma = Note.chroma(majorTonic);
+  const minorChroma = Note.chroma(minorTonic);
+  // Raised leading tone of the minor key = minor tonic + 11 semitones (the major 7th
+  // above the minor tonic). E.g. A minor → G# (chroma 8). Chroma comparison handles
+  // enharmonic spellings (E# == F, etc.).
+  const leadingToneChroma = (minorChroma + 11) % 12;
+
+  const log = (step, data) => {
+    if (trace) trace.log(`MODE_DETECT_${step}`, data);
+    else console.log(`[SOLFAI] [MODE_DETECT] ${step.toLowerCase()} —`, JSON.stringify(data));
+  };
+
+  const chromaOf = (n) => {
+    if (!n) return null;
+    const c = Note.chroma(String(n).trim());
+    return (c === null || c === undefined) ? null : c;
+  };
+
+  const firstNote = (firstNotes && firstNotes.length) ? firstNotes[0] : null;
+  const lastChroma = chromaOf(lastNote);
+  const firstChroma = chromaOf(firstNote);
+
+  // Tonic-frequency counts and leading-tone presence across all notes
+  let majorTonicCount = 0, minorTonicCount = 0, hasLeadingTone = false;
+  for (const n of (allNotes || [])) {
+    const c = chromaOf(n);
+    if (c === null) continue;
+    if (c === majorChroma) majorTonicCount++;
+    if (c === minorChroma) minorTonicCount++;
+    if (c === leadingToneChroma) hasLeadingTone = true;
+  }
+
+  log('CANDIDATES', { major: entry.major, minor: entry.minor, majorTonic, minorTonic });
+  log('SIGNALS', { lastNote: lastNote || null, firstNote: firstNote || null, hasLeadingTone, majorTonicCount, minorTonicCount });
+
+  // Weighted scoring
+  let majorScore = 0, minorScore = 0;
+  if (lastChroma !== null) {
+    if (lastChroma === minorChroma) minorScore += 5;
+    else if (lastChroma === majorChroma) majorScore += 5;
+  }
+  if (firstChroma !== null) {
+    if (firstChroma === minorChroma) minorScore += 2;
+    else if (firstChroma === majorChroma) majorScore += 2;
+  }
+  if (hasLeadingTone) minorScore += 4;
+  minorScore += minorTonicCount;
+  majorScore += majorTonicCount;
+
+  const total = majorScore + minorScore;
+  log('SCORES', { majorScore, minorScore });
+
+  if (total === 0) {
+    log('DECISION', { mode: 'major', confidence: 0.0, reason: 'no_notes_default_major' });
+    return { mode: 'major', confidence: 0.0, evidence: { reason: 'no_notes_default_major', majorScore, minorScore } };
+  }
+
+  const mode = minorScore > majorScore ? 'minor' : 'major';
+  const confidence = Math.min(1, Math.abs(majorScore - minorScore) / total);
+  log('DECISION', { mode, confidence: Math.round(confidence * 100) / 100 });
+
+  return {
+    mode,
+    confidence,
+    evidence: { lastNote: lastNote || null, firstNote: firstNote || null, hasLeadingTone, majorTonicCount, minorTonicCount, majorScore, minorScore },
+  };
+}
+
+function resolveKeyFromCounts(flatCount, sharpCount, allNotes = [], firstNotes = [], lastNote = null, trace = null) {
   let code;
   if (sharpCount > 0) code = `${sharpCount}s`;
   else if (flatCount > 0) code = `${flatCount}b`;
@@ -588,44 +687,25 @@ function resolveKeyFromCounts(flatCount, sharpCount, keySignatureVotes = [], pie
     return { key: 'C major', confident: false, codeSaid: 'C major', minorVoteRatio: 0 };
   }
 
-  // Genre/title heuristic: force major for spiritual/gospel/folk repertoire where
-  // minor is essentially never correct, before any vote counting happens.
-  const titleLower = (pieceTitle || '').toLowerCase();
-  const forceMajor = /spiritual|gospel|hymn|folk|traditional|march|anthem|alleluia|daniel|joshua|elijah|swing|low|nobody|water|deep river|swing low/i.test(titleLower);
-  if (forceMajor) {
-    console.log(`[Solfai] Genre heuristic forced major for title "${pieceTitle}"`);
-    const accLabel = sharpCount > 0 ? `${sharpCount} sharp${sharpCount > 1 ? 's' : ''}` :
-      flatCount > 0 ? `${flatCount} flat${flatCount > 1 ? 's' : ''}` : 'no sharps or flats';
-    return { key: `${entry.major} (${accLabel})`, confident: true, codeSaid: entry.major, minorVoteRatio: 0 };
-  }
-
-  // Count weighted votes for minor vs major across ALL extractions
-  let minorWeight = 0, majorWeight = 0, totalWeight = 0;
-  for (const v of (keySignatureVotes || [])) {
-    const isMinor = (v.key_signature || '').toLowerCase().includes('minor');
-    totalWeight += v.weight;
-    if (isMinor) minorWeight += v.weight;
-    else majorWeight += v.weight;
-  }
-
-  // Major-biased decision: minor only wins with a strong supermajority (>80%).
-  // Raised from 65% — minor was being mis-picked on ambiguous scores.
-  const minorRatio = totalWeight > 0 ? minorWeight / totalWeight : 0;
-  const keyName = (totalWeight > 0 && minorRatio > 0.80) ? entry.minor : entry.major;
+  // Major/minor is computed from the notes (final note + leading tone + tonic
+  // frequency), NOT from AI voting or title keywords.
+  const modeResult = detectModeFromNotes(flatCount, sharpCount, allNotes, firstNotes, lastNote, trace);
+  const keyName = modeResult.mode === 'minor' ? entry.minor : entry.major;
 
   const accLabel = sharpCount > 0 ? `${sharpCount} sharp${sharpCount > 1 ? 's' : ''}` :
     flatCount > 0 ? `${flatCount} flat${flatCount > 1 ? 's' : ''}` : 'no sharps or flats';
 
-  // Confident if there's at least a 60/40 split in votes
-  const confident = totalWeight > 0 && Math.abs(minorWeight - majorWeight) / totalWeight > 0.2;
+  // minorVoteRatio preserved for downstream compatibility: now derived from the
+  // mode-detection confidence (likelihood the piece is minor).
+  const minorVoteRatio = modeResult.mode === 'minor' ? modeResult.confidence : (1 - modeResult.confidence);
 
-  console.log(`[Solfai] Major/minor vote: ${Math.round(minorRatio * 100)}% minor → ${keyName}`);
+  console.log(`[Solfai] Mode detect: ${keyName} (${modeResult.mode}, confidence ${Math.round(modeResult.confidence * 100)}%)`);
 
   return {
     key: `${keyName} (${accLabel})`,
-    confident,
+    confident: modeResult.confidence >= 0.4,
     codeSaid: keyName,
-    minorVoteRatio: minorRatio,
+    minorVoteRatio,
   };
 }
 
@@ -1932,13 +2012,20 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
   const pieceTitle = raw.piece_title || 'unknown';
   const composerName = raw.composer_name || 'unknown';
 
-  // Code-calculated key from voted flat/sharp count.
-  // Pass ALL fullExtraction votes so resolveKeyFromCounts can do weighted major/minor decision.
-  const keySignatureVotes = fullExtractions.map((ext, i) => ({
-    key_signature: ext.key_signature,
-    weight: i === 0 ? WEIGHT_PRO : WEIGHT_FLASH,
-  }));
-  const keyResult = resolveKeyFromCounts(finalFlats, finalSharps, keySignatureVotes, pieceTitle);
+  // Code-calculated key from voted flat/sharp count. Major/minor is computed from the
+  // actual notes (final note + leading tone + tonic frequency), not from AI voting.
+  const noteEvidence = fullExtractions.flatMap(ext => [
+    ...(Array.isArray(ext.first_notes) ? ext.first_notes : []),
+    ...(Array.isArray(ext.last_notes) ? ext.last_notes : []),
+  ]);
+  const longestFirstNotes = fullExtractions
+    .map(ext => (Array.isArray(ext.first_notes) ? ext.first_notes : []))
+    .sort((a, b) => b.length - a.length)[0] || [];
+  const longestLastNotes = fullExtractions
+    .map(ext => (Array.isArray(ext.last_notes) ? ext.last_notes : []))
+    .sort((a, b) => b.length - a.length)[0] || [];
+  const finalNote = longestLastNotes.length ? longestLastNotes[longestLastNotes.length - 1] : null;
+  const keyResult = resolveKeyFromCounts(finalFlats, finalSharps, noteEvidence, longestFirstNotes, finalNote);
 
   // Apply cached corrections
   let finalKey = cached?.keySignature || keyResult.key;
@@ -2424,7 +2511,9 @@ Output ONLY JSON: {"vocal_staff_number": N, "total_staves": M, "clef": "treble" 
   const votedFlats = Number(weightedVote(keySigVotes.map(v => ({ value: v.flats, weight: v.weight })))) || 0;
   const votedSharps = Number(weightedVote(keySigVotes.map(v => ({ value: v.sharps, weight: v.weight })))) || 0;
 
-  const keyResult = resolveKeyFromCounts(votedFlats, votedSharps, null);
+  // Solfege path reads the key signature before notes are extracted, so there's no
+  // note evidence here — mode detection defaults to major and we use the tonic only.
+  const keyResult = resolveKeyFromCounts(votedFlats, votedSharps, [], [], null);
   const extractedKey = keyResult.codeSaid || keyResult.key;
   console.log(`[Solfai] Key sig voted: ${keySigVotes.map(v => `${v.flats}b/${v.sharps}s`).join(', ')} → ${extractedKey}`);
 
