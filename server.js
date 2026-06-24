@@ -32,6 +32,42 @@ app.use(express.static(join(__dirname, 'public')));
 // ─── Config ───────────────────────────────────────────────
 const GEMINI_MODEL = 'gemini-2.5-pro';
 const GEMINI_FLASH = 'gemini-2.5-flash';
+
+// Diagnostic verbosity. Set SOLFAI_VERBOSE=1 in the environment (e.g. Render env
+// vars) to dump large payloads — full Gemini raw text, full note arrays — into the
+// trace. Per-step trace lines always fire regardless (they're cheap and essential).
+const VERBOSE = process.env.SOLFAI_VERBOSE === '1';
+
+// ─── Diagnostic Trace System ──────────────────────────────
+// Every analysis gets a short trace ID; all its logs share that ID so they can be
+// grepped together, and a single SUMMARY block at the end shows each stage's input
+// and output side by side. Reading one SUMMARY reveals which stage produced a bad
+// value. Usage: const trace = makeTrace(); trace.log('STEP', {...}); trace.summary();
+function makeTrace() {
+  const id = Math.random().toString(36).slice(2, 8);
+  const t0 = Date.now();
+  const steps = [];
+  return {
+    id,
+    log(step, data) {
+      const ms = Date.now() - t0;
+      steps.push({ step, ms, data });
+      console.log(`[SOLFAI][${id}][+${ms}ms][${step}]`, JSON.stringify(data));
+    },
+    warn(step, data) {
+      const ms = Date.now() - t0;
+      steps.push({ step, ms, data, level: 'WARN' });
+      console.warn(`[SOLFAI][${id}][+${ms}ms][WARN][${step}]`, JSON.stringify(data));
+    },
+    summary() {
+      console.log(`[SOLFAI][${id}][SUMMARY] ====================`);
+      for (const s of steps) {
+        console.log(`[SOLFAI][${id}][SUMMARY] ${s.step}${s.level === 'WARN' ? ' ⚠' : ''}:`, JSON.stringify(s.data));
+      }
+      console.log(`[SOLFAI][${id}][SUMMARY] total=${Date.now() - t0}ms ====================`);
+    },
+  };
+}
 // Google AI Studio (Gemini Developer API). Auth is the AIzaSy API key sent via
 // the x-goog-api-key header. NOTE: do NOT switch this to the Vertex AI endpoint
 // ({loc}-aiplatform.googleapis.com/.../projects/...) unless you also switch auth
@@ -1449,7 +1485,17 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
     responseSchema = null,
     tools = null,
     thinkingBudget = 8000,
+    trace = null,
+    label = model,
   } = opts;
+
+  // Consistent diagnostic logging for failures/retries/empty responses. Uses the
+  // trace format when a trace is supplied, otherwise plain console. This is how we
+  // catch "one of the N voting calls silently failed and skewed the vote".
+  const logCall = (data) => {
+    if (trace) trace.warn('CALLGEMINI', { label, ...data });
+    else console.warn(`[SOLFAI][CALLGEMINI][${label}]`, JSON.stringify(data));
+  };
 
   const url = geminiUrl(model);
 
@@ -1489,10 +1535,11 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
 
         if ((resp.status === 429 || resp.status >= 500) && attempt < maxAttempts) {
           const delay = attempt * 2000;
-          console.warn(`[Solfai] Gemini ${resp.status}, retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`);
+          logCall({ attempt, maxAttempts, status: resp.status, retrying: true, delayMs: delay });
           await new Promise(r => setTimeout(r, delay));
           continue;
         }
+        logCall({ attempt, maxAttempts, status: resp.status, retrying: false, fatal: true, detail });
         throw new Error(detail);
       }
 
@@ -1515,7 +1562,7 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
       }
 
       if (!candidate.content?.parts) {
-        console.warn(`[Solfai] Empty response parts. finishReason=${finishReason}, blockReason=${data.promptFeedback?.blockReason}`);
+        logCall({ attempt, status: resp.status, empty: true, finishReason, blockReason: data.promptFeedback?.blockReason });
         throw new Error(`Gemini returned empty response (${finishReason || 'unknown'})`);
       }
 
@@ -1532,7 +1579,7 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
     } catch (err) {
       if (attempt === maxAttempts) throw err;
       const delay = attempt * 2000;
-      console.warn(`[Solfai] Network error, retrying in ${delay}ms:`, err.message);
+      logCall({ attempt, maxAttempts, networkError: true, retrying: true, delayMs: delay, message: err.message });
       await new Promise(r => setTimeout(r, delay));
     }
   }
@@ -1543,6 +1590,7 @@ app.post('/api/analyze', async (req, res) => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
 
+  const trace = makeTrace();
   try {
     const { messages, imageBase64, imageMime, pdfPages, mode, selectedPart } = req.body;
     const part = selectedPart || 'Soprano';
@@ -1551,13 +1599,14 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'No image provided' });
     }
 
+    trace.log('REQUEST', { mode, part, imageCount: imageParts.length, mime: imageMime || 'jpeg', hasPdfPages: !!pdfPages });
     console.log(`[Solfai v10] mode=${mode}, part=${part}, parts=${imageParts.length}, mime=${imageMime || 'jpeg'}`);
 
     switch (mode) {
-      case 'analyze': return await handleAnalyze(res, apiKey, imageParts, part, imageBase64, pdfPages);
-      case 'solfege': return await handleSolfege(res, apiKey, imageParts, part);
-      case 'rhythm': return await handleRhythm(res, apiKey, imageParts, part);
-      case 'chat': return await handleChat(res, apiKey, messages, imageParts, part);
+      case 'analyze': return await handleAnalyze(res, apiKey, imageParts, part, imageBase64, pdfPages, trace);
+      case 'solfege': return await handleSolfege(res, apiKey, imageParts, part, trace);
+      case 'rhythm': return await handleRhythm(res, apiKey, imageParts, part, trace);
+      case 'chat': return await handleChat(res, apiKey, messages, imageParts, part, trace);
       case 'correct': return handleCorrection(res, req.body);
       default: return res.status(400).json({ error: 'Invalid mode' });
     }
@@ -1599,6 +1648,8 @@ app.post('/api/analyze', async (req, res) => {
       errorCode = 'UNKNOWN';
       retryable = true;
     }
+    trace.warn('FATAL', { message: err.message, code: errorCode });
+    trace.summary();
     return res.status(500).json({ error: userError, errorCode, retryable });
   }
 });
@@ -1716,11 +1767,12 @@ function validateExtraction(keySignature, timeSignature, notes, part) {
 
 // ANALYZE — 5-way consensus + dedicated key/pitch extraction
 // ═══════════════════════════════════════════════════════════
-async function handleAnalyze(res, apiKey, imageParts, part, rawBase64, pdfPages) {
+async function handleAnalyze(res, apiKey, imageParts, part, rawBase64, pdfPages, trace = null) {
   const hashSrc = pdfPages?.[0] || rawBase64 || '';
   const imgHash = hashImage(hashSrc);
   const corrections = loadCorrections();
   const cached = corrections[imgHash];
+  trace?.log('CACHE', { imgHash: imgHash.slice(0, 12), hit: !!cached, cachedFields: cached ? Object.keys(cached) : [] });
 
   // ═══ IMAGE QUALITY PRE-CHECK ═══
   const firstJpegForQuality = imageParts.find(p => p.inlineData?.mimeType === 'image/jpeg');
@@ -1956,6 +2008,7 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
   const votedSharps = (winningPair && winningPair.endsWith('s')) ? parseInt(winningPair) : 0;
 
   console.log(`[Solfai] Key votes: ${keyVotes.map(v => `${v.flatCount}b/${v.sharpCount}s`).join(', ')} → ${votedFlats}b/${votedSharps}s`);
+  trace?.log('GEMINI_KEYSIG', { votes: keyVotes.map(v => ({ f: v.flatCount, s: v.sharpCount, conf: v.confidence })), votedFlats, votedSharps });
 
   // Parse dedicated time sig votes (indices 3-4)
   const timeSigDedicatedVotes = [];
@@ -1985,8 +2038,12 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
     }
   }
 
+  trace?.log('GEMINI_TIMESIG', { values: timeSigDedicatedVotes.map(v => v.value) });
+
   // Use primary Pro extraction as base, enriched by consensus
   const raw = fullExtractions[0];
+  trace?.log('GEMINI_FULL', { firstNotes: raw?.first_notes, lastNotes: raw?.last_notes, title: raw?.piece_title });
+  if (VERBOSE) trace?.log('GEMINI_FULL_RAW', { extractions: fullExtractions });
 
   // Also get flat/sharp counts from full extractions for cross-validation
   const fullKeyVotes = fullExtractions.map((ext, i) => ({
@@ -2008,7 +2065,6 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
   console.log(`[Solfai] Combined key votes (${allKeyVotes.length} total): ${finalFlats}b/${finalSharps}s`);
 
   // ═══ DATABASE LOOKUP — validate/override AI values ═══
-  // Declared early so pieceTitle can be passed into resolveKeyFromCounts for genre heuristic.
   const pieceTitle = raw.piece_title || 'unknown';
   const composerName = raw.composer_name || 'unknown';
 
@@ -2025,12 +2081,14 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
     .map(ext => (Array.isArray(ext.last_notes) ? ext.last_notes : []))
     .sort((a, b) => b.length - a.length)[0] || [];
   const finalNote = longestLastNotes.length ? longestLastNotes[longestLastNotes.length - 1] : null;
-  const keyResult = resolveKeyFromCounts(finalFlats, finalSharps, noteEvidence, longestFirstNotes, finalNote);
+  const keyResult = resolveKeyFromCounts(finalFlats, finalSharps, noteEvidence, longestFirstNotes, finalNote, trace);
+  trace?.log('KEY_RESOLVED', { key: keyResult.key, confident: keyResult.confident, minorRatio: keyResult.minorVoteRatio });
 
   // Apply cached corrections
   let finalKey = cached?.keySignature || keyResult.key;
   let tonic = finalKey.split(' ')[0];
   const dbMatch = lookupPiece(pieceTitle, composerName);
+  trace?.log('DB_MATCH', { matched: !!dbMatch, title: dbMatch?.title || null, source: dbMatch?.source || null });
   let dbOverrideApplied = false;
 
   if (dbMatch) {
@@ -2154,6 +2212,7 @@ Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`
   let votedTime = timeSigVoteResult.value || raw.time_signature;
   const timeSigConfidence = timeSigVoteResult.margin;
   console.log(`[Solfai] Time sig votes: ${allTimeSigVotes.map(v => v.value).join(', ')} → ${votedTime} (${Math.round(timeSigConfidence * 100)}% confidence)`);
+  trace?.log('TIME_RESOLVED', { timeSignature: votedTime, confidence: Math.round(timeSigConfidence * 100) / 100 });
 
   const votedTempo = weightedVote(
     fullExtractions.map((ext, i) => ({
@@ -2198,6 +2257,7 @@ Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`
   const firstNotesSolfege = bestFirstNotes.map(n =>
     noteToSolfege(n.replace(/\d+$/, ''), tonic)
   );
+  trace?.log('NOTES', { firstCount: bestFirstNotes.length, sample: bestFirstNotes.slice(0, 8), tonic, solfegeSample: firstNotesSolfege.slice(0, 8) });
 
   // Confidence report
   const keyAgreement = allKeyVotes.every(v => v.flatCount === finalFlats && v.sharpCount === finalSharps);
@@ -2331,6 +2391,8 @@ Output ONLY valid JSON.`;
     },
   };
 
+  trace?.log('RESPONSE', { key: structured.keySignature, time: structured.timeSignature, difficulty: structured.difficulty?.overall, noteCount: structured.firstNotes?.length });
+  trace?.summary();
   return res.status(200).json({ structured, text: buildTextSummary(structured, part) });
 }
 
@@ -2405,7 +2467,7 @@ function fixLargeIntervalErrors(measures, voicePart) {
 // ═══════════════════════════════════════════════════════════
 // SOLFEGE — 5-way extraction + note-by-note reconciliation
 // ═══════════════════════════════════════════════════════════
-async function handleSolfege(res, apiKey, imageParts, part) {
+async function handleSolfege(res, apiKey, imageParts, part, trace = null) {
   const startTime = Date.now();
 
   // Preprocess images with binarization
@@ -2782,7 +2844,7 @@ ${outputFormat}`;
 }
 
 // ─── RHYTHM ───────────────────────────────────────────────
-async function handleRhythm(res, apiKey, imageParts, part) {
+async function handleRhythm(res, apiKey, imageParts, part, trace = null) {
   const processedParts = await Promise.all(
     imageParts.slice(0, 4).map(async (p) => {
       if (p.inlineData?.mimeType === 'image/jpeg') {
@@ -2824,7 +2886,7 @@ Be thorough. Include ALL measures across all pages.`;
 }
 
 // ─── CHAT ─────────────────────────────────────────────────
-async function handleChat(res, apiKey, messages, imageParts, part) {
+async function handleChat(res, apiKey, messages, imageParts, part, trace = null) {
   const systemPrompt = `You are Solfai, a patient and encouraging choir director and music theory coach. The student sings ${part}.
 Always reference the actual sheet music. Only cite content you can see in the images.
 Be warm, specific, and practical. Use movable Do solfege.
