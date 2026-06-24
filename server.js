@@ -342,6 +342,11 @@ const KEY_FROM_COUNT = {
   '7s': { major: 'C# major', minor: 'A# minor' },
 };
 
+// A key-sig read whose reasoning matches this means the page it saw has no music
+// (title/cover/blank page). Such reads return 0 flats / 0 sharps and would poison
+// the key vote, so they are discarded rather than counted.
+const NON_MUSIC_PAGE_PATTERNS = /title page|does not contain any musical notation|no staves|no clef|no key signature visible|cannot see a time signature|no music/i;
+
 // ─── Choir Piece Database (known correct values) ────────
 const CHOIR_PIECE_DATABASE = [
   // Handel
@@ -1520,6 +1525,7 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
   if (tools) body.tools = tools;
 
   const maxAttempts = 3;
+  let maxTokensHits = 0;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const resp = await fetch(url, {
@@ -1563,6 +1569,19 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
 
       if (!candidate.content?.parts) {
         logCall({ attempt, status: resp.status, empty: true, finishReason, blockReason: data.promptFeedback?.blockReason });
+        // MAX_TOKENS: the model spent its whole budget (often on thinking tokens) and
+        // produced no text. Cap output at 8192 — Gemini 2.5 Pro is more reliable at a
+        // moderate cap — and retry instead of failing the call.
+        if (finishReason === 'MAX_TOKENS') {
+          maxTokensHits++;
+          if (attempt < maxAttempts) {
+            genConfig.max_output_tokens = 8192;
+            logCall({ attempt, maxTokens: true, retrying: true, newMaxOutputTokens: 8192 });
+            await new Promise(r => setTimeout(r, attempt * 1000));
+            continue;
+          }
+          console.warn('[SOLFAI][CALLGEMINI] All attempts failed with MAX_TOKENS — prompt may be too long');
+        }
         throw new Error(`Gemini returned empty response (${finishReason || 'unknown'})`);
       }
 
@@ -1977,10 +1996,17 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
 
   // Parse key signature votes (indices 0-2)
   const keyVotes = [];
+  let titlePageSkips = 0;
   for (const [i, weight] of [[0, WEIGHT_PRO], [1, WEIGHT_PRO], [2, WEIGHT_FLASH]]) {
     if (!results[i]) continue;
     try {
       const ks = JSON.parse(results[i]);
+      // Discard reads of a title/cover/blank page — they return 0/0 and poison the vote.
+      if (ks.reasoning && NON_MUSIC_PAGE_PATTERNS.test(ks.reasoning)) {
+        trace?.warn('KEYSIG_SKIP', { read: i + 1, reason: 'title/blank page detected', reasoning: String(ks.reasoning).slice(0, 120) });
+        titlePageSkips++;
+        continue;
+      }
       // Enforce mutual exclusion — flats and sharps can never both be non-zero
       if (Number(ks.flat_count) > 0 && Number(ks.sharp_count) > 0) {
         console.warn(`[Solfai] Impossible key sig (${ks.flat_count}b + ${ks.sharp_count}s) — keeping higher count, zeroing the other`);
@@ -2082,6 +2108,13 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
     .sort((a, b) => b.length - a.length)[0] || [];
   const finalNote = longestLastNotes.length ? longestLastNotes[longestLastNotes.length - 1] : null;
   const keyResult = resolveKeyFromCounts(finalFlats, finalSharps, noteEvidence, longestFirstNotes, finalNote, trace);
+  // If every dedicated key read was a title/blank page, the count comes only from the
+  // full-extraction reads — flag it as not confident and surface a clear warning.
+  if (titlePageSkips > 0 && keyVotes.length === 0) {
+    keyResult.confident = false;
+    keyResult.keyWarning = 'First page had no music (title/cover page); key was read from the music pages — please verify.';
+    trace?.warn('KEYSIG_ALL_SKIPPED', { skips: titlePageSkips, fellBackTo: 'full-extraction key votes' });
+  }
   trace?.log('KEY_RESOLVED', { key: keyResult.key, confident: keyResult.confident, minorRatio: keyResult.minorVoteRatio });
 
   // Apply cached corrections
@@ -2232,13 +2265,18 @@ Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`
     console.log(`[Solfai] Piece DB match: #${pieceDbEntry.id} "${pieceDbEntry.title}" (${pieceDbEntry.confidence})`);
     const confOk = pieceDbEntry.confidence === 'high' || pieceDbEntry.confidence === 'medium';
 
-    // Override key: only if DB has data, confidence is sufficient, user hasn't
-    // corrected it, and the hardcoded CHOIR_PIECE_DATABASE hasn't already overridden.
-    if (confOk && pieceDbEntry.key && !cached?.keySignature && !dbOverrideApplied) {
-      console.log(`[Solfai] Piece DB key override: "${finalKey}" → "${pieceDbEntry.key}"`);
+    // Override key when the DB is confident, OR when the DB confidence is low but
+    // Gemini's own key reading is also unconfident — a known DB entry beats an
+    // uncertain AI reading (e.g. a title page that produced 0/0). Only a CONFIDENT
+    // Gemini reading is allowed to keep a low-confidence DB entry from applying.
+    const keyConfOk = confOk || !keyResult.confident;
+    if (keyConfOk && pieceDbEntry.key && !cached?.keySignature && !dbOverrideApplied) {
+      const source = confOk ? 'db_confident' : 'db_override_uncertain_gemini';
+      console.log(`[Solfai] Piece DB key override (${source}): "${finalKey}" → "${pieceDbEntry.key}"`);
       finalKey = pieceDbEntry.key;
       tonic = finalKey.split(' ')[0];
       pieceDbKeyOverride = true;
+      trace?.log('DB_APPLY', { field: 'key', source, value: pieceDbEntry.key });
     }
 
     // Override time: only if DB has data, confidence is sufficient, and user
@@ -2273,7 +2311,7 @@ ${WATERMARK_NOTE}`;
   const pass2UserText = `Write a complete analysis for this ${part} singer.
 
 Verified musical data (consensus of ${allKeyVotes.length} independent reads):
-- Key: ${finalKey}${!keyResult.confident && keyResult.geminiSaid !== keyResult.codeSaid ? ` (Note: visual count suggests ${keyResult.codeSaid}, AI read ${keyResult.geminiSaid})` : ''}
+- Key: ${finalKey}${!keyResult.confident ? ' (Note: key reading is uncertain — verify against the score)' : ''}
 - Time Signature: ${votedTime}
 - Tempo: ${votedTempo}
 - Composer: ${raw.composer_name || 'unknown'}
@@ -2330,9 +2368,9 @@ Output ONLY valid JSON.`;
   const structured = {
     keySignature: finalKey,
     keyConfident: keyResult.confident || keyAgreement,
-    keyWarning: !keyResult.confident && keyResult.geminiSaid !== keyResult.codeSaid
-      ? `Visual count: ${keyResult.codeSaid} | AI read: ${keyResult.geminiSaid}`
-      : null,
+    keyWarning: keyResult.keyWarning
+      ? keyResult.keyWarning
+      : (!keyResult.confident ? 'Key reading is uncertain — please verify the key signature against the score.' : null),
     timeSignature: votedTime || 'Not determined',
     timeSigConfidence: timeSigConfLabel,
     tempo: votedTempo === 'none' ? 'No tempo marking' : (votedTempo || 'Not marked'),
@@ -2724,11 +2762,24 @@ ${outputFormat}`;
     ),
   ];
 
-  const extractionResults = await Promise.all(extractionPromises);
+  // allSettled so one extraction that exhausts its retries (e.g. persistent
+  // MAX_TOKENS) doesn't crash the whole request — we reconcile from whatever survives.
+  const extractionSettled = await Promise.allSettled(extractionPromises);
+  const extractionResults = extractionSettled.map((s, i) => {
+    if (s.status === 'fulfilled') return s.value;
+    console.warn(`[Solfai] Note extraction ${i} failed: ${s.reason?.message || s.reason}`);
+    return null;
+  });
 
   const measureSets = extractionResults.map(r => parseExtraction(r));
   // Include segmented results if available
   if (segmentedMeasures?.length) measureSets.push(segmentedMeasures);
+
+  // If every extraction came back empty (e.g. all hit MAX_TOKENS), there is nothing
+  // to reconcile — warn so the trace shows why the note output is thin.
+  if (measureSets.every(s => !s || s.length === 0)) {
+    trace?.warn('NOTES_FALLBACK', { reason: 'all note extractions empty (possible MAX_TOKENS)', usingFirstNotesOnly: true });
+  }
 
   const tonic = extractedKey?.split(' ')[0] || 'C';
   console.log(`[Solfai] Extractions: ${measureSets.map((s, i) => `${i < 3 ? 'Pro' : i < 5 ? 'Flash' : 'Seg'}=${s.length}m`).join(', ')}, tonic=${tonic}`);
