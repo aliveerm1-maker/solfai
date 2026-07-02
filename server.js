@@ -716,6 +716,38 @@ function detectModeFromNotes(flatCount, sharpCount, allNotes = [], firstNotes = 
   };
 }
 
+// ═══ NOTE-CONTENT KEY INFERENCE (last-resort fallback) ═══
+// When the key signature is unreadable (title pages, blank renders) but real notes
+// were extracted, score every accidental-count candidate by how many extracted
+// pitch classes belong to its scale. Pure code — no AI. Ties prefer fewer accidentals.
+function inferKeyFromNoteContent(notes = [], trace = null) {
+  const chromas = notes
+    .map(n => Note.chroma(String(n).trim().replace(/\d+$/, '')))
+    .filter(c => c !== null && c !== undefined);
+  if (chromas.length < 6) return null; // not enough evidence
+
+  const scored = [];
+  for (const [code, entry] of Object.entries(KEY_FROM_COUNT)) {
+    const scale = Scale.get(`${entry.major.split(' ')[0]} major`);
+    if (!scale?.notes?.length) continue;
+    const scaleChromas = new Set(scale.notes.map(n => Note.chroma(n)));
+    const inScale = chromas.filter(c => scaleChromas.has(c)).length;
+    const accidentals = code === '0' ? 0 : parseInt(code);
+    scored.push({ code, inScale, accidentals });
+  }
+  scored.sort((a, b) => b.inScale - a.inScale || a.accidentals - b.accidentals);
+  const best = scored[0];
+  if (!best) return null;
+
+  const flats = best.code.endsWith('b') ? parseInt(best.code) : 0;
+  const sharps = best.code.endsWith('s') ? parseInt(best.code) : 0;
+  trace?.log('KEY_INFERRED_FROM_NOTES', {
+    code: best.code, matched: `${best.inScale}/${chromas.length}`,
+    runnersUp: scored.slice(1, 3).map(s => `${s.code}:${s.inScale}`),
+  });
+  return { flats, sharps, code: best.code, matched: best.inScale, total: chromas.length };
+}
+
 function resolveKeyFromCounts(flatCount, sharpCount, allNotes = [], firstNotes = [], lastNote = null, trace = null) {
   let code;
   if (sharpCount > 0) code = `${sharpCount}s`;
@@ -1576,7 +1608,13 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
           maxTokensHits++;
           if (attempt < maxAttempts) {
             genConfig.max_output_tokens = 8192;
-            logCall({ attempt, maxTokens: true, retrying: true, newMaxOutputTokens: 8192 });
+            // Thinking tokens are usually what exhausted the budget — slash them on retry
+            // so the model has room to actually answer.
+            if (genConfig.thinking_config) {
+              genConfig.thinking_config.thinking_budget = Math.min(
+                genConfig.thinking_config.thinking_budget ?? 1024, 1024);
+            }
+            logCall({ attempt, maxTokens: true, retrying: true, newMaxOutputTokens: 8192, newThinkingBudget: genConfig.thinking_config?.thinking_budget });
             await new Promise(r => setTimeout(r, attempt * 1000));
             continue;
           }
@@ -1931,13 +1969,13 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
     callGemini(apiKey, keySigPrompt,
       [{ text: 'Count the exact number of sharp or flat symbols in the key signature zone. Show your work.' },
        ...(keyRegionParts.length ? keyRegionParts : processedParts.slice(0, 1))],
-      { temperature: 0, maxOutputTokens: 256, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 5000 }
+      { temperature: 0, maxOutputTokens: 2048, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 1024 }
     ),
     // KEY SIG read 2: Pro with full processed image (independent read)
     callGemini(apiKey, keySigPrompt,
       [{ text: 'Independent count: how many sharps or flats are in the key signature? Count carefully.' },
        ...processedParts.slice(0, 1)],
-      { temperature: 0, maxOutputTokens: 256, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 5000 }
+      { temperature: 0, maxOutputTokens: 2048, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 1024 }
     ),
     // KEY SIG read 3: Flash with full image (tie-breaker)
     callGemini(apiKey, keySigPrompt,
@@ -1950,7 +1988,7 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
     callGemini(apiKey, timeSigPrompt,
       [{ text: 'Read the two stacked numbers that form the time signature.' },
        ...(timeSigRegionParts.length ? timeSigRegionParts : processedParts.slice(0, 1))],
-      { temperature: 0, maxOutputTokens: 128, responseSchema: TIME_SIG_SCHEMA, thinkingBudget: 2000 }
+      { temperature: 0, maxOutputTokens: 1024, responseSchema: TIME_SIG_SCHEMA, thinkingBudget: 512 }
     ),
     // TIME SIG read 2: Flash with full image
     callGemini(apiKey, timeSigPrompt,
@@ -2036,6 +2074,45 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
   console.log(`[Solfai] Key votes: ${keyVotes.map(v => `${v.flatCount}b/${v.sharpCount}s`).join(', ')} → ${votedFlats}b/${votedSharps}s`);
   trace?.log('GEMINI_KEYSIG', { votes: keyVotes.map(v => ({ f: v.flatCount, s: v.sharpCount, conf: v.confidence })), votedFlats, votedSharps });
 
+  // ═══ MUSIC-PAGE RESCUE PASS ═══
+  // All dedicated key reads saw a title/blank page (page 1 is often a cover). Every
+  // crop above derives from imageParts[0], so they were all reading the same cover.
+  // Walk the REMAINING pages until one actually contains music, and read the key
+  // signature from THAT page. This is the fix for multi-page PDFs with cover pages.
+  let musicPageJpeg = null;
+  if (keyVotes.length === 0 && titlePageSkips > 0 && imageParts.length > 1) {
+    const jpegPages = imageParts.filter(p => p.inlineData?.mimeType === 'image/jpeg');
+    for (let pg = 1; pg < jpegPages.length; pg++) {
+      try {
+        const cropped = await preprocessForGemini(jpegPages[pg].inlineData.data, 'key_region').catch(() => null);
+        const rescuePart = cropped
+          ? { inlineData: { mimeType: 'image/jpeg', data: cropped } }
+          : jpegPages[pg];
+        const rescueRaw = await callGemini(apiKey, keySigPrompt,
+          [{ text: `RESCUE READ (page ${pg + 1} of the PDF — earlier pages had no music): count the sharps or flats in the key signature.` },
+           rescuePart],
+          { temperature: 0, maxOutputTokens: 2048, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 1024 }
+        );
+        const rs = JSON.parse(rescueRaw);
+        if (rs.reasoning && NON_MUSIC_PAGE_PATTERNS.test(rs.reasoning)) {
+          trace?.warn('KEYSIG_RESCUE_SKIP', { page: pg + 1, reasoning: String(rs.reasoning).slice(0, 120) });
+          continue; // this page is also a cover/blank — try the next one
+        }
+        if (Number(rs.flat_count) > 0 && Number(rs.sharp_count) > 0) {
+          if (Number(rs.flat_count) >= Number(rs.sharp_count)) rs.sharp_count = 0;
+          else rs.flat_count = 0;
+        }
+        keyVotes.push({ flatCount: Number(rs.flat_count) || 0, sharpCount: Number(rs.sharp_count) || 0, weight: WEIGHT_PRO * 1.5, confidence: rs.confidence });
+        musicPageJpeg = jpegPages[pg];
+        trace?.log('KEYSIG_RESCUE', { page: pg + 1, flats: Number(rs.flat_count) || 0, sharps: Number(rs.sharp_count) || 0, conf: rs.confidence, reasoning: String(rs.reasoning || '').slice(0, 120) });
+        console.log(`[Solfai] Key rescue (page ${pg + 1}): ${rs.flat_count}b/${rs.sharp_count}s`);
+        break; // found a music page — done
+      } catch (e) {
+        trace?.warn('KEYSIG_RESCUE_FAIL', { page: pg + 1, error: e.message });
+      }
+    }
+  }
+
   // Parse dedicated time sig votes (indices 3-4)
   const timeSigDedicatedVotes = [];
   for (const [i, weight] of [[3, WEIGHT_PRO], [4, WEIGHT_FLASH]]) {
@@ -2107,13 +2184,24 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
     .map(ext => (Array.isArray(ext.last_notes) ? ext.last_notes : []))
     .sort((a, b) => b.length - a.length)[0] || [];
   const finalNote = longestLastNotes.length ? longestLastNotes[longestLastNotes.length - 1] : null;
-  const keyResult = resolveKeyFromCounts(finalFlats, finalSharps, noteEvidence, longestFirstNotes, finalNote, trace);
-  // If every dedicated key read was a title/blank page, the count comes only from the
-  // full-extraction reads — flag it as not confident and surface a clear warning.
+  let keyResult = resolveKeyFromCounts(finalFlats, finalSharps, noteEvidence, longestFirstNotes, finalNote, trace);
+  // If every dedicated key read (including the page-by-page rescue pass) saw a
+  // title/blank page, the count comes only from full-extraction votes — which read
+  // the same images. Rather than silently defaulting to C major, infer the best-fit
+  // key from the extracted note content (pure code, honest warning attached).
   if (titlePageSkips > 0 && keyVotes.length === 0) {
     keyResult.confident = false;
-    keyResult.keyWarning = 'First page had no music (title/cover page); key was read from the music pages — please verify.';
-    trace?.warn('KEYSIG_ALL_SKIPPED', { skips: titlePageSkips, fellBackTo: 'full-extraction key votes' });
+    trace?.warn('KEYSIG_ALL_SKIPPED', { skips: titlePageSkips, rescueTried: imageParts.length > 1, fellBackTo: 'note-content inference' });
+    const inferred = inferKeyFromNoteContent(noteEvidence, trace);
+    if (inferred && (inferred.flats !== finalFlats || inferred.sharps !== finalSharps)) {
+      const inferredResult = resolveKeyFromCounts(inferred.flats, inferred.sharps, noteEvidence, longestFirstNotes, finalNote, trace);
+      console.log(`[Solfai] Key inferred from note content: ${keyResult.key} → ${inferredResult.key} (${inferred.matched}/${inferred.total} notes fit)`);
+      keyResult = inferredResult;
+      keyResult.confident = false;
+      keyResult.keyWarning = 'Key signature was unreadable (cover/blank pages) — key inferred from the notes themselves. Please verify.';
+    } else {
+      keyResult.keyWarning = 'Key signature pages were unreadable (title/cover pages); key may be wrong — please verify.';
+    }
   }
   trace?.log('KEY_RESOLVED', { key: keyResult.key, confident: keyResult.confident, minorRatio: keyResult.minorVoteRatio });
 
@@ -2121,7 +2209,7 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
   let finalKey = cached?.keySignature || keyResult.key;
   let tonic = finalKey.split(' ')[0];
   const dbMatch = lookupPiece(pieceTitle, composerName);
-  trace?.log('DB_MATCH', { matched: !!dbMatch, title: dbMatch?.title || null, source: dbMatch?.source || null });
+  trace?.log('DB_MATCH', { matched: !!dbMatch, title: dbMatch?.title || null, hasKey: !!dbMatch?.key, source: dbMatch?.source || null });
   let dbOverrideApplied = false;
 
   if (dbMatch) {
@@ -2145,17 +2233,19 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
 
   console.log(`[Solfai] Key confidence: ${Math.round(keyConfidenceRatio * 100)}% (${keyVoteResult.isUnanimous ? 'unanimous' : keyVoteResult.isTie ? 'TIE' : 'majority'})`);
 
-  // Retry key if < 70% agreement and we have image data
-  if (keyConfidenceRatio < 0.7 && firstJpeg) {
+  // Retry key if < 70% agreement and we have image data.
+  // Use the rescued music page when the cover turned out to be a title page.
+  const retrySourceJpeg = musicPageJpeg || firstJpeg;
+  if (keyConfidenceRatio < 0.7 && retrySourceJpeg) {
     // Below 50% confidence = tie → use extreme zoom; otherwise high_contrast is enough
     const retryMode = keyConfidenceRatio < 0.55 ? 'key_region_extreme' : 'high_contrast';
-    console.log(`[Solfai] Low key confidence (${Math.round(keyConfidenceRatio * 100)}%), retrying with ${retryMode}...`);
+    console.log(`[Solfai] Low key confidence (${Math.round(keyConfidenceRatio * 100)}%), retrying with ${retryMode}${musicPageJpeg ? ' on rescued music page' : ''}...`);
     try {
-      const hcData = await preprocessForGemini(firstJpeg.inlineData.data, retryMode);
+      const hcData = await preprocessForGemini(retrySourceJpeg.inlineData.data, retryMode);
       const retryResult = await callGemini(apiKey, keySigPrompt,
         [{ text: 'CRITICAL RETRY: Show your work step by step. Count every accidental carefully. This is a tie-breaker read.' },
          { inlineData: { mimeType: 'image/jpeg', data: hcData } }],
-        { temperature: 0, maxOutputTokens: 256, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 8000 }
+        { temperature: 0, maxOutputTokens: 2048, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 1024 }
       );
       const retryKs = JSON.parse(retryResult);
       if (retryKs.reasoning) console.log(`[Solfai] Retry reasoning: ${retryKs.reasoning}`);
@@ -2195,10 +2285,10 @@ Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`
     const [lastRead1, lastRead2, lastRead3] = await Promise.allSettled([
       callGemini(apiKey, lastNotePrompt,
         [{ text: `Find last sung note for ${part}. Think carefully.` }, ...processedParts.slice(0, 2)],
-        { temperature: 0, maxOutputTokens: 128, responseSchema: LAST_NOTE_SCHEMA, thinkingBudget: 6000 }),
+        { temperature: 0, maxOutputTokens: 1024, responseSchema: LAST_NOTE_SCHEMA, thinkingBudget: 512 }),
       callGemini(apiKey, lastNotePrompt,
         [{ text: `Independent read — find last sung note for ${part}.` }, ...processedParts.slice(0, 2)],
-        { temperature: 0, maxOutputTokens: 128, responseSchema: LAST_NOTE_SCHEMA, thinkingBudget: 4000 }),
+        { temperature: 0, maxOutputTokens: 1024, responseSchema: LAST_NOTE_SCHEMA, thinkingBudget: 512 }),
       callGemini(apiKey, lastNotePrompt,
         [{ text: `Find last sung note for ${part}.` }, ...processedParts.slice(0, 1)],
         { model: GEMINI_FLASH, temperature: 0, maxOutputTokens: 128, responseSchema: LAST_NOTE_SCHEMA, thinkingBudget: 0 }),
@@ -2263,6 +2353,12 @@ Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`
 
   if (pieceDbEntry) {
     console.log(`[Solfai] Piece DB match: #${pieceDbEntry.id} "${pieceDbEntry.title}" (${pieceDbEntry.confidence})`);
+    trace?.log('PIECE_DB_MATCH', { id: pieceDbEntry.id, title: pieceDbEntry.title, confidence: pieceDbEntry.confidence, hasKey: !!pieceDbEntry.key, hasTime: !!pieceDbEntry.time });
+    if (!pieceDbEntry.key) {
+      // Entry exists but carries no key data — nothing to apply. Say so plainly
+      // instead of silently doing nothing (this is what looked like a broken override).
+      trace?.warn('PIECE_DB_NO_KEY', { id: pieceDbEntry.id, note: 'matched entry has key:null — no override possible' });
+    }
     const confOk = pieceDbEntry.confidence === 'high' || pieceDbEntry.confidence === 'medium';
 
     // Override key when the DB is confident, OR when the DB confidence is low but
@@ -2568,19 +2664,19 @@ Output ONLY JSON: {"vocal_staff_number": N, "total_staves": M, "clef": "treble" 
   const [staffRaw, keySig1Raw, keySig2Raw, keySig3Raw] = await Promise.all([
     callGemini(apiKey, solfegeStaffPrompt,
       [{ text: `Identify the ${part} vocal staff.` }, ...processedParts],
-      { temperature: 0, maxOutputTokens: 256, thinkingBudget: 1500 }
+      { temperature: 0, maxOutputTokens: 2048, thinkingBudget: 1024 }
     ),
     // Key sig read 1: Pro with key_region crop (tightest zoom)
     callGemini(apiKey, solfegeKeySigPrompt,
       [{ text: 'Count the exact number of sharp # or flat b symbols in the key signature zone.' },
        ...(keyRegionPart ? [keyRegionPart] : processedParts.slice(0, 1))],
-      { temperature: 0, maxOutputTokens: 128, thinkingBudget: 4000 }
+      { temperature: 0, maxOutputTokens: 1024, thinkingBudget: 512 }
     ),
     // Key sig read 2: Pro with full image (independent)
     callGemini(apiKey, solfegeKeySigPrompt,
       [{ text: 'Independent read: count sharps or flats between clef and time signature.' },
        ...processedParts.slice(0, 1)],
-      { temperature: 0, maxOutputTokens: 128, thinkingBudget: 4000 }
+      { temperature: 0, maxOutputTokens: 1024, thinkingBudget: 512 }
     ),
     // Key sig read 3: Flash (tie-breaker)
     callGemini(apiKey, solfegeKeySigPrompt,
