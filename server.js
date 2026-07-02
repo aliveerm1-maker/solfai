@@ -222,7 +222,12 @@ const ANALYZE_SCHEMA = {
     first_notes: {
       type: "ARRAY",
       items: { type: "STRING" },
-      description: "First 12 note letter names with octave for the selected vocal part only (e.g., ['C4','E4','G4']). Include accidentals: 'Bb4', 'F#4'."
+      description: "First 12 note names AS SOUNDING for the selected vocal part only, with octave (e.g., ['C4','E4','G4']). CRITICAL: apply the key signature — if the key signature has a Bb and a note sits on the B line with no natural sign, write 'Bb4', NOT 'B4'. Same for every flatted/sharped letter in the signature. Only write the plain letter when a natural sign cancels the signature."
+    },
+    drawn_accidentals: {
+      type: "ARRAY",
+      items: { type: "STRING" },
+      description: "Accidental symbols PRINTED DIRECTLY BEFORE individual noteheads in the first 8 measures (not the key signature itself). Format: pitch with the drawn symbol, e.g. ['Eb4','F#5','Bn4'] (use 'n' suffix for natural signs). Empty array if none."
     },
     last_notes: {
       type: "ARRAY",
@@ -746,6 +751,113 @@ function inferKeyFromNoteContent(notes = [], trace = null) {
     runnersUp: scored.slice(1, 3).map(s => `${s.code}:${s.inScale}`),
   });
   return { flats, sharps, code: best.code, matched: best.inScale, total: chromas.length };
+}
+
+// ═══ KEY HYPOTHESIS TOURNAMENT ═══
+// Vision counting has a known ±1 error mode. Instead of blindly trusting the voted
+// accidental count, run the winner AND its neighbors (±1 accidental) through a
+// music-theory scorer. Pure code — the notes get the final say.
+//
+// Signals per candidate:
+//   • vote share      — how much of the weighted read vote it got            (0–3 pts)
+//   • final note      — pieces end on the tonic (or dominant) of the real key (0–2.5)
+//   • drawn accidentals — a repeatedly-drawn accidental that belongs to a
+//     NEIGHBOR's key signature means the signature was undercounted           (0–2/each)
+//   • note fit        — extracted pitches that clash with a candidate's scale
+//     count against it                                                        (−0.75/clash)
+function keyHypothesisTournament(votedFlats, votedSharps, voteShare, allNotes = [], drawnAccidentals = [], lastNote = null, trace = null) {
+  const codeOf = (f, s) => (s > 0 ? `${s}s` : f > 0 ? `${f}b` : '0');
+  const votedCode = codeOf(votedFlats, votedSharps);
+
+  // Candidate set: voted count and its ±1 neighbors on the circle of fifths
+  const ORDER = ['7b','6b','5b','4b','3b','2b','1b','0','1s','2s','3s','4s','5s','6s','7s'];
+  const idx = ORDER.indexOf(votedCode);
+  if (idx === -1) return { flats: votedFlats, sharps: votedSharps, changed: false };
+  const candidates = [ORDER[idx - 1], ORDER[idx], ORDER[idx + 1]].filter(Boolean);
+
+  const noteChromas = allNotes
+    .map(n => Note.chroma(String(n).trim().replace(/\d+$/, '')))
+    .filter(c => c !== null && c !== undefined);
+
+  // Parse drawn accidentals like 'Eb4', 'F#5' ('n' naturals carry no signature evidence)
+  const drawnPcs = (drawnAccidentals || [])
+    .map(a => String(a).trim().replace(/\d+$/, ''))
+    .filter(a => /[b#]$/.test(a));
+
+  const scores = candidates.map(code => {
+    const entry = KEY_FROM_COUNT[code];
+    if (!entry) return { code, score: -Infinity };
+    const majorTonic = entry.major.split(' ')[0];
+    const minorTonic = entry.minor.split(' ')[0];
+    const scale = Scale.get(`${majorTonic} major`);
+    const scaleChromas = new Set(scale.notes.map(n => Note.chroma(n)));
+    const signaturePcs = new Set(scale.notes.filter(n => /[b#]/.test(n)));
+
+    let score = 0;
+    const detail = { code };
+
+    // 1. Vote share — the voted candidate carries its electoral weight
+    if (code === votedCode) { score += 3 * voteShare; detail.voteBonus = +(3 * voteShare).toFixed(2); }
+
+    // 2. Final note is the strongest tonality anchor
+    if (lastNote) {
+      const lastChroma = Note.chroma(String(lastNote).replace(/\d+$/, ''));
+      if (lastChroma === Note.chroma(majorTonic) || lastChroma === Note.chroma(minorTonic)) {
+        score += 2.5; detail.finalNoteTonic = true;
+      } else if (lastChroma === (Note.chroma(majorTonic) + 7) % 12) {
+        score += 1; detail.finalNoteDominant = true;
+      }
+    }
+
+    // 3. Drawn accidentals that live in THIS candidate's signature are evidence the
+    //    engraver drew them because the (undercounted) signature was missing them.
+    let accHits = 0;
+    for (const pc of drawnPcs) if (signaturePcs.has(pc)) accHits++;
+    if (accHits) { score += Math.min(accHits * 2, 4); detail.drawnAccidentalHits = accHits; }
+
+    // 4. Extracted notes clashing with the candidate's scale count against it
+    const clashes = noteChromas.filter(c => !scaleChromas.has(c)).length;
+    score -= clashes * 0.75;
+    detail.noteClashes = clashes;
+
+    detail.score = +score.toFixed(2);
+    return { code, score, detail };
+  });
+
+  scores.sort((a, b) => b.score - a.score);
+  const winner = scores[0];
+  trace?.log('KEY_TOURNAMENT', { voted: votedCode, ranking: scores.map(s => s.detail) });
+
+  if (winner.code !== votedCode) {
+    console.log(`[Solfai] Tournament overturned key vote: ${votedCode} → ${winner.code}`);
+  }
+  return {
+    flats: winner.code.endsWith('b') ? parseInt(winner.code) : 0,
+    sharps: winner.code.endsWith('s') ? parseInt(winner.code) : 0,
+    changed: winner.code !== votedCode,
+    margin: scores.length > 1 ? +(winner.score - scores[1].score).toFixed(2) : 99,
+  };
+}
+
+// Apply a key signature to extracted note letters in code — fixes signature-blind
+// extraction (Gemini reading 'E5' off the staff position when the key makes it Eb5).
+// Letters carrying an explicit accidental or natural marker are left untouched.
+const FLAT_ORDER = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
+const SHARP_ORDER = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
+function applyKeySignatureToNotes(notes = [], flats = 0, sharps = 0) {
+  if (!flats && !sharps) return notes;
+  const altered = new Set(flats > 0 ? FLAT_ORDER.slice(0, flats) : SHARP_ORDER.slice(0, sharps));
+  const mark = flats > 0 ? 'b' : '#';
+  return notes.map(n => {
+    const s = String(n).trim();
+    const m = s.match(/^([A-Ga-g])(n|b|#|bb|##)?(\d*)$/);
+    if (!m) return s;
+    const [, letter, acc, oct] = m;
+    if (acc === 'n') return letter.toUpperCase() + (oct || ''); // explicit natural
+    if (acc) return s;                                          // already marked
+    if (altered.has(letter.toUpperCase())) return letter.toUpperCase() + mark + (oct || '');
+    return s;
+  });
 }
 
 function resolveKeyFromCounts(flatCount, sharpCount, allNotes = [], firstNotes = [], lastNote = null, trace = null) {
@@ -1788,7 +1900,10 @@ function validateExtraction(keySignature, timeSignature, notes, part) {
     warnings.push({ field: 'key', level: 'error', message: 'Key signature could not be determined — check the score manually.' });
   } else {
     const validKeys = Object.values(KEY_FROM_COUNT).flatMap(e => [e.major, e.minor]);
-    if (!validKeys.includes(keySignature)) {
+    // The display string carries a "(N flats)" suffix — strip it before checking,
+    // otherwise every single key looks "unusual".
+    const bareKey = keySignature.replace(/\s*\(.*\)\s*$/, '').trim();
+    if (!validKeys.includes(bareKey)) {
       warnings.push({ field: 'key', level: 'warning', message: `Key "${keySignature}" is unusual — verify accidental count.` });
     }
   }
@@ -1860,6 +1975,11 @@ async function handleAnalyze(res, apiKey, imageParts, part, rawBase64, pdfPages,
   // Prepare specialized image crops IN PARALLEL
   const firstJpeg = imageParts.find(p => p.inlineData?.mimeType === 'image/jpeg');
   let keyRegionParts = [];
+  // Key-region crops from up to the first 3 pages — the key signature repeats on
+  // every system of every page, so multi-page reads give independent votes and
+  // survive cover pages without a rescue pass.
+  const allJpegPages = imageParts.filter(p => p.inlineData?.mimeType === 'image/jpeg');
+  let keyRegionByPage = [];
 
   let annotatedKeyParts = [];
   let first2MeasuresParts = [];
@@ -1867,15 +1987,20 @@ async function handleAnalyze(res, apiKey, imageParts, part, rawBase64, pdfPages,
   let timeSigRegionParts = [];
 
   if (firstJpeg) {
-    const [keyData, firstSysData, hiContrast, annotatedData, first2MData, timeSigData] = await Promise.all([
-      preprocessForGemini(firstJpeg.inlineData.data, 'key_region').catch(() => null),
+    const cropPages = allJpegPages.slice(0, 3);
+    const [keyCrops, firstSysData, hiContrast, annotatedData, first2MData, timeSigData] = await Promise.all([
+      Promise.all(cropPages.map(p =>
+        preprocessForGemini(p.inlineData.data, 'key_region').catch(() => null))),
       preprocessForGemini(firstJpeg.inlineData.data, 'first_system').catch(() => null),
       preprocessForGemini(firstJpeg.inlineData.data, 'high_contrast').catch(() => null),
       preprocessForGemini(firstJpeg.inlineData.data, 'annotated').catch(() => null),
       preprocessForGemini(firstJpeg.inlineData.data, 'first_2_measures').catch(() => null),
       preprocessForGemini(firstJpeg.inlineData.data, 'time_sig_region').catch(() => null),
     ]);
-    if (keyData) keyRegionParts = [{ inlineData: { mimeType: 'image/jpeg', data: keyData } }];
+    keyRegionByPage = keyCrops.map((data, i) => data
+      ? { part: { inlineData: { mimeType: 'image/jpeg', data } }, page: i + 1 }
+      : { part: cropPages[i], page: i + 1 });
+    if (keyCrops[0]) keyRegionParts = [{ inlineData: { mimeType: 'image/jpeg', data: keyCrops[0] } }];
     if (hiContrast) {
       processedParts.push({ inlineData: { mimeType: 'image/jpeg', data: hiContrast } });
     }
@@ -1960,28 +2085,44 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
   const extractText = `Extract all musical data for the ${part} part. Skip title/cover pages. Be precise about accidental counting.`;
 
   // Launch extraction phases in parallel
-  // Key sig: 3 dedicated reads (Pro cropped x2, Flash full)
+  // Key sig: 5 dedicated reads spread across pages (the signature repeats on every
+  //          system, so different pages are independent witnesses — off-by-one vision
+  //          errors don't repeat identically across pages)
   // Time sig: 2 dedicated reads (Pro cropped, Flash full)
   // Full extraction: 2 reads (Pro + Flash)
-  // Total: 7 calls
+  const pg1 = keyRegionByPage[0]?.part;
+  const pg2 = keyRegionByPage[1]?.part;
+  const pg3 = keyRegionByPage[2]?.part;
   const allPromises = [
-    // KEY SIG read 1: Pro with key_region crop (tightest zoom on accidentals)
+    // KEY SIG read 1: Pro with key_region crop of page 1
     callGemini(apiKey, keySigPrompt,
       [{ text: 'Count the exact number of sharp or flat symbols in the key signature zone. Show your work.' },
-       ...(keyRegionParts.length ? keyRegionParts : processedParts.slice(0, 1))],
+       ...(pg1 ? [pg1] : processedParts.slice(0, 1))],
       { temperature: 0, maxOutputTokens: 2048, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 1024 }
     ),
-    // KEY SIG read 2: Pro with full processed image (independent read)
+    // KEY SIG read 2: Pro with key_region crop of page 2 (independent witness)
     callGemini(apiKey, keySigPrompt,
-      [{ text: 'Independent count: how many sharps or flats are in the key signature? Count carefully.' },
+      [{ text: 'Independent count on this page: how many sharps or flats are in the key signature? Count carefully.' },
+       ...(pg2 ? [pg2] : processedParts.slice(0, 1))],
+      { temperature: 0, maxOutputTokens: 2048, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 1024 }
+    ),
+    // KEY SIG read 3: Flash with key_region crop of page 3 (independent witness)
+    callGemini(apiKey, keySigPrompt,
+      [{ text: 'Third independent read: count sharps or flats in the key signature on this page.' },
+       ...(pg3 ? [pg3] : processedParts.slice(0, 1))],
+      { model: GEMINI_FLASH, temperature: 0, maxOutputTokens: 1024, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 0 }
+    ),
+    // KEY SIG read 4: Pro with full page-1 image (context read — sees whole staves)
+    callGemini(apiKey, keySigPrompt,
+      [{ text: 'Full-page read: count the sharps or flats printed right after each clef. They repeat on every staff — verify your count on at least two staves.' },
        ...processedParts.slice(0, 1)],
       { temperature: 0, maxOutputTokens: 2048, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 1024 }
     ),
-    // KEY SIG read 3: Flash with full image (tie-breaker)
+    // KEY SIG read 5: Flash with page-2 full image (cheap extra witness)
     callGemini(apiKey, keySigPrompt,
-      [{ text: 'Third independent read: count sharps or flats in the key signature.' },
-       ...processedParts.slice(0, 1)],
-      { model: GEMINI_FLASH, temperature: 0, maxOutputTokens: 128, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 0 }
+      [{ text: 'Count sharps or flats in the key signature. Cross-check on two different staves before answering.' },
+       ...(allJpegPages[1] ? [allJpegPages[1]] : processedParts.slice(0, 1))],
+      { model: GEMINI_FLASH, temperature: 0, maxOutputTokens: 1024, responseSchema: KEY_SIG_SCHEMA, thinkingBudget: 0 }
     ),
 
     // TIME SIG read 1: Pro with time_sig_region crop
@@ -2023,19 +2164,21 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
   }
   console.log(`[Solfai] ${successCount}/${results.length} Gemini calls succeeded`);
 
-  // Parse results — indices match the 7-call allPromises array:
-  //   0: key sig Pro (key_region crop)
-  //   1: key sig Pro (full image)
-  //   2: key sig Flash (full image)
-  //   3: time sig Pro (time_sig_region crop)
-  //   4: time sig Flash (full image)
-  //   5: full extraction Pro
-  //   6: full extraction Flash
+  // Parse results — indices match the 9-call allPromises array:
+  //   0: key sig Pro (page-1 key_region crop)
+  //   1: key sig Pro (page-2 key_region crop)
+  //   2: key sig Flash (page-3 key_region crop)
+  //   3: key sig Pro (page-1 full image)
+  //   4: key sig Flash (page-2 full image)
+  //   5: time sig Pro (time_sig_region crop)
+  //   6: time sig Flash (full image)
+  //   7: full extraction Pro
+  //   8: full extraction Flash
 
-  // Parse key signature votes (indices 0-2)
+  // Parse key signature votes (indices 0-4)
   const keyVotes = [];
   let titlePageSkips = 0;
-  for (const [i, weight] of [[0, WEIGHT_PRO], [1, WEIGHT_PRO], [2, WEIGHT_FLASH]]) {
+  for (const [i, weight] of [[0, WEIGHT_PRO], [1, WEIGHT_PRO], [2, WEIGHT_FLASH], [3, WEIGHT_PRO], [4, WEIGHT_FLASH]]) {
     if (!results[i]) continue;
     try {
       const ks = JSON.parse(results[i]);
@@ -2113,30 +2256,30 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
     }
   }
 
-  // Parse dedicated time sig votes (indices 3-4)
+  // Parse dedicated time sig votes (indices 5-6)
   const timeSigDedicatedVotes = [];
-  for (const [i, weight] of [[3, WEIGHT_PRO], [4, WEIGHT_FLASH]]) {
+  for (const [i, weight] of [[5, WEIGHT_PRO], [6, WEIGHT_FLASH]]) {
     if (!results[i]) continue;
     try {
       const ts = JSON.parse(results[i]);
       if (ts.time_signature) {
-        if (ts.what_i_see) console.log(`[Solfai] Time sig read ${i-2}: "${ts.what_i_see}" → ${ts.time_signature} (${ts.confidence})`);
+        if (ts.what_i_see) console.log(`[Solfai] Time sig read ${i-4}: "${ts.what_i_see}" → ${ts.time_signature} (${ts.confidence})`);
         const confMult = ts.confidence === 'certain' ? 1.5 : ts.confidence === 'uncertain' ? 0.6 : 1.0;
         timeSigDedicatedVotes.push({ value: ts.time_signature, weight: weight * confMult });
       }
     } catch (e) {
-      console.warn(`[Solfai] Time sig dedicated read ${i-2} parse failed`);
+      console.warn(`[Solfai] Time sig dedicated read ${i-4} parse failed`);
     }
   }
 
-  // Parse full extraction results (indices 5-6)
+  // Parse full extraction results (indices 7-8)
   const fullExtractions = [];
-  for (const [i, weight] of [[5, WEIGHT_PRO], [6, WEIGHT_FLASH]]) {
+  for (const [i, weight] of [[7, WEIGHT_PRO], [8, WEIGHT_FLASH]]) {
     if (!results[i]) { fullExtractions.push({}); continue; }
     try {
       fullExtractions.push(JSON.parse(results[i]));
     } catch (e) {
-      console.warn(`[Solfai] Full extraction ${i - 1} parse failed`);
+      console.warn(`[Solfai] Full extraction ${i - 6} parse failed`);
       fullExtractions.push({});
     }
   }
@@ -2184,7 +2327,28 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
     .map(ext => (Array.isArray(ext.last_notes) ? ext.last_notes : []))
     .sort((a, b) => b.length - a.length)[0] || [];
   const finalNote = longestLastNotes.length ? longestLastNotes[longestLastNotes.length - 1] : null;
-  let keyResult = resolveKeyFromCounts(finalFlats, finalSharps, noteEvidence, longestFirstNotes, finalNote, trace);
+
+  // ═══ HYPOTHESIS TOURNAMENT ═══
+  // Vision counting has a ±1 error mode. Run the voted count and its circle-of-fifths
+  // neighbors through a music-theory scorer; the notes get the final say.
+  const drawnAccidentals = fullExtractions.flatMap(ext =>
+    Array.isArray(ext.drawn_accidentals) ? ext.drawn_accidentals : []);
+  const voteShareForTournament = weightedVoteWithMargin(allPairVotes).margin || 0.7;
+  const tournament = keyHypothesisTournament(
+    finalFlats, finalSharps, voteShareForTournament,
+    noteEvidence, drawnAccidentals, finalNote, trace
+  );
+  const tFlats = tournament.flats;
+  const tSharps = tournament.sharps;
+  if (tournament.changed) {
+    console.log(`[Solfai] Key count after tournament: ${finalFlats}b/${finalSharps}s → ${tFlats}b/${tSharps}s (margin ${tournament.margin})`);
+  }
+
+  let keyResult = resolveKeyFromCounts(tFlats, tSharps, noteEvidence, longestFirstNotes, finalNote, trace);
+  if (tournament.changed) {
+    keyResult.keyWarning = keyResult.keyWarning ||
+      'Key adjusted by note-content analysis (the drawn accidentals/final note disagreed with the raw signature count). Please verify.';
+  }
   // If every dedicated key read (including the page-by-page rescue pass) saw a
   // title/blank page, the count comes only from full-extraction votes — which read
   // the same images. Rather than silently defaulting to C major, infer the best-fit
@@ -2384,14 +2548,23 @@ Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`
     }
   }
 
-  // Pre-calculate solfege from first_notes (use longest first_notes array)
-  const bestFirstNotes = fullExtractions
+  // Pre-calculate solfege from first_notes (use longest first_notes array).
+  // Apply the FINAL key signature in code first — Gemini often reads staff position
+  // only ('E5' when the 2-flat signature makes it Eb5). Code fixes what vision misses.
+  const keyForSig = finalKey.toLowerCase();
+  const sigFlats = tFlats, sigSharps = tSharps;
+  const bestFirstNotesRaw = fullExtractions
     .map(ext => ext.first_notes || [])
     .sort((a, b) => b.length - a.length)[0];
+  const bestFirstNotes = applyKeySignatureToNotes(bestFirstNotesRaw, sigFlats, sigSharps);
+  const sigCorrections = bestFirstNotes.filter((n, i) => n !== bestFirstNotesRaw[i]).length;
+  if (sigCorrections > 0) {
+    console.log(`[Solfai] Key signature applied to ${sigCorrections} extracted notes (signature-blind extraction fixed in code)`);
+  }
   const firstNotesSolfege = bestFirstNotes.map(n =>
     noteToSolfege(n.replace(/\d+$/, ''), tonic)
   );
-  trace?.log('NOTES', { firstCount: bestFirstNotes.length, sample: bestFirstNotes.slice(0, 8), tonic, solfegeSample: firstNotesSolfege.slice(0, 8) });
+  trace?.log('NOTES', { firstCount: bestFirstNotes.length, sample: bestFirstNotes.slice(0, 8), sigCorrections, tonic, solfegeSample: firstNotesSolfege.slice(0, 8) });
 
   // Confidence report
   const keyAgreement = allKeyVotes.every(v => v.flatCount === finalFlats && v.sharpCount === finalSharps);
