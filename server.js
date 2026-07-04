@@ -5174,7 +5174,7 @@ app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.setHeader('Cache-Control', 'no-cache');
   res.send(`
-const CACHE_NAME = 'solfai-cache-v2';
+const CACHE_NAME = 'solfai-cache-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -5207,6 +5207,21 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/')) {
     return;
   }
+  // Network-first for page navigations so new deploys show up immediately.
+  // Falls back to cache only when offline.
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(event.request).then((c) => c || caches.match('/')))
+    );
+    return;
+  }
+  // Stale-while-revalidate for other assets.
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request).then((response) => {
