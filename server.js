@@ -87,7 +87,7 @@ async function tryOmrService(imageBuffer, mimeType, trace) {
       method: 'POST',
       body: form.getBuffer(),
       headers: form.getHeaders(),
-      signal: AbortSignal.timeout(95000),
+      signal: AbortSignal.timeout(280000),
     });
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
