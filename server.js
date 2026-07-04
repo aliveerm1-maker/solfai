@@ -14,6 +14,7 @@ import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from '
 import sharp from 'sharp';
 import multer from 'multer';
 import AdmZip from 'adm-zip';
+import FormData from 'form-data';
 import { Note, Scale, Interval } from 'tonal';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,6 +38,8 @@ const GEMINI_FLASH = 'gemini-2.5-flash';
 // vars) to dump large payloads — full Gemini raw text, full note arrays — into the
 // trace. Per-step trace lines always fire regardless (they're cheap and essential).
 const VERBOSE = process.env.SOLFAI_VERBOSE === '1';
+
+const OMR_SERVICE_URL = process.env.OMR_SERVICE_URL || 'https://aliveer-solfai-omr-service.hf.space';
 
 // ─── Diagnostic Trace System ──────────────────────────────
 // Every analysis gets a short trace ID; all its logs share that ID so they can be
@@ -68,6 +71,42 @@ function makeTrace() {
     },
   };
 }
+// ─── OMR Microservice ─────────────────────────────────────
+// Posts a page image to the OMR service and returns the MusicXML string, or null
+// on any failure. All outcomes are logged through the caller's trace.
+async function tryOmrService(imageBuffer, mimeType, trace) {
+  const url = `${OMR_SERVICE_URL}/omr`;
+  try {
+    const form = new FormData();
+    form.append('image', imageBuffer, {
+      filename: mimeType === 'image/png' ? 'page.png' : 'page.jpg',
+      contentType: mimeType || 'image/jpeg',
+    });
+    trace?.log('OMR_START', { url, mimeType, bytes: imageBuffer.length });
+    const response = await fetch(url, {
+      method: 'POST',
+      body: form.getBuffer(),
+      headers: form.getHeaders(),
+      signal: AbortSignal.timeout(95000),
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      trace?.warn('OMR_HTTP_ERROR', { status: response.status, body: errText.slice(0, 200) });
+      return null;
+    }
+    const data = await response.json();
+    if (typeof data.musicxml !== 'string') {
+      trace?.warn('OMR_NO_MUSICXML', { keys: Object.keys(data) });
+      return null;
+    }
+    trace?.log('OMR_DONE', { xmlLength: data.musicxml.length });
+    return data.musicxml;
+  } catch (err) {
+    trace?.warn('OMR_EXCEPTION', { error: err.message });
+    return null;
+  }
+}
+
 // Google AI Studio (Gemini Developer API). Auth is the AIzaSy API key sent via
 // the x-goog-api-key header. NOTE: do NOT switch this to the Vertex AI endpoint
 // ({loc}-aiplatform.googleapis.com/.../projects/...) unless you also switch auth
@@ -2084,6 +2123,14 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
 
   const extractText = `Extract all musical data for the ${part} part. Skip title/cover pages. Be precise about accidental counting.`;
 
+  // OMR: launch in parallel with Gemini calls on the first PDF page
+  const pdfPagesArr = Array.isArray(pdfPages) ? pdfPages : [];
+  let omrPromise = Promise.resolve(null);
+  if (pdfPagesArr.length > 0) {
+    const omrBuf = Buffer.from(pdfPagesArr[0], 'base64');
+    omrPromise = tryOmrService(omrBuf, 'image/jpeg', trace);
+  }
+
   // Launch extraction phases in parallel
   // Key sig: 5 dedicated reads spread across pages (the signature repeats on every
   //          system, so different pages are independent witnesses — off-by-one vision
@@ -2149,8 +2196,8 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
     ),
   ];
 
-  // Use allSettled so one failed call doesn't kill everything
-  const settled = await Promise.allSettled(allPromises);
+  // Use allSettled so one failed call doesn't kill everything; OMR runs in parallel
+  const [settled, omrXml0] = await Promise.all([Promise.allSettled(allPromises), omrPromise]);
   const results = settled.map((s, i) => {
     if (s.status === 'fulfilled') return s.value;
     console.warn(`[Solfai] Gemini call ${i} failed: ${s.reason?.message || s.reason}`);
@@ -2199,6 +2246,14 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
     } catch (e) {
       console.warn(`[Solfai] Key sig read ${i + 1} parse failed`);
     }
+  }
+
+  // Rescue pass: page 0 was a title page, so OMR on page 0 was wasted — retry on page 1
+  let omrXml = omrXml0;
+  if (!omrXml && titlePageSkips > 0 && keyVotes.length === 0 && pdfPagesArr.length > 1) {
+    trace?.log('OMR_RESCUE', { reason: 'page 0 is title page, retrying OMR on page 1' });
+    const buf1 = Buffer.from(pdfPagesArr[1], 'base64');
+    omrXml = await tryOmrService(buf1, 'image/jpeg', trace);
   }
 
   // Vote the (flatCount, sharpCount) PAIR — they are mutually exclusive in music.
@@ -2501,6 +2556,10 @@ Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`
   console.log(`[Solfai] Time sig votes: ${allTimeSigVotes.map(v => v.value).join(', ')} → ${votedTime} (${Math.round(timeSigConfidence * 100)}% confidence)`);
   trace?.log('TIME_RESOLVED', { timeSignature: votedTime, confidence: Math.round(timeSigConfidence * 100) / 100 });
 
+  // Capture Gemini's raw votes before any DB/OMR overrides (used for OMR cross-check)
+  const geminiVotedKey  = keyResult.codeSaid;
+  const geminiVotedTime = timeSigVoteResult.value || raw.time_signature;
+
   const votedTempo = weightedVote(
     fullExtractions.map((ext, i) => ({
       value: ext.tempo,
@@ -2545,6 +2604,57 @@ Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`
       console.log(`[Solfai] Piece DB time override: "${votedTime}" → "${pieceDbEntry.time}"`);
       votedTime = pieceDbEntry.time;
       pieceDbTimeOverride = true;
+    }
+  }
+
+  // ═══ OMR INTEGRATION (PDF path only) ════════════════════════════════════
+  // tryOmrService ran in parallel; results are now in omrXml.
+  // OMR overrides Gemini voting but yields to user cache and piece databases.
+  if (omrXml && omrXml.includes('<score-partwise')) {
+    try {
+      const omrParsed = parseMusicXML(omrXml, part);
+      if (!omrParsed.error) {
+        const hasKeyEl    = omrXml.includes('<key>');
+        const hasTimeEl   = omrXml.includes('<time>');
+        const omrNoteCount = (omrParsed.measures || []).reduce((s, m) => s + (m.notes?.length || 0), 0);
+        const omrSane     = hasKeyEl && hasTimeEl && omrNoteCount >= 4;
+        trace?.log('OMR_PARSED', { key: omrParsed.keySignature, time: omrParsed.timeSignature, notes: omrNoteCount, sane: omrSane });
+
+        if (omrSane) {
+          const omrKey  = omrParsed.keySignature;
+          const omrTime = omrParsed.timeSignature;
+          const normK   = s => s.toLowerCase().replace(/\s+/g, '').replace(/\(.*\)/g, '');
+          const keyAgrees  = normK(omrKey) === normK(geminiVotedKey);
+          const timeAgrees = omrTime === geminiVotedTime;
+          trace?.log('OMR_CROSS_CHECK', { omrKey, omrTime, geminiKey: geminiVotedKey, geminiTime: geminiVotedTime, keyAgrees, timeAgrees });
+
+          if (!cached?.keySignature && !dbOverrideApplied && !pieceDbKeyOverride) {
+            finalKey = omrKey;
+            tonic    = omrParsed.tonic || omrKey.split(' ')[0];
+            trace?.log('OMR_KEY_APPLIED', { key: omrKey });
+          }
+          if (!cached?.timeSignature && !pieceDbTimeOverride) {
+            votedTime = omrTime;
+            trace?.log('OMR_TIME_APPLIED', { time: omrTime });
+          }
+
+          if (!keyAgrees || !timeAgrees) {
+            const disagreement = `OMR reads ${omrKey} / ${omrTime}; Gemini reads ${geminiVotedKey} / ${geminiVotedTime}. Preferring OMR (structural analysis) — verify if unexpected.`;
+            trace?.warn('OMR_GEMINI_DISAGREE', { omrKey, omrTime, geminiKey: geminiVotedKey, geminiTime: geminiVotedTime });
+            keyResult.keyWarning = keyResult.keyWarning
+              ? `${keyResult.keyWarning} ${disagreement}`
+              : disagreement;
+          } else {
+            trace?.log('OMR_GEMINI_AGREE', { key: omrKey, time: omrTime });
+          }
+        } else {
+          trace?.warn('OMR_INSANE', { notes: omrNoteCount, hasKeyEl, hasTimeEl });
+        }
+      } else {
+        trace?.warn('OMR_PARSE_FAILED', { error: omrParsed.error });
+      }
+    } catch (omrErr) {
+      trace?.warn('OMR_PARSE_ERROR', { error: omrErr.message });
     }
   }
 
