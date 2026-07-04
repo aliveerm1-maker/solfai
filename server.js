@@ -14,7 +14,6 @@ import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from '
 import sharp from 'sharp';
 import multer from 'multer';
 import AdmZip from 'adm-zip';
-import FormData from 'form-data';
 import { Note, Scale, Interval } from 'tonal';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,7 +38,8 @@ const GEMINI_FLASH = 'gemini-2.5-flash';
 // trace. Per-step trace lines always fire regardless (they're cheap and essential).
 const VERBOSE = process.env.SOLFAI_VERBOSE === '1';
 
-const OMR_SERVICE_URL = process.env.OMR_SERVICE_URL || 'https://aliveer-solfai-omr-service.hf.space';
+const RUNPOD_ENDPOINT_ID = process.env.RUNPOD_ENDPOINT_ID;
+const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY;
 
 // ─── Diagnostic Trace System ──────────────────────────────
 // Every analysis gets a short trace ID; all its logs share that ID so they can be
@@ -75,33 +75,36 @@ function makeTrace() {
 // Posts a page image to the OMR service and returns the MusicXML string, or null
 // on any failure. All outcomes are logged through the caller's trace.
 async function tryOmrService(imageBuffer, mimeType, trace) {
-  const url = `${OMR_SERVICE_URL}/omr`;
+  if (!RUNPOD_ENDPOINT_ID || !RUNPOD_API_KEY) {
+    trace?.warn('OMR_CONFIG_MISSING', { hasEndpointId: !!RUNPOD_ENDPOINT_ID, hasApiKey: !!RUNPOD_API_KEY });
+    return null;
+  }
+  const url = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/runsync`;
   try {
-    const form = new FormData();
-    form.append('file', imageBuffer, {
-      filename: mimeType === 'image/png' ? 'page.png' : 'page.jpg',
-      contentType: mimeType || 'image/jpeg',
-    });
     trace?.log('OMR_START', { url, mimeType, bytes: imageBuffer.length });
     const response = await fetch(url, {
       method: 'POST',
-      body: form.getBuffer(),
-      headers: form.getHeaders(),
-      signal: AbortSignal.timeout(280000),
+      body: JSON.stringify({ input: { image_base64: imageBuffer.toString('base64') } }),
+      headers: {
+        Authorization: `Bearer ${RUNPOD_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(90000),
     });
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
       trace?.warn('OMR_HTTP_ERROR', { status: response.status, body: errText.slice(0, 200) });
       return null;
     }
-    // main.py returns raw XML bytes (application/vnd.recordare.musicxml+xml),
-    // not a JSON wrapper — read as text and validate it looks like MusicXML.
-    const contentType = response.headers.get('content-type') || '';
-    const body = await response.text();
-    const musicxml = contentType.includes('xml') ? body
-      : (() => { try { return JSON.parse(body)?.musicxml ?? null; } catch { return null; } })();
+    const data = await response.json().catch(() => null);
+    const error = data?.error ?? data?.output?.error;
+    if (error) {
+      trace?.warn('OMR_RUNPOD_ERROR', { error: typeof error === 'string' ? error.slice(0, 200) : error });
+      return null;
+    }
+    const musicxml = data?.output?.musicxml ?? data?.musicxml ?? null;
     if (typeof musicxml !== 'string' || !musicxml.includes('<score-partwise')) {
-      trace?.warn('OMR_NO_MUSICXML', { contentType, bodyPrefix: body.slice(0, 120) });
+      trace?.warn('OMR_NO_MUSICXML', { bodyPrefix: JSON.stringify(data)?.slice(0, 120) });
       return null;
     }
     trace?.log('OMR_DONE', { xmlLength: musicxml.length });
