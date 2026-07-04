@@ -78,7 +78,7 @@ async function tryOmrService(imageBuffer, mimeType, trace) {
   const url = `${OMR_SERVICE_URL}/omr`;
   try {
     const form = new FormData();
-    form.append('image', imageBuffer, {
+    form.append('file', imageBuffer, {
       filename: mimeType === 'image/png' ? 'page.png' : 'page.jpg',
       contentType: mimeType || 'image/jpeg',
     });
@@ -2340,6 +2340,15 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
   }
 
   trace?.log('GEMINI_TIMESIG', { values: timeSigDedicatedVotes.map(v => v.value) });
+
+  const allEmpty = fullExtractions.every(ext => !ext.first_notes?.length && !ext.last_notes?.length);
+  if (allEmpty && titlePageSkips >= (imageParts.length - 1)) {
+    trace?.warn('SUSPICIOUS_UPLOAD', {
+      reason: 'Every page read as title/blank AND zero notes extracted anywhere — likely a bad scan, corrupted page render, or conversion bug, not a real title-heavy score.',
+      pageCount: imageParts.length,
+      titlePageSkips,
+    });
+  }
 
   // Use primary Pro extraction as base, enriched by consensus
   const raw = fullExtractions[0];
