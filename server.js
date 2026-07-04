@@ -94,13 +94,18 @@ async function tryOmrService(imageBuffer, mimeType, trace) {
       trace?.warn('OMR_HTTP_ERROR', { status: response.status, body: errText.slice(0, 200) });
       return null;
     }
-    const data = await response.json();
-    if (typeof data.musicxml !== 'string') {
-      trace?.warn('OMR_NO_MUSICXML', { keys: Object.keys(data) });
+    // main.py returns raw XML bytes (application/vnd.recordare.musicxml+xml),
+    // not a JSON wrapper — read as text and validate it looks like MusicXML.
+    const contentType = response.headers.get('content-type') || '';
+    const body = await response.text();
+    const musicxml = contentType.includes('xml') ? body
+      : (() => { try { return JSON.parse(body)?.musicxml ?? null; } catch { return null; } })();
+    if (typeof musicxml !== 'string' || !musicxml.includes('<score-partwise')) {
+      trace?.warn('OMR_NO_MUSICXML', { contentType, bodyPrefix: body.slice(0, 120) });
       return null;
     }
-    trace?.log('OMR_DONE', { xmlLength: data.musicxml.length });
-    return data.musicxml;
+    trace?.log('OMR_DONE', { xmlLength: musicxml.length });
+    return musicxml;
   } catch (err) {
     trace?.warn('OMR_EXCEPTION', { error: err.message });
     return null;
