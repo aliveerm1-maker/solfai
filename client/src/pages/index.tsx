@@ -214,12 +214,12 @@ export default function Home() {
 
         <div className="relative mx-auto w-full max-w-3xl px-5 pt-14 pb-16 flex flex-col items-center">
           {/* Floating clef */}
-          <div className="relative h-36 w-36 -mb-3">
-            <div className="absolute -inset-8 rounded-full blur-3xl opacity-70"
+          <div className="relative h-36 w-36 mb-1">
+            <div className="absolute -inset-6 rounded-full blur-3xl opacity-60"
                  style={{ background: "radial-gradient(circle, color-mix(in oklab, var(--teal) 45%, transparent), transparent 65%)" }} />
             <Suspense fallback={<div className="h-full w-full" />}>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-40 w-28"><TrebleClef3D /></div>
+                <div className="h-36 w-24"><TrebleClef3D /></div>
               </div>
             </Suspense>
           </div>

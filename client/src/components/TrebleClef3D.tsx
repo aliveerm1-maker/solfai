@@ -75,12 +75,12 @@ function TrebleClefMesh() {
       shapes.push(...s);
     }
     const geo = new THREE.ExtrudeGeometry(shapes, {
-      depth: 22,          // depth in SVG units (clef is ~500 tall) → thin ribbon
+      depth: 26,          // depth in SVG units (clef is ~500 tall) → thin ribbon
       bevelEnabled: true,
-      bevelThickness: 3,
-      bevelSize: 2,
-      bevelSegments: 4,
-      curveSegments: 48,
+      bevelThickness: 4,
+      bevelSize: 2.5,
+      bevelSegments: 10,  // smoother rounded edges
+      curveSegments: 96,  // smoother curves (was 48)
     });
     geo.center();
     geo.scale(1, -1, 1); // SVG Y is inverted
@@ -105,21 +105,22 @@ function TrebleClefMesh() {
       <Float speed={1.1} rotationIntensity={0.05} floatIntensity={0.35}>
         <mesh geometry={geometry}>
           <MeshTransmissionMaterial
-            samples={6}
-            resolution={512}
+            samples={16}
+            resolution={1024}
             transmission={1}
-            roughness={0.02}
-            thickness={0.4}
-            ior={1.45}
-            chromaticAberration={0.06}
-            anisotropy={0.15}
-            distortion={0.05}
-            distortionScale={0.3}
+            roughness={0}
+            thickness={0.55}
+            ior={1.5}
+            chromaticAberration={0.025}
+            anisotropy={0.1}
+            distortion={0}
+            distortionScale={0.2}
             temporalDistortion={0}
             clearcoat={1}
-            clearcoatRoughness={0.02}
+            clearcoatRoughness={0}
+            envMapIntensity={1.6}
             attenuationColor={new THREE.Color("#f2d59a")}
-            attenuationDistance={3}
+            attenuationDistance={4}
             color={new THREE.Color("#ffffff")}
             backside
           />
@@ -140,16 +141,17 @@ export function TrebleClef3D() {
   return (
     <div className="relative aspect-[3/4.2] w-full max-w-[460px]">
       <Canvas
-        camera={{ position: [0, 0, 8], fov: 36 }}
-        dpr={[1, 2]}
+        camera={{ position: [0, 0, 8], fov: 34 }}
+        dpr={[1.5, 2]}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       >
-        <ambientLight intensity={0.3} />
-        <directionalLight position={[5, 6, 5]} intensity={1.1} color="#fff2d0" />
-        <directionalLight position={[-4, -3, 4]} intensity={0.5} color="#c9b98a" />
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 6, 5]} intensity={1.5} color="#fff2d0" />
+        <directionalLight position={[-4, -3, 4]} intensity={0.8} color="#c9b98a" />
+        <directionalLight position={[0, -5, -3]} intensity={0.5} color="#ffffff" />
         <Suspense fallback={null}>
           <TrebleClefMesh />
-          <Environment preset="warehouse" />
+          <Environment preset="studio" />
         </Suspense>
       </Canvas>
     </div>
