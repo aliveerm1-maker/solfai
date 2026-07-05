@@ -2013,6 +2013,35 @@
       .lv-island { width: 100%; }
       .top-bar { padding: 10px 12px !important; }
     }
+
+    /* — Reference sidebar: New-analysis primary + Recents ————— */
+    .sidebar-nav { flex: 0 0 auto; }
+    .sidebar-logo-subtitle { text-transform: uppercase; }
+    .sidebar-item.primary {
+      background: color-mix(in srgb, var(--bg) 55%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--teal) 32%, transparent);
+      color: var(--text);
+    }
+    .sidebar-item.primary .sidebar-item-icon { color: var(--teal); opacity: 1; }
+    .sidebar-item.primary:hover { background: color-mix(in srgb, var(--bg) 72%, transparent); }
+    .sidebar-item.primary.active {
+      background: color-mix(in srgb, var(--bg) 72%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--teal) 40%, transparent);
+    }
+    .sidebar-recents { flex: 0 0 auto; margin-top: 16px; padding: 0 6px; min-height: 0; }
+    .sidebar-recents-title {
+      font-size: 0.56rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px; font-weight: 700;
+    }
+    .sidebar-recents ul { list-style: none; display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; }
+    .sidebar-recents button {
+      width: 100%; text-align: left; background: transparent; border: 0; cursor: pointer;
+      color: var(--muted); font-size: 0.78rem; padding: 6px 8px; border-radius: 8px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      transition: color .15s, background .15s;
+    }
+    .sidebar-recents button:hover { color: var(--text); background: color-mix(in srgb, var(--surface-muted) 55%, transparent); }
+    @media (max-width: 768px) { .sidebar-recents { display: none; } }
     .lv-badge {
       position: relative; z-index: 1; margin-top: 12px;
       display: inline-flex; align-items: center; gap: 8px;
@@ -2244,13 +2273,21 @@
     </div>
     <div>
       <div class="sidebar-logo-text">SOLFAI</div>
-      <div class="sidebar-logo-subtitle">AI SHEET MUSIC ANALYSIS</div>
+      <div class="sidebar-logo-subtitle">SIGHT-READ STUDIO</div>
     </div>
   </div>
   <nav class="sidebar-nav">
-    <div class="sidebar-item active" onclick="switchSection('analyze')" data-section="analyze">
-      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"/></svg></span>
-      <span class="sidebar-item-label">Analyze</span>
+    <div class="sidebar-item primary active" onclick="switchSection('analyze')" data-section="analyze">
+      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span>
+      <span class="sidebar-item-label">New analysis</span>
+    </div>
+    <div class="sidebar-item" onclick="switchSection('library')">
+      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <span class="sidebar-item-label">Search library</span>
+    </div>
+    <div class="sidebar-item" onclick="switchSection('library')" data-section="library">
+      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5z"/><path d="M8 7h6M8 11h6"/></svg></span>
+      <span class="sidebar-item-label">Library</span>
     </div>
     <div class="sidebar-item" onclick="switchSection('practice')" data-section="practice">
       <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></span>
@@ -2260,11 +2297,17 @@
       <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg></span>
       <span class="sidebar-item-label">Vocal Coach</span>
     </div>
-    <div class="sidebar-item" onclick="switchSection('library')" data-section="library">
-      <span class="sidebar-item-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5z"/><path d="M8 7h6M8 11h6"/></svg></span>
-      <span class="sidebar-item-label">Library</span>
-    </div>
   </nav>
+  <div class="sidebar-recents">
+    <div class="sidebar-recents-title">Recents</div>
+    <ul>
+      <li><button type="button" onclick="switchSection('library')">Speak the Truth — Tenor</button></li>
+      <li><button type="button" onclick="switchSection('library')">Didn't My Lord Deliver Daniel?</button></li>
+      <li><button type="button" onclick="switchSection('library')">Ave Verum Corpus — Alto</button></li>
+      <li><button type="button" onclick="switchSection('library')">Sicut Cervus warm-up</button></li>
+      <li><button type="button" onclick="switchSection('library')">Interval drill · P5s</button></li>
+    </ul>
+  </div>
   <div class="sidebar-bottom">
     <div class="usage-card" aria-label="Monthly analysis usage">
       <div class="usage-user-row">
