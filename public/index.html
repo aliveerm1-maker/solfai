@@ -20,6 +20,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
   <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1914,12 +1922,39 @@
       filter: blur(26px); pointer-events: none; z-index: 0;
     }
     .lv-clef {
-      position: relative; z-index: 1; width: 62px; height: 116px;
-      animation: markFloat 6s ease-in-out infinite;
+      position: relative; z-index: 1; width: 150px; height: 210px;
+      display: grid; place-items: center;
     }
-    .lv-clef svg {
-      width: 100%; height: 100%; display: block;
+    #lvClefCanvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      display: block;
+    }
+    .lv-clef-fallback {
+      width: 62px; height: 116px; display: block;
+      animation: markFloat 6s ease-in-out infinite;
       filter: drop-shadow(0 10px 22px color-mix(in oklab, var(--teal) 42%, transparent));
+    }
+    .lv-clef.ready .lv-clef-fallback { display: none; }
+
+    /* Ambient hero backdrop (dark theme only — the photo is a dark plate) */
+    .lv-hero-bg {
+      position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+      width: calc(100vw - var(--sidebar-w)); height: 640px; z-index: 0;
+      pointer-events: none; display: none;
+      background-image:
+        linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--bg) 45%, transparent) 52%, var(--bg) 90%),
+        radial-gradient(ellipse 60% 42% at 50% 4%, color-mix(in oklab, var(--teal) 20%, transparent), transparent 62%),
+        url('/assets/ambient-hero.jpg');
+      background-size: cover, cover, cover;
+      background-position: center top;
+      background-repeat: no-repeat;
+    }
+    [data-theme="dark"] .lv-hero-bg { display: block; }
+    #section-analyze { position: relative; }
+    .lv-mode svg { flex-shrink: 0; }
+    .lv-mode { display: inline-flex; align-items: center; gap: 7px; }
+    @media (max-width: 768px) {
+      .lv-hero-bg { width: 100vw; }
     }
     .lv-badge {
       position: relative; z-index: 1; margin-top: 12px;
@@ -2262,11 +2297,15 @@
       <div class="section-desc">Upload a sheet music file and Solfai will analyze it instantly.</div>
     </div>
 
+    <!-- Ambient hero backdrop (Lovable ambient-hero.jpg) -->
+    <div class="lv-hero-bg" aria-hidden="true"></div>
+
     <!-- Lovable-style centered composer hero (decorative + real nav) -->
     <div class="lv-hero">
       <div class="lv-hero-glow" aria-hidden="true"></div>
       <div class="lv-clef" aria-hidden="true">
-        <svg viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg">
+        <canvas id="lvClefCanvas"></canvas>
+        <svg class="lv-clef-fallback" viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="lvClefGold" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stop-color="oklch(0.93 0.11 82)"/>
@@ -2278,14 +2317,14 @@
         </svg>
       </div>
       <div class="lv-badge"><span class="lv-badge-dot"></span> Solfai · v0.4 preview</div>
-      <h1 class="lv-greeting">Welcome back, <span class="lv-name">Ali</span></h1>
-      <p class="lv-tagline">Upload a score — Solfai returns key, tempo, range, and section notes, built for your exact voice part.</p>
+      <h1 class="lv-greeting">Good afternoon, <span class="lv-name">Ali</span></h1>
+      <p class="lv-tagline">Read a score end-to-end. Switch modes below — Solfai reshapes itself around what you're trying to do.</p>
       <div class="lv-modes" role="tablist" aria-label="Modes">
-        <button type="button" class="lv-mode active" onclick="switchSection('analyze')">Analyze</button>
-        <button type="button" class="lv-mode" onclick="switchSection('practice')">Sight-read</button>
-        <button type="button" class="lv-mode" onclick="switchSection('practice')">Ear Training</button>
-        <button type="button" class="lv-mode" onclick="switchSection('vocal-coach')">Vocal Coach</button>
-        <button type="button" class="lv-mode" onclick="switchSection('practice')">Compose</button>
+        <button type="button" class="lv-mode active" onclick="switchSection('analyze')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg> Analyze</button>
+        <button type="button" class="lv-mode" onclick="switchSection('practice')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Sight-read</button>
+        <button type="button" class="lv-mode" onclick="switchSection('practice')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 0 1-7 0M6 8.5a2.5 2.5 0 0 1 5 0"/></svg> Ear Training</button>
+        <button type="button" class="lv-mode" onclick="switchSection('vocal-coach')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M4.9 4.9a10 10 0 0 0 0 14.2M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> Vocal Coach</button>
+        <button type="button" class="lv-mode" onclick="switchSection('practice')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Compose</button>
       </div>
     </div>
 
@@ -7451,6 +7490,88 @@ function buildWeakPanel() {
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">${weak.map(s=>`<span style="padding:3px 10px;border-radius:999px;background:${COLS[s]||'var(--card)'};color:white;font-size:0.8rem;font-weight:600">${s}</span>`).join('')}</div>
     <button style="font-size:0.72rem;color:var(--muted);background:none;border:none;cursor:pointer;padding:0" onclick="localStorage.removeItem('solfai-weak-syllables');buildWeakPanel()">Clear weak spots</button>`;
 }
+</script>
+
+<!-- 3D glass treble clef (ported from reference TrebleClef3D.tsx; decorative, isolated) -->
+<script type="module">
+  import * as THREE from 'three';
+  import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+  import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+  const TREBLE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 500"><path fill="currentColor" fill-rule="evenodd" d="M 108 8 C 88 8 72 27 72 51 C 72 71 82 92 93 111 C 68 132 40 158 40 197 C 40 236 68 264 106 269 L 116 341 C 118 356 108 371 92 374 C 76 377 61 366 59 351 C 57 340 62 329 71 323 C 74 321 75 317 73 314 C 71 311 67 310 64 312 C 49 322 41 341 45 359 C 50 384 74 401 99 396 C 124 391 141 367 137 342 L 127 269 C 165 265 195 233 195 195 C 195 158 168 128 133 122 L 124 79 C 141 63 155 43 155 21 C 155 12 148 8 108 8 Z M 116 30 C 128 30 138 40 138 52 C 138 68 128 82 116 92 L 108 40 C 108 34 112 30 116 30 Z M 102 138 C 108 152 114 166 118 180 L 128 253 C 108 250 92 233 92 213 C 92 195 106 179 124 176 C 128 175 131 172 130 168 C 129 164 126 162 122 162 C 96 168 78 190 78 216 C 78 246 100 271 128 275 L 138 348 C 92 355 52 320 52 273 C 52 217 78 178 102 138 Z M 134 138 C 158 148 174 172 174 199 C 174 233 148 261 116 264 L 106 191 C 122 190 138 178 138 162 C 138 154 133 148 126 145 C 121 143 116 146 114 151 C 112 156 115 161 120 163 Z"/></svg>';
+
+  function initClef() {
+    const canvas = document.getElementById('lvClefCanvas');
+    if (!canvas) return;
+    const wrap = canvas.parentElement;
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    } catch (e) { return; } // no WebGL → keep SVG fallback
+    renderer.setClearColor(0x000000, 0);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+    camera.position.set(0, 0, 8);
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+    const d1 = new THREE.DirectionalLight(0xfff2d0, 1.3); d1.position.set(5, 6, 5); scene.add(d1);
+    const d2 = new THREE.DirectionalLight(0xc9b98a, 0.6); d2.position.set(-4, -3, 4); scene.add(d2);
+
+    // Build extruded clef geometry from the SVG path
+    const loader = new SVGLoader();
+    const data = loader.parse(TREBLE_SVG);
+    const shapes = [];
+    for (const path of data.paths) shapes.push(...SVGLoader.createShapes(path));
+    const geo = new THREE.ExtrudeGeometry(shapes, {
+      depth: 22, bevelEnabled: true, bevelThickness: 3, bevelSize: 2, bevelSegments: 4, curveSegments: 48,
+    });
+    geo.center();
+    geo.scale(1, -1, 1);
+    geo.computeBoundingBox();
+    const h = geo.boundingBox.max.y - geo.boundingBox.min.y;
+    const s = 4.2 / h; geo.scale(s, s, s);
+    geo.computeVertexNormals();
+
+    const material = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color('#ffffff'),
+      metalness: 0.1, roughness: 0.05,
+      transmission: 1, thickness: 0.5, ior: 1.45,
+      clearcoat: 1, clearcoatRoughness: 0.03,
+      attenuationColor: new THREE.Color('#f2d59a'), attenuationDistance: 3,
+      envMapIntensity: 1.1,
+    });
+    const mesh = new THREE.Mesh(geo, material);
+    const group = new THREE.Group(); group.add(mesh); scene.add(group);
+
+    function resize() {
+      const w = wrap.clientWidth || 150, hgt = wrap.clientHeight || 210;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(w, hgt, false);
+      camera.aspect = w / hgt; camera.updateProjectionMatrix();
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    wrap.classList.add('ready'); // hide SVG fallback
+
+    let t0 = performance.now(), floatT = 0;
+    function loop(now) {
+      const dt = Math.min((now - t0) / 1000, 0.05); t0 = now; floatT += dt;
+      group.rotation.y += dt * 0.5;
+      group.position.y = Math.sin(floatT * 1.1) * 0.12;
+      group.rotation.x = Math.sin(floatT * 0.7) * 0.05;
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initClef);
+  else initClef();
 </script>
 </body>
 </html>
