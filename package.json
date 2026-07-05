@@ -5,7 +5,11 @@
   "description": "AI Sheet Music Coach",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "npm --prefix client install && npm --prefix client run build",
+    "build:client": "npm --prefix client run build",
+    "postinstall": "echo 'Run: npm run build (builds the client SPA into client/dist)'"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",

@@ -27,7 +27,25 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(join(__dirname, 'public')));
+
+// ─── Frontend serving ─────────────────────────────────────
+// Primary UI: the Lovable React SPA (client/dist). The fully-functional classic
+// single-file UI is preserved at /classic so NO functionality is lost.
+const CLIENT_DIST = join(__dirname, 'client', 'dist');
+const HAS_CLIENT_BUILD = existsSync(join(CLIENT_DIST, 'index.html'));
+
+// Classic UI preserved: upload, analyze, solfege, vocal coach, transpose, etc.
+app.use('/classic', express.static(join(__dirname, 'public')));
+
+if (HAS_CLIENT_BUILD) {
+  app.use(express.static(CLIENT_DIST));                                     // React SPA = front door
+  app.use('/assets', express.static(join(__dirname, 'public', 'assets'))); // fallback for classic static assets (logo, etc.)
+  console.log('[Solfai] Serving Lovable SPA from client/dist (classic UI at /classic)');
+} else {
+  // SPA not built yet — serve the classic app at root so nothing breaks.
+  app.use(express.static(join(__dirname, 'public')));
+  console.log('[Solfai] client/dist not found — serving classic UI at / (run: npm run build)');
+}
 
 // ─── Config ───────────────────────────────────────────────
 const GEMINI_MODEL = 'gemini-2.5-pro';
@@ -5426,6 +5444,15 @@ app.post('/api/smart-practice', (req, res) => {
   const queue = scored.slice(0, 10);
 
   return res.json({ queue, totalMeasures: measures.length, weakMeasureCount: Object.keys(weaknessMap).length });
+});
+
+// ─── SPA fallback ─────────────────────────────────────────
+// Any non-API, non-classic GET route is handled by the React app's client-side
+// router (e.g. /library, /practice, /vocal-coach → serve the SPA shell).
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/classic') || req.path === '/sw.js') return next();
+  if (HAS_CLIENT_BUILD) return res.sendFile(join(CLIENT_DIST, 'index.html'));
+  return next();
 });
 
 // ─── Start ────────────────────────────────────────────────
