@@ -1870,6 +1870,154 @@
       .card-title { font-size: 1.2rem; }
     }
 
+    /* ═══════════════════════════════════════════════════════════════
+       LOVABLE HOME LAYOUT — centered composer for the Analyze page.
+       Collapses the dashboard grid into a single centered column and
+       adds the reference's clef · greeting · mode picker · quick-action
+       cards · suggestion chips. All new elements use .lv-* classes and
+       call existing global functions; no JS-referenced ids touched.
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* On Analyze: drop the old header/preview, hide the duplicated top-bar
+       greeting, and center the working column. */
+    #section-analyze { max-width: 1000px; }
+    #section-analyze > .section-header { display: none; }
+    #section-analyze .dashboard-grid {
+      grid-template-columns: 1fr;
+      max-width: 720px;
+      margin: 0 auto;
+      gap: 18px;
+      align-items: stretch;
+    }
+    #section-analyze .results-placeholder { display: none !important; }
+    #section-analyze .upload-card .card-title,
+    #section-analyze .upload-card .card-copy { display: none; }
+    body:has(#section-analyze.active) .top-bar { justify-content: flex-end; }
+    body:has(#section-analyze.active) .top-bar-heading { display: none; }
+    /* When results/loading appear, let them breathe wider than the composer */
+    #section-analyze .results.show,
+    #section-analyze .analysis-state-card { max-width: 860px; margin: 0 auto; }
+
+    /* — Hero ————————————————————————————————————————————————— */
+    .lv-hero {
+      position: relative;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center;
+      padding: 6px 16px 22px;
+      margin: 0 auto 8px;
+      max-width: 720px;
+    }
+    .lv-hero-glow {
+      position: absolute; top: -46px; left: 50%; transform: translateX(-50%);
+      width: 440px; height: 280px; max-width: 90vw;
+      background: radial-gradient(ellipse at center, color-mix(in oklab, var(--teal) 24%, transparent), transparent 66%);
+      filter: blur(26px); pointer-events: none; z-index: 0;
+    }
+    .lv-clef {
+      position: relative; z-index: 1; width: 62px; height: 116px;
+      animation: markFloat 6s ease-in-out infinite;
+    }
+    .lv-clef svg {
+      width: 100%; height: 100%; display: block;
+      filter: drop-shadow(0 10px 22px color-mix(in oklab, var(--teal) 42%, transparent));
+    }
+    .lv-badge {
+      position: relative; z-index: 1; margin-top: 12px;
+      display: inline-flex; align-items: center; gap: 8px;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 65%, transparent);
+      border-radius: 999px; padding: 5px 14px;
+      font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted); font-weight: 700; backdrop-filter: blur(10px);
+    }
+    .lv-badge-dot {
+      width: 5px; height: 5px; border-radius: 999px;
+      background: var(--teal); box-shadow: 0 0 10px var(--teal); flex-shrink: 0;
+    }
+    .lv-greeting {
+      position: relative; z-index: 1; margin-top: 18px;
+      font-family: 'Fraunces', ui-serif, Georgia, serif; font-optical-sizing: auto;
+      font-size: 2.7rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.05;
+      color: var(--text);
+    }
+    .lv-name {
+      font-style: italic;
+      background: linear-gradient(120deg, var(--text) 0%, var(--teal) 55%, var(--text) 100%);
+      background-size: 200% 100%;
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      animation: shimmer 9s linear infinite;
+    }
+    .lv-tagline {
+      position: relative; z-index: 1; margin-top: 12px; max-width: 470px;
+      color: var(--text2); font-size: 0.98rem; line-height: 1.6;
+    }
+    .lv-modes {
+      position: relative; z-index: 1; margin-top: 22px;
+      display: flex; gap: 5px; padding: 6px; max-width: 100%;
+      border: 1px solid var(--border); border-radius: 18px;
+      background: color-mix(in srgb, var(--surface) 60%, transparent);
+      backdrop-filter: blur(14px);
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .lv-modes::-webkit-scrollbar { display: none; }
+    .lv-mode {
+      border: none; background: transparent; color: var(--text2);
+      font-size: 0.8rem; font-weight: 600; padding: 9px 16px; border-radius: 12px;
+      cursor: pointer; white-space: nowrap; transition: color .2s, background .2s, box-shadow .2s;
+    }
+    .lv-mode:hover { color: var(--text); }
+    .lv-mode.active {
+      background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+      color: var(--ink); box-shadow: 0 10px 26px -12px var(--teal);
+    }
+
+    /* — Quick-action cards ———————————————————————————————— */
+    .lv-actions {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+      max-width: 720px; margin: 2px auto 0;
+    }
+    .lv-action {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+      text-align: left; padding: 14px;
+      border: 1px solid var(--border); border-radius: 16px;
+      background: color-mix(in srgb, var(--surface) 55%, transparent);
+      cursor: pointer; transition: transform .2s, border-color .2s, background .2s;
+    }
+    .lv-action:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in oklab, var(--teal) 45%, transparent);
+      background: var(--surface);
+    }
+    .lv-action-ic {
+      display: grid; place-items: center; width: 30px; height: 30px;
+      border-radius: 10px; background: var(--bg); color: var(--teal);
+      border: 1px solid var(--border); font-size: 0.95rem;
+    }
+    .lv-action-t { font-size: 0.86rem; font-weight: 600; color: var(--text); }
+    .lv-action-h { font-size: 0.72rem; color: var(--muted); line-height: 1.35; }
+
+    /* — Suggestion chips ————————————————————————————————— */
+    .lv-suggest { max-width: 720px; margin: 6px auto 0; }
+    .lv-suggest-h {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+      font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted); font-weight: 700;
+    }
+    .lv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .lv-chip {
+      border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px;
+      background: color-mix(in srgb, var(--surface) 40%, transparent);
+      color: var(--text2); font-size: 0.78rem; cursor: pointer; transition: color .2s, border-color .2s;
+    }
+    .lv-chip:hover { color: var(--text); border-color: color-mix(in oklab, var(--teal) 40%, transparent); }
+
+    @media (max-width: 768px) {
+      .lv-greeting { font-size: 2rem; }
+      .lv-actions { grid-template-columns: repeat(2, 1fr); }
+      #section-analyze .dashboard-grid { max-width: 100%; }
+      .lv-hero, .lv-suggest, .lv-actions { max-width: 100%; }
+    }
+
   </style>
 </head>
 <body>
@@ -2114,6 +2262,33 @@
       <div class="section-desc">Upload a sheet music file and Solfai will analyze it instantly.</div>
     </div>
 
+    <!-- Lovable-style centered composer hero (decorative + real nav) -->
+    <div class="lv-hero">
+      <div class="lv-hero-glow" aria-hidden="true"></div>
+      <div class="lv-clef" aria-hidden="true">
+        <svg viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="lvClefGold" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="oklch(0.93 0.11 82)"/>
+              <stop offset=".55" stop-color="oklch(0.78 0.15 68)"/>
+              <stop offset="1" stop-color="oklch(0.52 0.12 55)"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#lvClefGold)" fill-rule="evenodd" d="M 108 8 C 88 8 72 27 72 51 C 72 71 82 92 93 111 C 68 132 40 158 40 197 C 40 236 68 264 106 269 L 116 341 C 118 351 118 361 116 370 C 112 388 96 400 78 400 C 60 400 46 386 46 368 C 46 356 54 346 66 342 C 60 332 56 322 60 310 C 40 316 26 336 26 360 C 26 390 52 414 84 414 C 116 414 142 390 142 358 C 142 352 141 346 140 340 L 128 264 C 156 258 178 234 178 204 C 178 178 160 158 138 152 L 133 122 C 152 100 168 76 168 50 C 168 27 152 8 132 8 Z M 120 44 C 129 44 136 52 136 62 C 136 78 126 96 112 112 L 108 84 C 106 68 110 44 120 44 Z M 116 176 L 126 240 C 143 236 155 222 155 204 C 155 188 138 176 116 176 Z M 104 176 C 86 178 72 190 72 208 C 72 226 86 240 104 240 C 106 240 108 240 110 240 L 100 176 Z"/>
+        </svg>
+      </div>
+      <div class="lv-badge"><span class="lv-badge-dot"></span> Solfai · v0.4 preview</div>
+      <h1 class="lv-greeting">Welcome back, <span class="lv-name">Ali</span></h1>
+      <p class="lv-tagline">Upload a score — Solfai returns key, tempo, range, and section notes, built for your exact voice part.</p>
+      <div class="lv-modes" role="tablist" aria-label="Modes">
+        <button type="button" class="lv-mode active" onclick="switchSection('analyze')">Analyze</button>
+        <button type="button" class="lv-mode" onclick="switchSection('practice')">Sight-read</button>
+        <button type="button" class="lv-mode" onclick="switchSection('practice')">Ear Training</button>
+        <button type="button" class="lv-mode" onclick="switchSection('vocal-coach')">Vocal Coach</button>
+        <button type="button" class="lv-mode" onclick="switchSection('practice')">Compose</button>
+      </div>
+    </div>
+
     <div class="dashboard-grid">
       <div class="analyze-card upload-card">
         <div class="card-kicker">New score</div>
@@ -2169,6 +2344,38 @@
     </div>
 
       </div>
+
+    <!-- Lovable-style quick actions + suggestions (wired to existing functions) -->
+    <div class="lv-actions">
+      <button type="button" class="lv-action" onclick="document.getElementById('fileInput').click()">
+        <span class="lv-action-ic" aria-hidden="true">&#8613;</span>
+        <span class="lv-action-t">Upload a score</span>
+        <span class="lv-action-h">PDF · MusicXML · Image</span>
+      </button>
+      <button type="button" class="lv-action" onclick="if(window._startingPitchFreq){playStartingPitch()}else{showToast('Analyze a piece first','info')}">
+        <span class="lv-action-ic" aria-hidden="true">&#9834;</span>
+        <span class="lv-action-t">Find starting pitch</span>
+        <span class="lv-action-h">From your first entrance</span>
+      </button>
+      <button type="button" class="lv-action" onclick="switchSection('practice')">
+        <span class="lv-action-ic" aria-hidden="true">&#9654;</span>
+        <span class="lv-action-t">Practice mode</span>
+        <span class="lv-action-h">Measure by measure</span>
+      </button>
+      <button type="button" class="lv-action" onclick="switchSection('vocal-coach')">
+        <span class="lv-action-ic" aria-hidden="true">&#9673;</span>
+        <span class="lv-action-t">Vocal coach</span>
+        <span class="lv-action-h">Record &amp; get feedback</span>
+      </button>
+    </div>
+    <div class="lv-suggest">
+      <div class="lv-suggest-h"><span class="lv-badge-dot"></span> Try</div>
+      <div class="lv-chips">
+        <button type="button" class="lv-chip" onclick="document.getElementById('fileInput').click()">Upload a MusicXML for exact notes</button>
+        <button type="button" class="lv-chip" onclick="switchSection('practice')">Drill intervals for 5 minutes</button>
+        <button type="button" class="lv-chip" onclick="switchSection('vocal-coach')">Grade my last recording</button>
+      </div>
+    </div>
 
     <div class="analyze-card results-placeholder" id="resultsPlaceholder" aria-live="polite">
       <div class="results-header">
