@@ -1911,8 +1911,8 @@
       position: relative;
       display: flex; flex-direction: column; align-items: center;
       text-align: center;
-      padding: 6px 16px 22px;
-      margin: 0 auto 8px;
+      padding: 40px 16px 44px;
+      margin: 0 auto 10px;
       max-width: 720px;
     }
     .lv-hero-glow {
@@ -1939,15 +1939,17 @@
     /* Ambient hero backdrop (dark theme only — the photo is a dark plate).
        Fixed to the top of the main area so the floating island sits over it. */
     .lv-hero-bg {
-      position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: 640px; z-index: 0;
+      position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: 720px; z-index: 0;
       pointer-events: none; display: none;
       background-image:
-        linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--bg) 40%, transparent) 55%, var(--bg) 92%),
-        radial-gradient(ellipse 55% 42% at 50% 6%, color-mix(in oklab, var(--teal) 18%, transparent), transparent 62%),
+        radial-gradient(ellipse 56% 44% at 50% 10%, color-mix(in oklab, var(--teal) 15%, transparent), transparent 60%),
         url('/assets/ambient-hero.jpg');
-      background-size: cover, cover, cover;
-      background-position: center top;
+      background-size: cover, cover;
+      background-position: center 28%;
       background-repeat: no-repeat;
+      /* Dissolve the photo into the page (no hard rectangular edge) */
+      -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 44%, rgba(0,0,0,0.35) 70%, transparent 90%);
+      mask-image: linear-gradient(to bottom, #000 0%, #000 44%, rgba(0,0,0,0.35) 70%, transparent 90%);
     }
     [data-theme="dark"] .lv-hero-bg { display: block; }
     #section-analyze { position: relative; }
@@ -2042,6 +2044,45 @@
     }
     .sidebar-recents button:hover { color: var(--text); background: color-mix(in srgb, var(--surface-muted) 55%, transparent); }
     @media (max-width: 768px) { .sidebar-recents { display: none; } }
+
+    /* ═══ POLISH PASS — clef logo, hero spacing, CTA, action cards ═══ */
+
+    /* Glass PNG sidebar logo (snapshot of the corrected 3D clef) */
+    .solfai-mark-svg { display: none !important; }
+    .sidebar-logo-icon { width: 44px; height: 60px; }
+    .solfai-mark-img {
+      width: 44px; height: 60px; object-fit: contain; display: block;
+      animation: markFloat 6s ease-in-out infinite;
+      filter: drop-shadow(0 6px 14px color-mix(in oklab, var(--teal) 40%, transparent));
+    }
+
+    /* Hero breathing room + slightly larger clef */
+    .lv-clef { width: 160px; height: 224px; }
+    .lv-badge { margin-top: 16px !important; }
+    .lv-greeting { margin-top: 22px !important; }
+    .lv-tagline { margin-top: 15px !important; }
+    .lv-modes { margin-top: 30px !important; }
+
+    /* Vibrant amber CTA — the analyze button is disabled until a file is
+       chosen; the old opacity:0.4 turned the amber into muddy brown. Match
+       the CHOOSE FILE vibrancy (same gradient) with only a faint dim. */
+    #analyzeBtn {
+      background: linear-gradient(135deg, var(--teal), var(--teal-dark)) !important;
+      color: var(--ink) !important;
+    }
+    #analyzeBtn:disabled { opacity: 0.9; }
+
+    /* Quick-action cards — match reference index.tsx: icon+title in a row,
+       28px badge, hint below, rounded-2xl, p-3.5, subtle hover lift. */
+    .lv-action { gap: 6px !important; padding: 14px !important; border-radius: 16px !important; }
+    .lv-action-row { display: flex; align-items: center; gap: 8px; }
+    .lv-action-ic {
+      width: 28px !important; height: 28px !important; border-radius: 8px !important;
+      font-size: 0.82rem !important; flex-shrink: 0;
+    }
+    .lv-action:hover .lv-action-ic { border-color: color-mix(in oklab, var(--teal) 40%, transparent); }
+    .lv-action-t { font-size: 0.82rem !important; font-weight: 600; }
+    .lv-action-h { font-size: 0.69rem !important; color: var(--muted); line-height: 1.35; }
     .lv-badge {
       position: relative; z-index: 1; margin-top: 12px;
       display: inline-flex; align-items: center; gap: 8px;
@@ -2224,7 +2265,8 @@
 <aside class="sidebar">
   <div class="sidebar-logo" onclick="switchSection('analyze')">
     <div class="sidebar-logo-icon" aria-hidden="true">
-      <svg class="solfai-mark" viewBox="0 0 46 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <img class="solfai-mark solfai-mark-img" src="/assets/clef-logo.png" alt="" width="44" height="60" />
+      <svg class="solfai-mark solfai-mark-svg" viewBox="0 0 46 64" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="gcBody" x1="13" y1="6" x2="31" y2="58" gradientUnits="userSpaceOnUse">
             <stop offset="0" stop-color="#fbe7c8"/>
@@ -2488,23 +2530,19 @@
     <!-- Lovable-style quick actions + suggestions (wired to existing functions) -->
     <div class="lv-actions">
       <button type="button" class="lv-action" onclick="document.getElementById('fileInput').click()">
-        <span class="lv-action-ic" aria-hidden="true">&#8613;</span>
-        <span class="lv-action-t">Upload a score</span>
+        <span class="lv-action-row"><span class="lv-action-ic" aria-hidden="true">&#8613;</span><span class="lv-action-t">Upload a score</span></span>
         <span class="lv-action-h">PDF · MusicXML · Image</span>
       </button>
       <button type="button" class="lv-action" onclick="if(window._startingPitchFreq){playStartingPitch()}else{showToast('Analyze a piece first','info')}">
-        <span class="lv-action-ic" aria-hidden="true">&#9834;</span>
-        <span class="lv-action-t">Find starting pitch</span>
+        <span class="lv-action-row"><span class="lv-action-ic" aria-hidden="true">&#9834;</span><span class="lv-action-t">Find starting pitch</span></span>
         <span class="lv-action-h">From your first entrance</span>
       </button>
       <button type="button" class="lv-action" onclick="switchSection('practice')">
-        <span class="lv-action-ic" aria-hidden="true">&#9654;</span>
-        <span class="lv-action-t">Practice mode</span>
+        <span class="lv-action-row"><span class="lv-action-ic" aria-hidden="true">&#9654;</span><span class="lv-action-t">Practice mode</span></span>
         <span class="lv-action-h">Measure by measure</span>
       </button>
       <button type="button" class="lv-action" onclick="switchSection('vocal-coach')">
-        <span class="lv-action-ic" aria-hidden="true">&#9673;</span>
-        <span class="lv-action-t">Vocal coach</span>
+        <span class="lv-action-row"><span class="lv-action-ic" aria-hidden="true">&#9673;</span><span class="lv-action-t">Vocal coach</span></span>
         <span class="lv-action-h">Record &amp; get feedback</span>
       </button>
     </div>
@@ -7618,9 +7656,10 @@ function buildWeakPanel() {
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
-    const d1 = new THREE.DirectionalLight(0xfff2d0, 1.3); d1.position.set(5, 6, 5); scene.add(d1);
-    const d2 = new THREE.DirectionalLight(0xc9b98a, 0.6); d2.position.set(-4, -3, 4); scene.add(d2);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+    const d1 = new THREE.DirectionalLight(0xfff2d0, 2.4); d1.position.set(5, 6, 5); scene.add(d1);
+    const d2 = new THREE.DirectionalLight(0xffdca0, 1.4); d2.position.set(-4, -3, 4); scene.add(d2);
+    const d3 = new THREE.DirectionalLight(0xfff6e0, 1.1); d3.position.set(0, 2, 8); scene.add(d3);
 
     // Build extruded clef geometry from the SVG path
     const loader = new SVGLoader();
@@ -7637,13 +7676,15 @@ function buildWeakPanel() {
     const s = 4.2 / h; geo.scale(s, s, s);
     geo.computeVertexNormals();
 
+    // Polished gold glass-metal. No transmission: renders identically on
+    // every GPU (transmission glass turns the clef into an unreadable
+    // refracting blob on real hardware) while keeping a pristine glossy look.
     const material = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color('#ffffff'),
-      metalness: 0.1, roughness: 0.05,
-      transmission: 1, thickness: 0.5, ior: 1.45,
-      clearcoat: 1, clearcoatRoughness: 0.03,
-      attenuationColor: new THREE.Color('#f2d59a'), attenuationDistance: 3,
-      envMapIntensity: 1.1,
+      color: new THREE.Color('#f4d99b'),
+      metalness: 0.7, roughness: 0.17,
+      clearcoat: 1, clearcoatRoughness: 0.08,
+      reflectivity: 1, envMapIntensity: 2.0,
+      emissive: new THREE.Color('#3a2a10'), emissiveIntensity: 0.35,
     });
     const mesh = new THREE.Mesh(geo, material);
     const group = new THREE.Group(); group.add(mesh); scene.add(group);
