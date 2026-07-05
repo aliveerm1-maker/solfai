@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, Float, MeshTransmissionMaterial } from "@react-three/drei";
+import { Environment, Float, Lightformer, MeshTransmissionMaterial } from "@react-three/drei";
 import * as THREE from "three";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 
@@ -151,7 +151,15 @@ export function TrebleClef3D() {
         <directionalLight position={[0, -5, -3]} intensity={0.5} color="#ffffff" />
         <Suspense fallback={null}>
           <TrebleClefMesh />
-          <Environment preset="studio" />
+          {/* In-scene studio environment (lightformers) — no external HDR/CDN,
+              so the glass always has something bright to refract/reflect. */}
+          <Environment resolution={256}>
+            <color attach="background" args={["#0b0a12"]} />
+            <Lightformer form="rect" intensity={4} position={[0, 3, 5]} scale={[10, 10, 1]} color="#fff6e6" />
+            <Lightformer form="rect" intensity={2.5} position={[-6, 1, 2]} scale={[6, 10, 1]} color="#ffdca8" />
+            <Lightformer form="rect" intensity={2} position={[6, -1, 2]} scale={[6, 10, 1]} color="#ffffff" />
+            <Lightformer form="circle" intensity={3} position={[0, -5, 4]} scale={[5, 5, 1]} color="#ffe9c2" />
+          </Environment>
         </Suspense>
       </Canvas>
     </div>
