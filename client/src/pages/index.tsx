@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { analyzeScore, type AnalyzeResult } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import ambientHero from "@/assets/ambient-hero.jpg";
 import modeSightread from "@/assets/mode-sightread.jpg";
 import modeEartrain from "@/assets/mode-eartrain.jpg";
@@ -133,6 +134,11 @@ export default function Home() {
   const [part, setPart] = useState<(typeof PARTS)[number]>("Soprano");
   const [text, setText] = useState("");
 
+  const { user } = useAuth();
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const firstName = user?.given_name || user?.name?.split(" ")[0] || "";
+
   // ── Real backend wiring (flagship Analyze flow → /api/analyze) ──
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -224,8 +230,13 @@ export default function Home() {
           </div>
 
           <h1 className="mt-5 text-center serif text-4xl md:text-5xl font-semibold tracking-tight text-paper">
-            Good afternoon,{" "}
-            <span className="italic text-gradient-amber">Ali</span>
+            {greeting}
+            {firstName && (
+              <>
+                ,{" "}
+                <span className="italic text-gradient-amber">{firstName}</span>
+              </>
+            )}
           </h1>
           <p className="mt-3 max-w-lg text-center text-[15px] text-muted-dark">
             {mode.tagline}. Switch modes below — Solfai reshapes itself around what you're trying to do.

@@ -47,6 +47,12 @@ if (HAS_CLIENT_BUILD) {
   console.log('[Solfai] client/dist not found — serving classic UI at / (run: npm run build)');
 }
 
+// Frontend runtime config — Google OAuth client id for "Sign in with Google".
+// Set GOOGLE_OAUTH_CLIENT_ID in the environment (Render) to enable sign-in.
+app.get('/api/config', (req, res) => {
+  res.json({ googleClientId: process.env.GOOGLE_OAUTH_CLIENT_ID || null });
+});
+
 // ─── Config ───────────────────────────────────────────────
 const GEMINI_MODEL = 'gemini-2.5-pro';
 const GEMINI_FLASH = 'gemini-2.5-flash';

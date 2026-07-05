@@ -85,7 +85,8 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html { scroll-behavior: smooth; }
+  /* Render ~10% larger by default so it reads like a normal site without manual zoom. */
+  html { scroll-behavior: smooth; zoom: 1.1; }
   body {
     background: var(--bg);
     color: var(--paper);

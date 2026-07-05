@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
-import { Plus, Search, Library as LibIcon, PlayCircle, Mic, Music, Settings, ChevronDown, PanelLeft, Command, Flame } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Plus, Search, Library as LibIcon, PlayCircle, Mic, Music, Settings, ChevronDown, PanelLeft, Command, Flame, LogOut } from "lucide-react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { CommandPalette } from "@/components/CommandPalette";
 import { Equalizer } from "@/components/Equalizer";
+import { useAuth } from "@/lib/auth";
 
 type NavItem = { to: "/" | "/library" | "/practice" | "/vocal-coach"; label: string; icon: typeof Plus; primary?: boolean };
 const NAV: NavItem[] = [
@@ -58,6 +59,16 @@ function ProgressRing({ value, size = 34 }: { value: number; size?: number }) {
 export function AppLayout({ children, contentClassName = "", title, subtitle }: { children: ReactNode; contentClassName?: string; title?: string; subtitle?: string }) {
   const pathname = useLocation().pathname;
   const [open, setOpen] = useState(true);
+  const { user, signIn, signOut, renderButton, googleReady, clientId } = useAuth();
+  const signInRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user && open) renderButton(signInRef.current);
+  }, [user, open, googleReady, clientId, renderButton]);
+
+  const initials = user?.name
+    ? user.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()
+    : "";
 
   return (
     <div className="min-h-screen bg-bg text-paper flex">
@@ -153,17 +164,44 @@ export function AppLayout({ children, contentClassName = "", title, subtitle }: 
             <Command size={13} />
             {open && <><span>Quick actions</span><kbd className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border border-[color:var(--border-dark)]">⌘K</kbd></>}
           </button>
-          <button className={"w-full flex items-center gap-3 rounded-xl px-2.5 py-2 hover:bg-[color:var(--bg)]/60 transition " + (open ? "" : "justify-center")}>
-            <span className="grid place-items-center h-8 w-8 rounded-full text-[11px] font-semibold text-[color:var(--ink)]"
-                  style={{ background: "linear-gradient(135deg, oklch(0.82 0.14 78), oklch(0.65 0.15 55))" }}>AV</span>
-            {open && (
-              <div className="min-w-0 text-left leading-tight flex-1">
-                <div className="text-[13px] font-semibold truncate">Ali Veer</div>
-                <div className="text-[10.5px] text-muted-dark">Pro · 23/50 analyses</div>
-              </div>
-            )}
-            {open && <Settings size={14} className="text-muted-dark" />}
-          </button>
+          {user ? (
+            <div className={"w-full flex items-center gap-3 rounded-xl px-2.5 py-2 " + (open ? "" : "justify-center")}>
+              {user.picture ? (
+                <img src={user.picture} alt="" referrerPolicy="no-referrer"
+                     className="h-8 w-8 rounded-full ring-1 ring-[color:var(--border-dark)]" />
+              ) : (
+                <span className="grid place-items-center h-8 w-8 rounded-full text-[11px] font-semibold text-[color:var(--ink)]"
+                      style={{ background: "linear-gradient(135deg, oklch(0.82 0.14 78), oklch(0.65 0.15 55))" }}>{initials}</span>
+              )}
+              {open && (
+                <>
+                  <div className="min-w-0 text-left leading-tight flex-1">
+                    <div className="text-[13px] font-semibold truncate">{user.name}</div>
+                    <div className="text-[10.5px] text-muted-dark truncate">{user.email}</div>
+                  </div>
+                  <button onClick={signOut} title="Sign out" aria-label="Sign out"
+                          className="grid place-items-center h-7 w-7 rounded-lg text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/60 transition">
+                    <LogOut size={14} />
+                  </button>
+                </>
+              )}
+            </div>
+          ) : open ? (
+            clientId ? (
+              // Official Google Sign-In button (renders when a client id is configured)
+              <div ref={signInRef} className="flex justify-center min-h-[40px]" />
+            ) : (
+              <button onClick={signIn}
+                      className="w-full flex items-center justify-center gap-2 rounded-full border border-[color:var(--border-dark)] px-3 py-2 text-[12px] font-semibold text-muted-dark hover:text-paper hover:border-[color:var(--teal)]/50 transition">
+                <Music size={13} className="text-[color:var(--teal)]" /> Sign in with Google
+              </button>
+            )
+          ) : (
+            <button onClick={signIn} title="Sign in" aria-label="Sign in"
+                    className="w-full grid place-items-center rounded-xl px-2.5 py-2 hover:bg-[color:var(--bg)]/60 transition">
+              <Settings size={16} className="text-muted-dark" />
+            </button>
+          )}
         </div>
       </aside>
 
