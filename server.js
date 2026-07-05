@@ -5190,70 +5190,24 @@ app.get('/api/class/dashboard/:code', (req,res) => {
 // ─── Service Worker for PWA offline support ──────────────
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Cache-Control', 'no-store');
+  // Kill-switch service worker. The previous classic SW cached '/' and could
+  // serve stale classic HTML over the new SPA. This unregisters any existing
+  // service worker and clears all caches so the SPA always loads fresh.
   res.send(`
-const CACHE_NAME = 'solfai-cache-v3';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch((err) => {
-        console.warn('[SW] Failed to cache some assets:', err);
-      });
-    })
-  );
-  self.skipWaiting();
-});
-
+self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    })
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+      await self.registration.unregister();
+    } catch (e) {}
+    await self.clients.claim();
+  })());
 });
-
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  if (url.pathname.startsWith('/api/')) {
-    return;
-  }
-  // Network-first for page navigations so new deploys show up immediately.
-  // Falls back to cache only when offline.
-  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
-    event.respondWith(
-      fetch(event.request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => caches.match(event.request).then((c) => c || caches.match('/')))
-    );
-    return;
-  }
-  // Stale-while-revalidate for other assets.
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetchPromise = fetch(event.request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
-      return cached || fetchPromise;
-    })
-  );
-});
-  `.trim());
+// No fetch handler: this service worker never serves cached content.
+`.trim());
 });
 
 // ═══════════════════════════════════════════════════════════
