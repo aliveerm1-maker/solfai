@@ -2226,11 +2226,54 @@
     }
     .lv-chip:hover { color: var(--text); border-color: color-mix(in oklab, var(--teal) 40%, transparent); }
 
+    /* — Hero composer (Sight-read / Ear Training / Vocal Coach / Compose) ——— */
+    .hero-composer {
+      position: relative; max-width: 720px; margin: 16px auto 0;
+      border-radius: 24px; border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 85%, transparent);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 30px 80px -30px rgba(0,0,0,0.5);
+    }
+    .hero-composer-top {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 20px 0; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted);
+    }
+    .hero-composer-mode-label { color: var(--text); font-weight: 700; }
+    .hero-composer-voice { margin-left: auto; text-transform: none; letter-spacing: normal; font-size: 0.72rem; }
+    .hero-composer-voice strong { color: var(--text); }
+    .hero-composer-input {
+      display: block; width: 100%; resize: none; background: transparent; border: 0;
+      padding: 8px 20px 12px; font-size: 0.92rem; line-height: 1.6; color: var(--text);
+      font-family: 'Inter', sans-serif;
+    }
+    .hero-composer-input::placeholder { color: var(--muted); }
+    .hero-composer-input:focus { outline: none; }
+    .hero-composer-bottom { display: flex; align-items: center; gap: 8px; padding: 0 12px 12px; }
+    .hero-composer-icon-btn {
+      display: grid; place-items: center; height: 36px; width: 36px; border-radius: 999px;
+      border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer;
+      transition: color .2s, border-color .2s;
+    }
+    .hero-composer-icon-btn:hover { color: var(--text); border-color: color-mix(in oklab, var(--teal) 50%, transparent); }
+    .hero-composer-parts {
+      display: none; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--border); border-radius: 999px;
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .hero-composer-parts .part-btn { min-height: 0; padding: 6px 11px; border: 0; border-radius: 999px; background: transparent; }
+    .hero-composer-actions-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .hero-composer-send {
+      display: grid; place-items: center; height: 36px; width: 36px; border-radius: 999px; border: 0; cursor: pointer;
+      background: linear-gradient(135deg, var(--teal), var(--teal-dark)); color: var(--ink);
+      transition: opacity .2s;
+    }
+    .hero-composer-send:disabled { opacity: 0.4; cursor: default; }
+    @media (min-width: 640px) { .hero-composer-parts { display: flex; } }
+
     @media (max-width: 768px) {
       .lv-greeting { font-size: 2rem; }
       .lv-actions { grid-template-columns: repeat(2, 1fr); }
       #section-analyze .dashboard-grid { max-width: 100%; }
-      .lv-hero, .lv-suggest, .lv-actions { max-width: 100%; }
+      .lv-hero, .lv-suggest, .lv-actions, .hero-composer { max-width: 100%; }
     }
 
     /* — Command palette (⌘K) —————————————————————————————— */
@@ -2596,17 +2639,47 @@
       </div>
       <div class="lv-badge"><span class="lv-badge-dot"></span> Solfai · v0.4 preview</div>
       <h1 class="lv-greeting">Good afternoon, <span class="lv-name">Ali</span></h1>
-      <p class="lv-tagline">Read a score end-to-end. Switch modes below — Solfai reshapes itself around what you're trying to do.</p>
+      <p class="lv-tagline" id="lvTagline">Read a score end-to-end. Switch modes below — Solfai reshapes itself around what you're trying to do.</p>
       <div class="lv-modes" role="tablist" aria-label="Modes">
-        <button type="button" class="lv-mode active" onclick="switchSection('analyze')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg> Analyze</button>
-        <button type="button" class="lv-mode" onclick="switchSection('practice')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Sight-read</button>
-        <button type="button" class="lv-mode" onclick="switchSection('practice')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 0 1-7 0M6 8.5a2.5 2.5 0 0 1 5 0"/></svg> Ear Training</button>
-        <button type="button" class="lv-mode" onclick="switchSection('vocal-coach')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M4.9 4.9a10 10 0 0 0 0 14.2M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> Vocal Coach</button>
-        <button type="button" class="lv-mode" onclick="switchSection('practice')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Compose</button>
+        <button type="button" class="lv-mode" data-mode="analyze" role="tab" onclick="setHeroMode('analyze')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg> Analyze</button>
+        <button type="button" class="lv-mode" data-mode="sightread" role="tab" onclick="setHeroMode('sightread')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Sight-read</button>
+        <button type="button" class="lv-mode" data-mode="ear" role="tab" onclick="setHeroMode('ear')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 0 1-7 0M6 8.5a2.5 2.5 0 0 1 5 0"/></svg> Ear Training</button>
+        <button type="button" class="lv-mode" data-mode="vocal" role="tab" onclick="setHeroMode('vocal')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M4.9 4.9a10 10 0 0 0 0 14.2M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> Vocal Coach</button>
+        <button type="button" class="lv-mode" data-mode="compose" role="tab" onclick="setHeroMode('compose')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Compose</button>
       </div>
     </div>
 
-    <div class="dashboard-grid">
+    <!-- Decorative composer (Sight-read / Ear Training / Vocal Coach / Compose modes — no real
+         free-text command handling exists yet, so Send/Attach/Mic surface a "coming soon" toast) -->
+    <form class="hero-composer" id="heroComposer" style="display:none" onsubmit="heroComposerSubmit(event)">
+      <div class="hero-composer-top">
+        <span class="hero-composer-mode-label" id="heroComposerModeLabel">Sight-read</span>
+        <span class="hero-composer-mode-suffix">mode</span>
+        <span class="hero-composer-voice">Voice · <strong id="heroComposerPartLabel">Soprano</strong></span>
+      </div>
+      <textarea id="heroComposerInput" class="hero-composer-input" rows="2" placeholder="" oninput="heroComposerCheckEmpty()"></textarea>
+      <div class="hero-composer-bottom">
+        <button type="button" class="hero-composer-icon-btn" aria-label="Attach" onclick="showToast('Coming soon', 'info')">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <div class="hero-composer-parts">
+          <button type="button" class="part-btn active" onclick="setPart(this,'Soprano')">S</button>
+          <button type="button" class="part-btn" onclick="setPart(this,'Alto')">A</button>
+          <button type="button" class="part-btn" onclick="setPart(this,'Tenor')">T</button>
+          <button type="button" class="part-btn" onclick="setPart(this,'Bass')">B</button>
+        </div>
+        <div class="hero-composer-actions-right">
+          <button type="button" class="hero-composer-icon-btn" aria-label="Voice" onclick="showToast('Coming soon', 'info')">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+          </button>
+          <button type="submit" class="hero-composer-send" id="heroComposerSend" disabled aria-label="Send">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div class="dashboard-grid" id="dashboardGrid">
       <div class="analyze-card upload-card">
         <div class="card-kicker">New score</div>
         <h3 class="card-title">Analyze a new piece</h3>
@@ -2661,33 +2734,13 @@
     </div>
 
       </div>
-
-    <!-- Lovable-style quick actions + suggestions (wired to existing functions) -->
-    <div class="lv-actions">
-      <button type="button" class="lv-action" onclick="document.getElementById('fileInput').click()">
-        <span class="lv-action-row"><span class="lv-action-ic" aria-hidden="true">&#8613;</span><span class="lv-action-t">Upload a score</span></span>
-        <span class="lv-action-h">PDF · MusicXML · Image</span>
-      </button>
-      <button type="button" class="lv-action" onclick="if(window._startingPitchFreq){playStartingPitch()}else{showToast('Analyze a piece first','info')}">
-        <span class="lv-action-row"><span class="lv-action-ic" aria-hidden="true">&#9834;</span><span class="lv-action-t">Find starting pitch</span></span>
-        <span class="lv-action-h">From your first entrance</span>
-      </button>
-      <button type="button" class="lv-action" onclick="switchSection('practice')">
-        <span class="lv-action-row"><span class="lv-action-ic" aria-hidden="true">&#9654;</span><span class="lv-action-t">Practice mode</span></span>
-        <span class="lv-action-h">Measure by measure</span>
-      </button>
-      <button type="button" class="lv-action" onclick="switchSection('vocal-coach')">
-        <span class="lv-action-row"><span class="lv-action-ic" aria-hidden="true">&#9673;</span><span class="lv-action-t">Vocal coach</span></span>
-        <span class="lv-action-h">Record &amp; get feedback</span>
-      </button>
     </div>
+
+    <!-- Mode-aware quick actions + suggestions — content is (re)rendered by setHeroMode() -->
+    <div class="lv-actions" id="lvActionsGrid"></div>
     <div class="lv-suggest">
-      <div class="lv-suggest-h"><span class="lv-badge-dot"></span> Try</div>
-      <div class="lv-chips">
-        <button type="button" class="lv-chip" onclick="document.getElementById('fileInput').click()">Upload a MusicXML for exact notes</button>
-        <button type="button" class="lv-chip" onclick="switchSection('practice')">Drill intervals for 5 minutes</button>
-        <button type="button" class="lv-chip" onclick="switchSection('vocal-coach')">Grade my last recording</button>
-      </div>
+      <div class="lv-suggest-h"><span class="lv-badge-dot"></span> Try asking</div>
+      <div class="lv-chips" id="lvChipsRow"></div>
     </div>
 
     <div class="analyze-card results-placeholder" id="resultsPlaceholder" aria-live="polite">
@@ -3394,6 +3447,7 @@ function switchSection(name) {
   if (name === 'class') initClassSection();
   if (name === 'library') syncLibraryHistory();
   if (name === 'practice') buildWeakPanel();
+  if (name === 'analyze') setHeroMode('analyze');
 }
 
 function setResultsPlaceholderVisible(visible) {
@@ -3466,7 +3520,162 @@ function setPart(btn, part) {
   btn.classList.add('active');
   selectedPart = part;
   $('chatPartBadge').textContent = part;
+  if ($('heroComposerPartLabel')) $('heroComposerPartLabel').textContent = part;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// HERO MODE PICKER (Analyze / Sight-read / Ear Training / Vocal Coach / Compose)
+// Only "Analyze" has a real backing flow (the upload form below). The other
+// four modes mirror the reference's decorative composer + quick actions;
+// actions route to a real section where one already exists, otherwise show
+// a "coming soon" toast rather than pretending to do something they don't.
+// ═══════════════════════════════════════════════════════════════
+let heroMode = 'analyze';
+const HERO_MODES = {
+  analyze: {
+    label: 'Analyze',
+    tagline: "Read a score end-to-end. Switch modes below — Solfai reshapes itself around what you're trying to do.",
+    showDashboard: true, showComposer: false,
+    actions: [
+      { icon: '&#8613;', label: 'Upload a score', hint: 'PDF · MusicXML · Image', handler: () => document.getElementById('fileInput').click() },
+      { icon: '&#9834;', label: 'Find starting pitch', hint: 'From your first entrance', handler: () => { if (window._startingPitchFreq) playStartingPitch(); else showToast('Analyze a piece first', 'info'); } },
+      { icon: '&#9654;', label: 'Practice mode', hint: 'Measure by measure', handler: () => switchSection('practice') },
+      { icon: '&#9673;', label: 'Vocal coach', hint: 'Record & get feedback', handler: () => switchSection('vocal-coach') },
+    ],
+    suggestions: [
+      { label: 'Upload a MusicXML for exact notes', handler: () => document.getElementById('fileInput').click() },
+      { label: 'Drill intervals for 5 minutes', handler: () => switchSection('practice') },
+      { label: 'Grade my last recording', handler: () => switchSection('vocal-coach') },
+    ],
+  },
+  sightread: {
+    label: 'Sight-read',
+    tagline: "Real-time solfege coach. Switch modes below — Solfai reshapes itself around what you're trying to do.",
+    placeholder: 'Load a passage and Solfai will beat, blink, and prompt you through it at your tempo.',
+    showDashboard: false, showComposer: true,
+    actions: [
+      { icon: '&#8613;', label: 'Load passage', hint: 'Any 4–32 bars', handler: () => switchSection('practice') },
+      { icon: '&#8986;', label: 'Set tempo', hint: 'Metronome + count-in', handler: () => switchSection('practice') },
+      { icon: '&#9834;', label: 'Chunk & loop', hint: 'Auto phrase splits', handler: () => switchSection('practice') },
+      { icon: '&#128293;', label: 'Streak mode', hint: 'Nail 5 passes in a row', handler: () => switchSection('practice') },
+    ],
+    suggestions: [
+      { label: 'Slow the tricky measures to 70% until I hit them clean', fill: true },
+      { label: 'Loop measures 45–52 with a 4-beat count-in', fill: true },
+      { label: 'Quiz me on interval names as I go', fill: true },
+    ],
+  },
+  ear: {
+    label: 'Ear Training',
+    tagline: "Intervals · chords · dictation. Switch modes below — Solfai reshapes itself around what you're trying to do.",
+    placeholder: 'Pick a drill — intervals, triads, cadences, or full melodic dictation.',
+    showDashboard: false, showComposer: true,
+    actions: [
+      { icon: '&#9834;', label: 'Interval drill', hint: 'P4, P5, tritone…', handler: () => switchSection('practice') },
+      { icon: '&#9835;', label: 'Chord quality', hint: 'maj / min / dim / aug', handler: null },
+      { icon: '&#9998;', label: 'Melodic dictation', hint: '4–8 bars, notate it', handler: null },
+      { icon: '&#128293;', label: 'Daily streak', hint: '5 min · 10 questions', handler: () => switchSection('practice') },
+    ],
+    suggestions: [
+      { label: 'Ascending intervals within an octave, adaptive difficulty', fill: true },
+      { label: 'Dictation in E♭ major, quarter and eighth notes only', fill: true },
+      { label: 'Drill me on tritone vs perfect fifth for 3 minutes', fill: true },
+    ],
+  },
+  vocal: {
+    label: 'Vocal Coach',
+    tagline: "Feedback on your take. Switch modes below — Solfai reshapes itself around what you're trying to do.",
+    placeholder: 'Record 5–30 seconds. Solfai returns pitch, timing, vowel shape and dynamics.',
+    showDashboard: false, showComposer: true,
+    actions: [
+      { icon: '&#9210;', label: 'Record now', hint: 'Latest passage', handler: () => switchSection('vocal-coach') },
+      { icon: '&#8613;', label: 'Upload a take', hint: 'm4a · wav · mp3', handler: () => switchSection('vocal-coach') },
+      { icon: '&#9834;', label: 'Pitch overlay', hint: 'vs. reference line', handler: null },
+      { icon: '&#127925;', label: 'Warm-ups', hint: "In the piece's key", handler: () => switchSection('practice') },
+    ],
+    suggestions: [
+      { label: 'Grade my last recording measure-by-measure', fill: true },
+      { label: 'Am I flat on any sustained notes?', fill: true },
+      { label: 'Give me 3 warm-ups for the tenor bridge', fill: true },
+    ],
+  },
+  compose: {
+    label: 'Compose',
+    tagline: "Write, arrange, transpose. Switch modes below — Solfai reshapes itself around what you're trying to do.",
+    placeholder: 'Describe a phrase, arrangement, or exercise — Solfai drafts the notation.',
+    showDashboard: false, showComposer: true,
+    actions: [
+      { icon: '&#9998;', label: 'New exercise', hint: '8-bar sight-reader', handler: null },
+      { icon: '&#9834;', label: 'Reharmonize', hint: 'Give a chart new colors', handler: null },
+      { icon: '&#9835;', label: 'Voice a chord', hint: 'SATB voicing tool', handler: null },
+      { icon: '&#8613;', label: 'Import lead sheet', hint: 'MusicXML in, SATB out', handler: null },
+    ],
+    suggestions: [
+      { label: 'Write an 8-bar SATB warm-up in F, ending on a picardy third', fill: true },
+      { label: 'Reharmonize this refrain with a secondary dominant', fill: true },
+      { label: 'Compose a 16-bar sight-reading exercise, level 3/5', fill: true },
+    ],
+  },
+};
+
+function renderHeroActions(mode) {
+  $('lvActionsGrid').innerHTML = mode.actions.map((a, i) => `
+    <button type="button" class="lv-action" onclick="heroActionClick(${i})">
+      <span class="lv-action-row"><span class="lv-action-ic" aria-hidden="true">${a.icon}</span><span class="lv-action-t">${a.label}</span></span>
+      <span class="lv-action-h">${a.hint}</span>
+    </button>`).join('');
+}
+function heroActionClick(i) {
+  const a = HERO_MODES[heroMode].actions[i];
+  if (a.handler) a.handler(); else showToast('Coming soon', 'info');
+}
+
+function renderHeroSuggestions(mode) {
+  $('lvChipsRow').innerHTML = mode.suggestions.map((s, i) =>
+    `<button type="button" class="lv-chip" onclick="heroSuggestionClick(${i})">${s.label}</button>`).join('');
+}
+function heroSuggestionClick(i) {
+  const s = HERO_MODES[heroMode].suggestions[i];
+  if (s.fill) {
+    $('heroComposerInput').value = s.label;
+    $('heroComposerInput').focus();
+    heroComposerCheckEmpty();
+  } else if (s.handler) {
+    s.handler();
+  }
+}
+
+function heroComposerCheckEmpty() {
+  $('heroComposerSend').disabled = !$('heroComposerInput').value.trim();
+}
+function heroComposerSubmit(e) {
+  e.preventDefault();
+  if (!$('heroComposerInput').value.trim()) return;
+  showToast(HERO_MODES[heroMode].label + ' commands are coming soon', 'info');
+}
+
+function setHeroMode(id) {
+  const mode = HERO_MODES[id];
+  if (!mode) return;
+  heroMode = id;
+  document.querySelectorAll('.lv-mode').forEach(b => {
+    const active = b.dataset.mode === id;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  $('lvTagline').textContent = mode.tagline;
+  $('dashboardGrid').style.display = mode.showDashboard ? '' : 'none';
+  $('heroComposer').style.display = mode.showComposer ? '' : 'none';
+  if (mode.showComposer) {
+    $('heroComposerModeLabel').textContent = mode.label;
+    $('heroComposerInput').placeholder = mode.placeholder || '';
+    $('heroComposerInput').value = '';
+    heroComposerCheckEmpty();
+  }
+  renderHeroActions(mode);
+  renderHeroSuggestions(mode);
+}
+setHeroMode('analyze');
 
 // ═══════════════════════════════════════════════════════════════
 // UPLOAD
