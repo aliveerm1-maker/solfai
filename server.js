@@ -15,6 +15,8 @@ import sharp from 'sharp';
 import multer from 'multer';
 import AdmZip from 'adm-zip';
 import { Note, Scale, Interval } from 'tonal';
+import { spawn } from 'child_process';
+import http from 'http';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,22 +31,53 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '50mb' }));
 
 // ─── Frontend serving ─────────────────────────────────────
-// Primary UI: the Lovable React SPA (client/dist). The fully-functional classic
-// single-file UI is preserved at /classic so NO functionality is lost.
-const CLIENT_DIST = join(__dirname, 'client', 'dist');
-const HAS_CLIENT_BUILD = existsSync(join(CLIENT_DIST, 'index.html'));
+// Primary UI: the Emergent (glass-clef-craft) TanStack Start build, run as its
+// own Node process on an internal port and reverse-proxied at the root route.
+// It is purely decorative for now (see AGENTS notes) — every mode/composer is
+// a useState toggle with no real backend calls, so it is not wired to
+// /api/analyze yet. The fully-functional classic single-file UI is preserved
+// at /classic so NO real functionality is lost.
+const GCC_DIR = join(__dirname, 'gcc-frontend');
+const GCC_PORT = 4173;
+const HAS_GCC_BUILD = existsSync(join(GCC_DIR, 'server', 'index.mjs'));
 
-// Classic UI preserved: upload, analyze, solfege, vocal coach, transpose, etc.
 app.use('/classic', express.static(join(__dirname, 'public')));
+// The classic UI references some assets by absolute path (e.g. /assets/clef-logo.png).
+// Serve those from the classic public/assets folder before falling through to the
+// gcc-frontend proxy below, whose own /assets/* files use different hashed names.
+app.use('/assets', express.static(join(__dirname, 'public', 'assets')));
 
-if (HAS_CLIENT_BUILD) {
-  app.use(express.static(CLIENT_DIST));                                     // React SPA = front door
-  app.use('/assets', express.static(join(__dirname, 'public', 'assets'))); // fallback for classic static assets (logo, etc.)
-  console.log('[Solfai] Serving Lovable SPA from client/dist (classic UI at /classic)');
+let gccProcess = null;
+if (HAS_GCC_BUILD) {
+  gccProcess = spawn(process.execPath, ['index.mjs'], {
+    cwd: join(GCC_DIR, 'server'),
+    env: { ...process.env, PORT: String(GCC_PORT) },
+    stdio: 'inherit',
+  });
+  gccProcess.on('exit', (code) => console.error(`[Solfai] gcc-frontend process exited (code ${code})`));
+  const shutdown = () => { gccProcess?.kill(); process.exit(0); };
+  process.on('exit', () => gccProcess?.kill());
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+  console.log(`[Solfai] Spawned glass-clef-craft frontend on internal port ${GCC_PORT} (classic UI at /classic)`);
 } else {
-  // SPA not built yet — serve the classic app at root so nothing breaks.
+  console.log('[Solfai] gcc-frontend build not found — serving classic UI at / (build glass-clef-craft and copy .output/ into gcc-frontend/)');
+}
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/classic') || req.path === '/sw.js') return next();
+  if (!HAS_GCC_BUILD) return next();
+  const proxyReq = http.request(
+    { hostname: 'localhost', port: GCC_PORT, path: req.originalUrl, method: req.method, headers: req.headers },
+    (proxyRes) => { res.writeHead(proxyRes.statusCode, proxyRes.headers); proxyRes.pipe(res); },
+  );
+  proxyReq.on('error', (err) => { console.error('[Solfai] gcc-frontend proxy error:', err.message); res.status(502).send('Frontend unavailable'); });
+  req.pipe(proxyReq);
+});
+
+if (!HAS_GCC_BUILD) {
+  // No build present at all — serve the classic app at root so nothing breaks.
   app.use(express.static(join(__dirname, 'public')));
-  console.log('[Solfai] client/dist not found — serving classic UI at / (run: npm run build)');
 }
 
 // Frontend runtime config — Google OAuth client id for "Sign in with Google".
@@ -5404,15 +5437,6 @@ app.post('/api/smart-practice', (req, res) => {
   const queue = scored.slice(0, 10);
 
   return res.json({ queue, totalMeasures: measures.length, weakMeasureCount: Object.keys(weaknessMap).length });
-});
-
-// ─── SPA fallback ─────────────────────────────────────────
-// Any non-API, non-classic GET route is handled by the React app's client-side
-// router (e.g. /library, /practice, /vocal-coach → serve the SPA shell).
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/classic') || req.path === '/sw.js') return next();
-  if (HAS_CLIENT_BUILD) return res.sendFile(join(CLIENT_DIST, 'index.html'));
-  return next();
 });
 
 // ─── Start ────────────────────────────────────────────────
