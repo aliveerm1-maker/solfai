@@ -1015,7 +1015,9 @@
     .quick-action-btn .qa-icon { font-size: 0.9rem; }
 
     /* ═══ ACHIEVEMENT BADGES ═══ */
-    .achievements-container { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+    .achievements-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 18px; }
+    @media (min-width: 640px) { .achievements-container { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 1280px) { .achievements-container { grid-template-columns: repeat(8, 1fr); } }
     .achievement-badge { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 16px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); min-width: 100px; text-align: center; box-shadow: var(--shadow-card); transition: all 0.3s var(--transition); opacity: 0.4; }
     .achievement-badge.unlocked { opacity: 1; border-color: var(--teal); }
     .achievement-badge.unlocked:hover { box-shadow: var(--shadow-hover); transform: translateY(-3px); }
@@ -1026,15 +1028,21 @@
     @keyframes achieveGlow { 0%,100%{filter:drop-shadow(0 0 0 transparent)} 50%{filter:drop-shadow(0 0 8px color-mix(in oklab, var(--gold) 50%, transparent))} }
 
     /* ═══ INTERVAL EAR TRAINING MODAL ═══ */
-    .ear-training-section { background: var(--card); border-radius: var(--radius-xl); padding: 28px; margin-top: 24px; box-shadow: var(--shadow-card); }
+    .ear-training-section {
+      background: linear-gradient(160deg, color-mix(in oklab, var(--violet) 20%, var(--surface)), var(--surface) 60%);
+      border: 1px solid var(--border); border-radius: 24px; padding: 32px; margin-top: 24px; box-shadow: var(--shadow-card);
+    }
     .ear-training-title { font-family: 'Fraunces', serif; font-size: 1.15rem; color: var(--violet); font-weight: 600; margin-bottom: 18px; }
-    .interval-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .ear-training-difficulty { display: inline-flex; gap: 2px; padding: 4px; border-radius: 999px; border: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 60%, transparent); }
+    .ear-training-difficulty .part-btn { border: 0; border-radius: 999px; min-height: 0; padding: 7px 16px; }
+    .interval-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; max-width: 460px; }
+    @media (min-width: 640px) { .interval-buttons { grid-template-columns: repeat(6, 1fr); } }
     .interval-btn { padding: 10px 18px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--card2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; min-width: 60px; text-align: center; }
     .interval-btn:hover { border-color: var(--violet); color: var(--violet); }
     .interval-btn.correct { background: var(--success-dim); border-color: var(--success); color: var(--success); animation: fadeUp 0.3s; }
     .interval-btn.incorrect { background: var(--error-dim); border-color: var(--error); color: var(--error); animation: shake 0.4s; }
     @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
-    .ear-training-score { display: flex; gap: 20px; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .ear-training-score { display: flex; gap: 32px; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
     .ear-score-item { font-size: 0.82rem; color: var(--text2); }
     .ear-score-item strong { color: var(--teal); font-family: 'Fraunces', serif; font-size: 1.2rem; }
     .ear-training-difficulty { display: flex; gap: 6px; margin-top: 12px; }
@@ -2299,12 +2307,28 @@
     .hero-streak-sub { font-size: 0.68rem; color: var(--muted); }
     .hero-disclaimer { max-width: 720px; margin: 18px auto 0; font-size: 0.68rem; color: var(--muted); }
 
+    /* — Reusable large rounded card (reference "rounded-3xl" panels) ————— */
+    .rf-card { border-radius: 24px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-card); padding: 32px; margin-bottom: 24px; }
+    .rf-pill-btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+      cursor: pointer; border: 0; transition: transform .2s, box-shadow .2s, opacity .2s;
+    }
+    .rf-pill-btn:hover { transform: translateY(-1px); }
+    .rf-pill-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .rf-pill-btn.outline { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .rf-pill-btn.teal-soft { background: color-mix(in oklab, var(--teal) 25%, transparent); color: var(--text); border: 1px solid color-mix(in oklab, var(--teal) 40%, transparent); }
+    .rf-pill-btn.violet-solid { background: linear-gradient(135deg, oklch(0.72 0.18 310), oklch(0.62 0.20 285)); color: #fff; }
+    .rf-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--teal); }
+    .rf-eyebrow::before { content: ''; width: 5px; height: 5px; border-radius: 999px; background: currentColor; box-shadow: 0 0 8px currentColor; }
+
     @media (max-width: 768px) {
       .lv-greeting { font-size: 2rem; }
       .lv-actions { grid-template-columns: repeat(2, 1fr); }
       #section-analyze .dashboard-grid { max-width: 100%; }
       .lv-hero, .lv-suggest, .lv-actions, .hero-composer, .hero-continue-row, .hero-disclaimer { max-width: 100%; }
       .hero-continue-row { grid-template-columns: 1fr; }
+      .rf-card { padding: 22px; }
     }
 
     /* — Command palette (⌘K) —————————————————————————————— */
@@ -3040,17 +3064,19 @@
 
   <!-- ═══ PRACTICE SECTION ═══ -->
   <section class="app-section" id="section-practice">
-    <div class="section-header">
-      <div class="section-label">Measure by Measure</div>
-      <h2 class="section-title">Practice Mode</h2>
-      <div class="section-desc">Work through your part one measure at a time</div>
-    </div>
-    <div class="content-box violet-border" style="margin-bottom:24px;">
-      Play each measure with the piano, then sing it yourself. Load Solfege first in the Analyze section.
-    </div>
-    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:24px;">
-      <button class="btn-success" id="btnStartPractice" onclick="startPracticeMode()" disabled>Start Practice</button>
-      <div id="practiceLoadHint" style="font-size:0.82rem;color:var(--muted);font-weight:300;">Analyze a piece and generate Solfege first.</div>
+    <div class="rf-card">
+      <div class="section-header" style="margin-bottom:0;">
+        <div class="section-label">Measure by Measure</div>
+        <h2 class="section-title">Practice Mode</h2>
+        <div class="section-desc">Work through your part one measure at a time</div>
+      </div>
+      <div class="content-box gold-border" style="margin:20px 0 0;">
+        Play each measure with the piano, then sing it yourself. Load Solfege first in the Analyze section.
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:24px;">
+        <button class="btn-success rf-pill-btn teal-soft" id="btnStartPractice" onclick="startPracticeMode()" disabled>Start Practice</button>
+        <div id="practiceLoadHint" style="font-size:0.82rem;color:var(--muted);font-weight:300;">Analyze a piece and generate Solfege first.</div>
+      </div>
     </div>
     <div class="practice-progress" id="practiceProgress">
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -3135,8 +3161,8 @@
       <div class="ear-training-title">&#x1F3B6; Interval Ear Training</div>
       <div style="font-size:0.82rem;color:var(--text2);margin-bottom:14px;font-weight:300;">Listen to two notes and identify the interval. Train your ear progressively.</div>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
-        <button class="btn-violet" style="padding:10px 22px;" onclick="playEarTrainingInterval()" id="btnPlayInterval">&#x1F50A; Play Interval</button>
-        <button class="btn-secondary" style="padding:8px 16px;font-size:0.78rem;" onclick="replayEarTrainingInterval()">Replay</button>
+        <button class="btn-violet rf-pill-btn violet-solid" onclick="playEarTrainingInterval()" id="btnPlayInterval">&#x1F50A; Play Interval</button>
+        <button class="btn-secondary rf-pill-btn outline" onclick="replayEarTrainingInterval()">Replay</button>
         <div class="ear-training-difficulty">
           <button class="part-btn active" id="earDiffEasy" onclick="setEarDifficulty('easy')">Easy</button>
           <button class="part-btn" id="earDiffMedium" onclick="setEarDifficulty('medium')">Medium</button>
