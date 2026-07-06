@@ -2269,11 +2269,42 @@
     .hero-composer-send:disabled { opacity: 0.4; cursor: default; }
     @media (min-width: 640px) { .hero-composer-parts { display: flex; } }
 
+    /* — Continue + Streak row ————————————————————————————— */
+    .hero-continue-row {
+      max-width: 720px; margin: 24px auto 0; display: grid; grid-template-columns: 2fr 1fr; gap: 10px;
+    }
+    .hero-continue-card, .hero-streak-card {
+      border-radius: 16px; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 55%, transparent);
+      padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+    }
+    .hero-continue-empty { color: var(--muted); font-size: 0.82rem; }
+    .hero-continue-icon {
+      display: grid; place-items: center; height: 40px; width: 40px; border-radius: 10px; flex-shrink: 0;
+      background: var(--bg); border: 1px solid var(--border); color: var(--teal); font-size: 1rem;
+    }
+    .hero-continue-text { min-width: 0; flex: 1; }
+    .hero-continue-title { font-family: 'Fraunces', serif; font-size: 0.92rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hero-continue-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .hero-continue-resume {
+      flex-shrink: 0; background: transparent; border: 0; cursor: pointer; color: var(--teal);
+      font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .hero-continue-resume:hover { text-decoration: underline; }
+    .hero-streak-icon {
+      display: grid; place-items: center; height: 40px; width: 40px; border-radius: 10px; flex-shrink: 0; font-size: 1.05rem;
+      background: linear-gradient(135deg, oklch(0.82 0.14 78), oklch(0.62 0.15 55));
+    }
+    .hero-streak-label { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); }
+    .hero-streak-value { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .hero-streak-sub { font-size: 0.68rem; color: var(--muted); }
+    .hero-disclaimer { max-width: 720px; margin: 18px auto 0; font-size: 0.68rem; color: var(--muted); }
+
     @media (max-width: 768px) {
       .lv-greeting { font-size: 2rem; }
       .lv-actions { grid-template-columns: repeat(2, 1fr); }
       #section-analyze .dashboard-grid { max-width: 100%; }
-      .lv-hero, .lv-suggest, .lv-actions, .hero-composer { max-width: 100%; }
+      .lv-hero, .lv-suggest, .lv-actions, .hero-composer, .hero-continue-row, .hero-disclaimer { max-width: 100%; }
+      .hero-continue-row { grid-template-columns: 1fr; }
     }
 
     /* — Command palette (⌘K) —————————————————————————————— */
@@ -2742,6 +2773,19 @@
       <div class="lv-suggest-h"><span class="lv-badge-dot"></span> Try asking</div>
       <div class="lv-chips" id="lvChipsRow"></div>
     </div>
+
+    <div class="hero-continue-row">
+      <div class="hero-continue-card" id="heroContinueCard"></div>
+      <div class="hero-streak-card">
+        <span class="hero-streak-icon" aria-hidden="true">&#128293;</span>
+        <div>
+          <div class="hero-streak-label">Streak</div>
+          <div class="hero-streak-value" id="heroStreakValue">0 days</div>
+          <div class="hero-streak-sub" id="heroStreakSub">Practice today to start a streak</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-disclaimer">Solfai can misread messy scans. Verify key and rhythm before performance.</div>
 
     <div class="analyze-card results-placeholder" id="resultsPlaceholder" aria-live="polite">
       <div class="results-header">
@@ -4989,6 +5033,7 @@ function saveToHistory(data) {
     localStorage.setItem(key, JSON.stringify(hist));
     renderHistory();
     syncLibraryHistory();
+    updateHeroContinueRow();
   } catch (e) {}
 }
 
@@ -6053,6 +6098,44 @@ function updateSidebarTodayCard() {
   $('sidebarTodayMins').textContent = Math.floor(dailyPracticeTime / 60) + ' min';
   $('sidebarTodayGoal').textContent = 'of ' + practiceGoalMinutes + ' goal';
   $('sidebarTodayStreak').textContent = getCurrentPracticeStreak() + ' day streak';
+  updateHeroStreakCard();
+}
+
+function updateHeroStreakCard() {
+  const val = $('heroStreakValue');
+  if (!val) return;
+  const streak = getCurrentPracticeStreak();
+  val.textContent = streak + (streak === 1 ? ' day' : ' days');
+  $('heroStreakSub').textContent = streak > 0 ? 'Keep it going today' : 'Practice today to start a streak';
+}
+
+function updateHeroContinueRow() {
+  const card = $('heroContinueCard');
+  if (!card) return;
+  if (!window.currentUser) {
+    card.innerHTML = '<div class="hero-continue-empty">Sign in to pick up where you left off.</div>';
+    return;
+  }
+  const hist = JSON.parse(localStorage.getItem('solfai-history-' + currentUser.uid) || '[]');
+  if (!hist.length) {
+    card.innerHTML = '<div class="hero-continue-empty">Analyze a piece to start your first session.</div>';
+    return;
+  }
+  const h = hist[0];
+  let meta = h.part + ' · ' + h.date;
+  try {
+    const raw = JSON.parse(h.raw);
+    const bits = [raw.keySignature, raw.timeSignature, raw.tempo ? raw.tempo + ' bpm' : null].filter(Boolean);
+    if (bits.length) meta = bits.join(' · ') + ' · ' + h.part;
+  } catch (e) {}
+  card.innerHTML = `
+    <span class="hero-continue-icon" aria-hidden="true">&#9834;</span>
+    <div class="hero-continue-text">
+      <div class="hero-continue-title">Continue: ${esc(h.title)}</div>
+      <div class="hero-continue-meta">${esc(meta)}</div>
+    </div>
+    <button type="button" class="hero-continue-resume" onclick="loadHistory(0)">Resume &#8594;</button>
+  `;
 }
 
 function renderHeatmapCalendar() {
@@ -7776,6 +7859,7 @@ async function recordAudition() {
       $('userInfo').style.display = 'none'; $('signInNavBtn').style.display = 'flex';
       renderHistory();
     }
+    updateHeroContinueRow();
   }
 
   function solfaiSignOut() {
