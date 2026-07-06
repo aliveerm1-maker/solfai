@@ -656,6 +656,18 @@
       box-shadow: var(--shadow-card);
     }
     .record-area { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 24px; }
+    .coach-history-item {
+      display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-radius: 16px;
+      border: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 40%, transparent);
+      cursor: pointer; transition: border-color .2s; margin-bottom: 10px;
+    }
+    .coach-history-item:hover { border-color: color-mix(in oklab, var(--teal) 45%, transparent); }
+    .coach-history-icon { display: grid; place-items: center; height: 40px; width: 40px; border-radius: 50%; background: var(--surface-muted); color: var(--teal); flex-shrink: 0; }
+    .coach-history-main { min-width: 0; }
+    .coach-history-title { font-weight: 600; color: var(--text); font-size: 0.88rem; }
+    .coach-history-date { font-size: 0.72rem; color: var(--muted); }
+    .coach-history-bar { margin-left: auto; width: 140px; height: 4px; border-radius: 999px; background: var(--surface-muted); overflow: hidden; flex-shrink: 0; }
+    .coach-history-bar-fill { height: 100%; background: color-mix(in oklab, var(--teal) 60%, transparent); }
     .record-timer { font-family: 'Fraunces', serif; font-size: 1.6rem; font-weight: 600; color: var(--error); display: none; }
     .record-timer.show { display: flex; align-items: center; gap: 10px; }
     .record-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--error); animation: pulse 1s infinite; }
@@ -3059,7 +3071,6 @@
         <div id="guestCounter" style="display:none;text-align:center;font-size:0.75rem;color:var(--muted);padding:6px 0;"></div>
       </div>
     </div>
-    </div>
   </section>
 
   <!-- ═══ PRACTICE SECTION ═══ -->
@@ -3226,26 +3237,28 @@
 
   <!-- ═══ VOCAL COACH SECTION ═══ -->
   <section class="app-section" id="section-vocal-coach">
-    <div class="section-header">
-      <div class="section-label">Director Feedback</div>
-      <h2 class="section-title">Vocal Coach</h2>
-      <div class="section-desc">Record yourself and get professional-level feedback</div>
-    </div>
-    <div class="coach-hint">
-      <strong>Record yourself singing</strong>, then get detailed feedback from Solfai acting as a professional choir director. Works best with 5-30 seconds of clear singing.
-    </div>
-    <div class="record-area">
-      <button class="btn-danger" id="btnRecord" onclick="toggleRecording()">
-        <span id="recordBtnIcon">&#9210;</span> <span id="recordBtnText">Record</span>
-      </button>
-      <div class="record-timer" id="recordTimer">
-        <div class="record-dot"></div>
-        <span id="recordTimerText">0:00</span>
+    <div class="rf-card">
+      <div class="section-header" style="margin-bottom:0;">
+        <div class="section-label">Director Feedback</div>
+        <h2 class="section-title">Vocal Coach</h2>
+        <div class="section-desc">Record yourself and get professional-level feedback</div>
       </div>
-      <button class="btn-primary" id="btnSubmitRecording" onclick="submitRecording()" style="display:none">
-        Get Feedback
-      </button>
-      <button class="btn-secondary" onclick="openVideoRecording()" style="padding:10px 18px;">&#x1F4F9; Video Record</button>
+      <div class="coach-hint" style="margin:20px 0 0;">
+        <strong>Record yourself singing</strong>, then get detailed feedback from Solfai acting as a professional choir director. Works best with 5-30 seconds of clear singing.
+      </div>
+      <div class="record-area" style="margin-top:24px;margin-bottom:0;">
+        <button class="btn-danger rf-pill-btn" id="btnRecord" onclick="toggleRecording()">
+          <span id="recordBtnIcon">&#9210;</span> <span id="recordBtnText">Record</span>
+        </button>
+        <div class="record-timer" id="recordTimer">
+          <div class="record-dot"></div>
+          <span id="recordTimerText">0:00</span>
+        </div>
+        <button class="btn-primary" id="btnSubmitRecording" onclick="submitRecording()" style="display:none">
+          Get Feedback
+        </button>
+        <button class="btn-secondary rf-pill-btn outline" onclick="openVideoRecording()">&#x1F4F9; Video Record</button>
+      </div>
     </div>
     <div class="coach-evaluating" id="coachEvaluating">
       <div class="mini-spinner" style="border-top-color:var(--teal)"></div>
@@ -3264,7 +3277,7 @@
       </div>
     </div>
     <div id="coachHistorySection" style="display:none;margin-top:28px;">
-      <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin-bottom:14px;font-weight:500;">Past Recordings</div>
+      <div class="rf-eyebrow" style="margin-bottom:14px;">Past Recordings</div>
       <div id="coachHistoryList"></div>
     </div>
   </section>
@@ -4787,7 +4800,15 @@ function renderCoachScores(result) {
 function renderCoachHistory() {
   if (!coachHistory.length) { $('coachHistorySection').style.display = 'none'; return; }
   $('coachHistorySection').style.display = 'block';
-  $('coachHistoryList').innerHTML = coachHistory.map((h, i) => `<div class="history-item" onclick="renderCoachScores(coachHistory[${i}])"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:0.85rem;font-weight:500;">${esc(h.piece || 'Unknown')}</div><div style="font-size:0.72rem;color:var(--muted);">${esc(h.date || '')}</div></div><div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--gold);">${h.overallScore || '\u2014'}</div></div></div>`).join('');
+  $('coachHistoryList').innerHTML = coachHistory.map((h, i) => `
+    <div class="coach-history-item" onclick="renderCoachScores(coachHistory[${i}])">
+      <span class="coach-history-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h3l2-7 4 14 3-10 2 5h6"/></svg></span>
+      <div class="coach-history-main">
+        <div class="coach-history-title">${esc(h.piece || 'Unknown')}</div>
+        <div class="coach-history-date">${esc(h.date || '')} &middot; Score ${h.overallScore || '—'}</div>
+      </div>
+      <div class="coach-history-bar"><div class="coach-history-bar-fill" style="width:${Math.max(0, Math.min(100, h.overallScore || 0))}%"></div></div>
+    </div>`).join('');
 }
 
 function resetCoach() {
