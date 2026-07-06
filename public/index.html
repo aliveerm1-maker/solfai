@@ -2331,6 +2331,15 @@
     .rf-pill-btn.outline { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
     .rf-pill-btn.teal-soft { background: color-mix(in oklab, var(--teal) 25%, transparent); color: var(--text); border: 1px solid color-mix(in oklab, var(--teal) 40%, transparent); }
     .rf-pill-btn.violet-solid { background: linear-gradient(135deg, oklch(0.72 0.18 310), oklch(0.62 0.20 285)); color: #fff; }
+    .rf-text-link { background: transparent; border: 0; padding: 0; color: var(--teal); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; }
+    .rf-text-link:hover { text-decoration: underline; }
+    .rf-resource-btn {
+      display: block; width: 100%; text-align: center; padding: 12px 16px; border-radius: 999px;
+      border: 1px solid color-mix(in oklab, var(--teal) 40%, transparent);
+      background: color-mix(in srgb, var(--bg) 50%, transparent);
+      color: var(--teal); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background .2s;
+    }
+    .rf-resource-btn:hover { background: color-mix(in oklab, var(--teal) 10%, transparent); }
     .rf-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--teal); }
     .rf-eyebrow::before { content: ''; width: 5px; height: 5px; border-radius: 999px; background: currentColor; box-shadow: 0 0 8px currentColor; }
 
@@ -3291,23 +3300,23 @@
       <div class="section-desc">Review recent analyses and reopen practice resources.</div>
     </div>
     <div class="library-grid">
-      <div class="content-box library-card">
+      <div class="content-box library-card rf-card">
         <div class="library-card-head">
           <div>
             <div class="card-kicker">Recent Analyses</div>
             <h3 class="card-title">Your saved pieces</h3>
           </div>
-          <button class="btn-secondary" onclick="openHistory()">View all</button>
+          <button class="rf-text-link" onclick="openHistory()">View all</button>
         </div>
         <div id="libraryHistoryList" class="library-list"><div class="empty-state">No analyses yet.</div></div>
       </div>
-      <div class="content-box library-card">
+      <div class="content-box library-card rf-card">
         <div class="card-kicker">Resources</div>
         <h3 class="card-title">Study tools</h3>
         <div class="resource-actions">
-          <button class="btn-secondary" onclick="openCheatsheet()">Choir Quick Reference</button>
-          <button class="btn-secondary" onclick="switchSection('pitch-guide')">Pitch Guide</button>
-          <button class="btn-secondary" onclick="showShortcuts()">Keyboard Shortcuts</button>
+          <button class="rf-resource-btn" onclick="openCheatsheet()">Choir Quick Reference</button>
+          <button class="rf-resource-btn" onclick="switchSection('pitch-guide')">Pitch Guide</button>
+          <button class="rf-resource-btn" onclick="showShortcuts()">Keyboard Shortcuts</button>
         </div>
       </div>
     </div>
