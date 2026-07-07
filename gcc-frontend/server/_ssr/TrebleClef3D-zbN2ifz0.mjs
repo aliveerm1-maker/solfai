@@ -2,17 +2,17 @@ import { i as __toESM } from "../_runtime.mjs";
 import { a as useFrame, c as require_react, i as Canvas, n as Float, r as MeshTransmissionMaterial, s as require_jsx_runtime, t as Environment } from "../_libs/@react-three/drei+[...].mjs";
 import { _ as ExtrudeGeometry, d as Color } from "../_libs/monogrid__gainmap-js+three.mjs";
 import { t as SVGLoader } from "../_libs/three.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/TrebleClef3D-DrZL-EBM.js
+//#region node_modules/.nitro/vite/services/ssr/assets/TrebleClef3D-zbN2ifz0.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 /**
-* Clean, single-shape treble-clef silhouette (filled path).
-* viewBox 0 0 200 500 — traced from a public-domain musical symbol.
-* Chosen because it renders as ONE closed shape (with an interior hole),
-* so ExtrudeGeometry produces a single elegant clef, not stacked slabs.
+* Elegant treble-clef silhouette — a single filled shape traced from a public-domain
+* musical symbol. ExtrudeGeometry gives us a real 3D volume, and
+* MeshTransmissionMaterial renders it as clear/silver crystal glass — deliberately
+* NOT gold, so it contrasts against the warm amber palette instead of matching it.
 */
 var TREBLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 500">
-<path fill="currentColor" fill-rule="evenodd" d="
+<path fill="#ffffff" fill-rule="evenodd" d="
 M 108 8
 C 88 8 72 27 72 51
 C 72 71 82 92 93 111
@@ -63,74 +63,79 @@ C 121 143 116 146 114 151
 C 112 156 115 161 120 163
 Z
 "/></svg>`;
-function TrebleClefMesh() {
+function TrebleClefMesh({ rotationSpeed = .35, floatIntensity = .28, quality = "hero" }) {
 	const groupRef = (0, import_react.useRef)(null);
+	const timeRef = (0, import_react.useRef)(0);
 	const geometry = (0, import_react.useMemo)(() => {
 		const data = new SVGLoader().parse(TREBLE_SVG);
 		const shapes = [];
-		for (const path of data.paths) {
-			const s = SVGLoader.createShapes(path);
-			shapes.push(...s);
-		}
+		for (const path of data.paths) shapes.push(...SVGLoader.createShapes(path));
 		const geo = new ExtrudeGeometry(shapes, {
 			depth: 22,
 			bevelEnabled: true,
-			bevelThickness: 3,
-			bevelSize: 2,
-			bevelSegments: 4,
-			curveSegments: 48
+			bevelThickness: 3.2,
+			bevelSize: 2.4,
+			bevelSegments: 5,
+			curveSegments: 64
 		});
 		geo.center();
 		geo.scale(1, -1, 1);
 		geo.computeBoundingBox();
 		const bb = geo.boundingBox;
-		const scale = 4.2 / (bb.max.y - bb.min.y);
+		const scale = 4.4 / (bb.max.y - bb.min.y);
 		geo.scale(scale, scale, scale);
 		geo.computeVertexNormals();
 		return geo;
 	}, []);
 	useFrame((_, delta) => {
-		if (groupRef.current) groupRef.current.rotation.y += delta * .5;
+		if (groupRef.current) {
+			timeRef.current += delta * rotationSpeed;
+			groupRef.current.rotation.y = Math.sin(timeRef.current * .6) * (Math.PI / 5.2);
+		}
 	});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("group", {
 		ref: groupRef,
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Float, {
-			speed: 1.1,
-			rotationIntensity: .05,
-			floatIntensity: .35,
+			speed: .9,
+			rotationIntensity: .04,
+			floatIntensity,
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("mesh", {
 				geometry,
+				castShadow: true,
+				receiveShadow: true,
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MeshTransmissionMaterial, {
-					samples: 6,
-					resolution: 512,
+					samples: quality === "hero" ? 10 : 6,
+					resolution: quality === "hero" ? 1024 : 512,
 					transmission: 1,
-					roughness: .02,
-					thickness: .4,
-					ior: 1.45,
-					chromaticAberration: .06,
-					anisotropy: .15,
-					distortion: .05,
-					distortionScale: .3,
+					roughness: .05,
+					thickness: .28,
+					ior: 1.52,
+					chromaticAberration: .14,
+					anisotropy: .22,
+					distortion: .06,
+					distortionScale: .35,
 					temporalDistortion: 0,
 					clearcoat: 1,
-					clearcoatRoughness: .02,
-					attenuationColor: new Color("#f2d59a"),
-					attenuationDistance: 3,
+					clearcoatRoughness: .03,
+					attenuationColor: new Color("#f0f4ff"),
+					attenuationDistance: 6.5,
 					color: new Color("#ffffff"),
+					envMapIntensity: 2.6,
 					backside: true
 				})
 			})
 		})
 	});
 }
-function TrebleClef3D() {
+function TrebleClef3D({ quality = "hero", rotationSpeed = .35, floatIntensity = .28, className = "" }) {
 	const [mounted, setMounted] = (0, import_react.useState)(false);
 	(0, import_react.useEffect)(() => {
 		setMounted(true);
 	}, []);
-	if (!mounted) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "aspect-[3/4.2] w-full max-w-[460px]" });
+	if (!mounted) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "aspect-[3/4.2] w-full " + className });
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-		className: "relative aspect-[3/4.2] w-full max-w-[460px]",
+		className: "relative aspect-[3/4.2] w-full " + className,
+		"data-testid": "treble-clef-3d",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Canvas, {
 			camera: {
 				position: [
@@ -138,7 +143,7 @@ function TrebleClef3D() {
 					0,
 					8
 				],
-				fov: 36
+				fov: 34
 			},
 			dpr: [1, 2],
 			gl: {
@@ -147,28 +152,55 @@ function TrebleClef3D() {
 				powerPreference: "high-performance"
 			},
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ambientLight", { intensity: .3 }),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ambientLight", { intensity: .9 }),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("directionalLight", {
 					position: [
-						5,
-						6,
-						5
+						-6,
+						7,
+						8
 					],
-					intensity: 1.1,
-					color: "#fff2d0"
+					intensity: 2,
+					color: "#ffe6b8"
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("directionalLight", {
 					position: [
-						-4,
+						6,
 						-3,
+						5
+					],
+					intensity: 1.8,
+					color: "#dde5ff"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("pointLight", {
+					position: [
+						0,
+						-4,
 						4
 					],
-					intensity: .5,
-					color: "#c9b98a"
+					intensity: .6,
+					color: "#e5b370",
+					distance: 14
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("pointLight", {
+					position: [
+						-2,
+						3,
+						-5
+					],
+					intensity: .6,
+					color: "#ffffff",
+					distance: 12
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_react.Suspense, {
 					fallback: null,
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TrebleClefMesh, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Environment, { preset: "warehouse" })]
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TrebleClefMesh, {
+						rotationSpeed,
+						floatIntensity,
+						quality
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Environment, {
+						preset: "apartment",
+						background: false
+					})]
 				})
 			]
 		})
