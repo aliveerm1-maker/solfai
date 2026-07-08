@@ -1,2 +1,8 @@
 node_modules/
 .env
+# accuracy-harness regenerable artifacts
+tools/raster-out/
+tools/label-crops/
+# copyrighted scores — local test assets only, never publish
+test-data/pdfs/tu-lo-sai.pdf
+test-data/pdfs/daniel.pdf

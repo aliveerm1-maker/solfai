@@ -2047,7 +2047,11 @@ async function handleAnalyze(res, apiKey, imageParts, part, rawBase64, pdfPages,
   const hashSrc = pdfPages?.[0] || rawBase64 || '';
   const imgHash = hashImage(hashSrc);
   const corrections = loadCorrections();
-  const cached = corrections[imgHash];
+  // SOLFAI_NO_OVERRIDES=1 → measure the raw vision pipeline: skip the corrections
+  // cache and both piece databases. Used by tools/test-accuracy.mjs; never set in prod.
+  const NO_OVERRIDES = process.env.SOLFAI_NO_OVERRIDES === '1';
+  const cached = NO_OVERRIDES ? null : corrections[imgHash];
+  if (NO_OVERRIDES) trace?.log('NO_OVERRIDES', { note: 'cache + piece DBs disabled for this run' });
   trace?.log('CACHE', { imgHash: imgHash.slice(0, 12), hit: !!cached, cachedFields: cached ? Object.keys(cached) : [] });
 
   // ═══ IMAGE QUALITY PRE-CHECK ═══
@@ -2501,7 +2505,7 @@ Step 5: Report as top/bottom (e.g., "3/4").`;
   // Apply cached corrections
   let finalKey = cached?.keySignature || keyResult.key;
   let tonic = finalKey.split(' ')[0];
-  const dbMatch = lookupPiece(pieceTitle, composerName);
+  const dbMatch = NO_OVERRIDES ? null : lookupPiece(pieceTitle, composerName);
   trace?.log('DB_MATCH', { matched: !!dbMatch, title: dbMatch?.title || null, hasKey: !!dbMatch?.key, source: dbMatch?.source || null });
   let dbOverrideApplied = false;
 
@@ -2644,7 +2648,7 @@ Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`
   // ═══ PIECE DATABASE LOOKUP (piece-database.json) ═══
   // The library's own catalog. Overrides key/time only when confidence is
   // medium or high AND no user correction is already cached for this image.
-  const pieceDbEntry = lookupPieceDb(pieceTitle, composerName);
+  const pieceDbEntry = NO_OVERRIDES ? null : lookupPieceDb(pieceTitle, composerName);
   let pieceDbKeyOverride = false;
   let pieceDbTimeOverride = false;
 
