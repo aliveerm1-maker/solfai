@@ -1,0 +1,79 @@
+[
+  {
+    "file": "tu-lo-sai.pdf",
+    "title": "Tu lo sai (Torelli)",
+    "key": "E major",
+    "time": "3/4",
+    "notes": "local-only (copyright). 4 sharps. Solo voice + piano, scan quality: vintage print. Visually verified."
+  },
+  {
+    "file": "daniel.pdf",
+    "title": "Didn't My Lord Deliver Daniel (Hogan)",
+    "key": "G minor",
+    "time": "4/8",
+    "notes": "local-only (copyright). 2 flats, printed 4/8 (unusual!), cover page at p1. Mode per canonical Hogan arrangement; filename metadata said 'Bb major' but the arrangement is G-minor tonality."
+  },
+  {
+    "file": "ave-verum-mozart.pdf",
+    "title": "Ave Verum Corpus (Mozart)",
+    "key": "D major",
+    "time": "4/4",
+    "notes": "2 sharps, numeric 4/4. SATB + strings. Visually verified."
+  },
+  {
+    "file": "locus-iste.pdf",
+    "title": "Locus Iste (Bruckner)",
+    "key": "C major",
+    "time": "4/4",
+    "notes": "0 accidentals, numeric 4/4, COVER PAGE at p1 (rescue-path test). Visually verified."
+  },
+  {
+    "file": "sicut-cervus.pdf",
+    "title": "Sicut Cervus (Palestrina, Spanish ed.)",
+    "key": "G major",
+    "time": "2/2",
+    "notes": "1 sharp — TRANSPOSED edition ('Original en FA'); a piece-DB override to F would be wrong here. Time printed as cut-C. Visually verified."
+  },
+  {
+    "file": "if-ye-love-me.pdf",
+    "title": "If Ye Love Me (Tallis, AATB ed.)",
+    "key": "C major",
+    "time": "2/2",
+    "notes": "0 accidentals (transposed edition), printed cut-C, single page. Visually verified."
+  },
+  {
+    "file": "cantique.pdf",
+    "title": "Cantique de Jean Racine (Fauré)",
+    "key": "Db major",
+    "time": "4/4",
+    "notes": "5 FLATS — accidental-counting stress case. Printed common-time C. 13-page PDF. Visually verified."
+  },
+  {
+    "file": "panis-angelicus.pdf",
+    "title": "Panis Angelicus (Franck, G ed.)",
+    "key": "G major",
+    "time": "4/4",
+    "notes": "1 sharp — TRANSPOSED from canonical A major. Printed common-time C. COVER PAGE at p1. Visually verified."
+  },
+  {
+    "file": "o-magnum.pdf",
+    "title": "O Magnum Mysterium (Victoria)",
+    "key": "G minor",
+    "time": "2/2",
+    "notes": "1 flat, printed cut-C. Renaissance modal (G dorian) — mode label is soft; accidental COUNT is the reliable metric here. Visually verified."
+  },
+  {
+    "file": "abendlied.pdf",
+    "title": "Abendlied (Rheinberger)",
+    "key": "F major",
+    "time": "4/4",
+    "notes": "1 flat, printed common-time C, COVER PAGE at p1, 6 pages. Visually verified."
+  },
+  {
+    "file": "god-so-loved.pdf",
+    "title": "God So Loved the World (Stainer)",
+    "key": "D major",
+    "time": "3/4",
+    "notes": "2 sharps, numeric 3/4, COVER PAGE at p1. Visually verified."
+  }
+]
