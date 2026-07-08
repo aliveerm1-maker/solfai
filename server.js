@@ -417,8 +417,8 @@ const TIME_SIG_SCHEMA = {
   properties: {
     time_signature: {
       type: "STRING",
-      description: "The time signature as two numbers separated by a slash.",
-      enum: ["4/4", "3/4", "2/4", "6/8", "9/8", "12/8", "2/2", "3/8", "3/2", "6/4", "5/4", "7/8"]
+      description: "The time signature as two numbers separated by a slash. Trust the printed numbers even when unusual — 4/8, 3/2 and 5/4 are all real time signatures.",
+      enum: ["4/4", "3/4", "2/4", "4/8", "6/8", "9/8", "12/8", "2/2", "3/8", "3/2", "4/2", "6/4", "5/4", "7/8"]
     },
     confidence: {
       type: "STRING",
@@ -426,7 +426,7 @@ const TIME_SIG_SCHEMA = {
     },
     what_i_see: {
       type: "STRING",
-      description: "Describe exactly what numbers you see stacked vertically. Example: 'I see a 3 on top and a 4 below = 3/4' or 'I see a C symbol = 4/4'"
+      description: "Describe exactly what you see. If numbers: 'I see 3 stacked over 4 = 3/4' (read the BOTTOM number carefully — 4/8 and 4/4 differ only there). If a C-like symbol: check for a vertical line through it. 'Plain C, no vertical line = 4/4' vs 'C with a vertical slash through it = cut time = 2/2'."
     }
   },
   required: ["time_signature", "confidence", "what_i_see"]
@@ -1858,6 +1858,33 @@ async function callGemini(apiKey, systemPrompt, userParts, opts = {}) {
   }
 }
 
+// ─── Server-side PDF rasterization ────────────────────────
+// The React UI sends raw PDFs (no pdfPages). The whole accuracy stack — key
+// region crops, per-page keysig witnesses, OMR, cover-page rescue passes —
+// requires JPEG pages, so raw-PDF requests used to silently bypass all of it.
+// Rasterize here (same settings as the classic client: pdf.js scale 3.0,
+// JPEG q0.92, ≤5 pages). Any failure falls back to the raw-PDF behavior, so
+// this can never make things worse.
+async function ensurePdfPages(imageBase64, imageMime, pdfPages, trace) {
+  if (pdfPages?.length > 0) return pdfPages;                    // client already rasterized
+  if (imageMime !== 'application/pdf' || !imageBase64) return pdfPages;
+  try {
+    const t0 = Date.now();
+    const { rasterizePdfServer } = await import('./lib/pdf-raster.mjs');
+    const { pages, meta, numPages } = await rasterizePdfServer(Buffer.from(imageBase64, 'base64'));
+    trace?.log('SERVER_RASTER', {
+      numPages,
+      rendered: pages.length,
+      ms: Date.now() - t0,
+      dims: meta.map(m => `${m.width}x${m.height}`),
+    });
+    return pages;
+  } catch (err) {
+    trace?.warn('SERVER_RASTER_FAILED', { error: err.message, note: 'falling back to raw PDF' });
+    return pdfPages;
+  }
+}
+
 // ─── API Route ────────────────────────────────────────────
 app.post('/api/analyze', async (req, res) => {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -1865,8 +1892,9 @@ app.post('/api/analyze', async (req, res) => {
 
   const trace = makeTrace();
   try {
-    const { messages, imageBase64, imageMime, pdfPages, mode, selectedPart } = req.body;
+    const { messages, imageBase64, imageMime, mode, selectedPart } = req.body;
     const part = selectedPart || 'Soprano';
+    const pdfPages = await ensurePdfPages(imageBase64, imageMime, req.body.pdfPages, trace);
     const imageParts = buildImageParts(imageBase64, imageMime, pdfPages);
     if (!imageParts.length && mode !== 'correct') {
       return res.status(400).json({ error: 'No image provided' });
@@ -2179,8 +2207,9 @@ The time signature appears as TWO NUMBERS STACKED VERTICALLY, right after the ke
 - The TOP number tells you how many beats per measure (e.g., 3 means 3 beats).
 - The BOTTOM number tells you which note gets one beat (e.g., 4 means a quarter note).
 - A plain C symbol means 4/4 (common time).
-- A C with a vertical line through it means 2/2 (cut time / alla breve).
-- Report ONLY the fraction. Examples: "3/4" or "6/8" or "4/4". Do NOT guess — only report what you clearly see.
+- A C with a vertical line through it means 2/2 (cut time / alla breve). ALWAYS check any C symbol for a vertical slash before answering — plain C and cut C are different time signatures.
+- Read the BOTTOM number as carefully as the top one: 4/8 and 4/4 differ only in the bottom digit, and 4/8 is a real signature used in choral music.
+- Report ONLY the fraction. Examples: "3/4" or "6/8" or "4/4". Do NOT guess — only report what you clearly see, even if unusual (4/8, 3/2, 5/4 are all real).
 - If you cannot see a time signature at all, default to "4/4" with confidence "uncertain".
 
 STEP BY STEP:
@@ -4817,7 +4846,8 @@ app.post('/api/extract-lyrics', async (req, res) => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
 
-  const { imageBase64, imageMime, pdfPages, targetLanguage } = req.body;
+  const { imageBase64, imageMime, targetLanguage } = req.body;
+  const pdfPages = await ensurePdfPages(imageBase64, imageMime, req.body.pdfPages, null);
   const imageParts = buildImageParts(imageBase64, imageMime, pdfPages);
   if (!imageParts.length) return res.status(400).json({ error: 'No image provided' });
 
