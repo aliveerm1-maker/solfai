@@ -117,3 +117,58 @@ falls back to the old raw-PDF behavior, so it can never regress. Deps
 - Local homr validation impossible: no Python on this machine.
 
 ---
+
+## 2026-07-08 — Baseline numbers + mode-bias fix + OMR mode architecture
+
+### BASELINE (the number that was missing): Gemini-only vision, overrides off,
+### rasterized input (classic-UI path), 11 pieces:
+
+| metric              | score |
+|---------------------|-------|
+| KEY full match      | **36% (4/11)** |
+| KEY accidental count| **45% (5/11)** |
+| KEY mode (maj/min)  | 64% (7/11) |
+| TIME match          | **55% (6/11)** |
+| errors/timeouts     | 0 |
+| avg latency         | 95 s |
+
+Failure anatomy (each failure has one dominant cause):
+- **cut-C → 4/4** ×3 (sicut-cervus, if-ye-love-me, o-magnum) — the schema's own
+  `what_i_see` example taught "C symbol = 4/4" (Finding #2; fixed, Run 2 measures it).
+- **4/8 → 4/4** (daniel) — 4/8 missing from TIME_SIG_SCHEMA enum (fixed).
+- **count off-by-one** ×4 (Mozart 2♯→1♯, Cantique 5♭→4♭, Abendlied 1♭→2♭,
+  Stainer 2♯→3♯) — classic vision counting error; tournament didn't catch these.
+- **major→minor mode flips** ×4 (Ave Verum→Em, If Ye Love Me→Am, Abendlied→Gm,
+  Cantique→Fm).
+
+### homr OMR stress test (free HF Space, CPU): 3/3 PERFECT
+tu-lo-sai (vintage scan, 4♯ 3/4) ✓✓ · cantique (5♭!) ✓✓ · daniel (4/8!) ✓✓
+at 46–54 s/page — exactly the failures Gemini can't shake, at usable speed.
+(oemer, the old engine, timed out at 5+ min on the same tier.)
+
+### Mode-bias fix (detectModeFromNotes rebalance)
+Root causes found in code, all pushing toward false-minor:
+1. single raised-leading-tone note added +4 minor — but one G# in C major is
+   routine chromaticism (secondary dominants, Tallis musica ficta). Now: needs
+   ≥2 occurrences, adds +2.
+2. tonic-frequency tallies were uncapped — scale-degree-6 notes in major
+   melodies accumulate toward the relative minor's tonic. Now capped at 3.
+3. ties resolved minor on a 1-point edge. Now minor must win by ≥2
+   (major prior matches choral repertoire).
+
+### OMR mode architecture decision
+homr's MusicXML may omit `<mode>`; parseMusicXML defaults to major → a naive
+OMR override would wreck true-minor pieces (daniel). Changed the OMR-apply
+block: **OMR contributes the accidental COUNT (<fifths>) + time signature;
+major/minor always comes from the notes-based detector.** Each source does
+what it's mechanically good at.
+
+### Run plan (quota-conscious: key holder unsure of tier)
+- Run 2 (in flight): time-sig fixes only, OMR off → isolates schema-fix effect.
+- Run 3: OMR on + mode fix → per-piece attribution via trace tags
+  (OMR_KEY_APPLIED vs MODE_DETECT_DECISION), no extra full runs needed.
+- Raw-PDF path: 1-piece spot check only (server-side rasterization makes the
+  path converge by design; full run would spend ~165 calls to confirm plumbing).
+
+Deploy policy per owner: push only the safe subset (harness + rasterization +
+time-sig fixes); OMR integration stays local pending review.
