@@ -238,3 +238,58 @@ prompt-wording for this.
 ### Security note
 The HF Space repo's `.git/config` (local clone used to deploy) embeds a write
 token — rotate it when convenient; it is NOT in this repo.
+
+---
+
+## 2026-07-15 — Run 3 result + FOLLOW-UP for next session
+
+### Run 3 (OMR on + mode fix), 11/11 pieces, 0 errors:
+
+| metric              | baseline | Run 3 |
+|---------------------|----------|-------|
+| KEY full match      | 36% (4/11) | 55% (6/11) |
+| KEY count match      | 45% (5/11) | 64% (7/11) |
+| KEY mode match       | 64% (7/11) | 82% (9/11) |
+| TIME match           | 55% (6/11) | 82% (9/11) |
+| avg latency          | 95s | 88s |
+
+Saved: `tools/results/2026-07-15T19-02-36-216Z-run3-omr-on-modefix.json`
+
+Attribution via `OMR_KEY_APPLIED`/`OMR_TIME_APPLIED`/`MODE_DETECT_DECISION`:
+- OMR fixed cut-C time (Sicut Cervus, If Ye Love Me) and a bad key vote (Ave
+  Verum). OMR/notes agreed but were both wrong on O Magnum's key (upstream
+  pitch-extraction error, not an OMR/mode bug).
+- **HF Space crashed (`homr exited 1`, HTTP 502) on 5/11 pieces** (Daniel,
+  Locus Iste, Panis Angelicus, Abendlied, God So Loved) — far worse than the
+  3/3 stress test implied. Fail-safe fallback worked correctly (0 harness
+  errors), but treat OMR as unreliable on the free HF tier under back-to-back
+  calls, not as a dependable rescue path yet.
+- Mode-detector rebalance alone (no OMR) correctly resolved 2 ties (Locus
+  Iste, Panis) but can't fix genuine Gemini pitch/tournament misreads
+  (Daniel, God So Loved, Abendlied-key).
+
+### FOLLOW-UP (not fixed yet, do next): Cantique mode-flip regression
+On Cantique de Jean Racine, OMR correctly read 5 flats (Db major territory),
+but `detectModeFromNotes`, run against OMR's own tonic pair (Db major / Bb
+minor), scored minor 3–1 and flipped the result to **Bb minor** — worse than
+Gemini's own (also wrong) Ab major guess, because it discarded a correct
+accidental-count read. Root cause: the "OMR sets count, notes-detector sets
+mode" split (see 2026-07-08 entry) isn't OMR-aware — when OMR's fifths
+disagree sharply with Gemini's vote, re-deriving mode from OMR's tonic pair
+can override a correct OMR count with the wrong mode. Two candidate fixes to
+evaluate: (a) trust homr's own `<mode>` tag when present instead of
+re-deriving from notes, or (b) skip the mode-detector re-run against OMR's
+tonic pair when OMR/Gemini key disagreement is large, and fall back to
+Gemini's own tonic pair for mode instead. Measure both before picking.
+
+### Push status
+Owner approved pushing everything (safe subset + OMR client + mode fix) as
+Run 3 validated the policy rule. Push blocked on an unrelated problem: this
+machine has two divergent local clones of the same GitHub repo
+(`C:\Users\857525\solfai` and `C:\Users\857525\Desktop\solfai`); the former's
+history was already pushed to `origin/main` (commit `7364642`) and is NOT an
+ancestor of this repo's accuracy-campaign commits — it in fact deletes this
+whole log, `CLAUDE.md`, and all the accuracy tooling in its diff. Needs a
+merge/rebase/force-push decision by the owner before Run 3's work reaches
+`origin/main`. Do not just force-push without checking whether `7364642`'s UI
+wiring needs to be preserved.
