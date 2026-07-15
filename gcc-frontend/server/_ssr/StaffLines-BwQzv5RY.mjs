@@ -1,8 +1,8 @@
 import { i as __toESM } from "../_runtime.mjs";
 import { c as require_react, s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
 import { _ as useNavigate, g as Link, l as useRouterState } from "../_libs/@tanstack/react-router+[...].mjs";
-import { A as ChevronDown, D as Command, P as ArrowRight, S as Flame, T as Ear, _ as PanelLeft, b as Mic, c as Settings, f as Radio, h as PenLine, k as CirclePlay, l as Search, p as Plus, s as Sparkles, u as ScanLine, v as Music, x as Library, y as Music2 } from "../_libs/lucide-react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/AppLayout-BmG4-j5Y.js
+import { B as ArrowRight, C as Music2, F as Command, L as CirclePlay, O as Library, P as Ear, S as PanelLeft, _ as Plus, d as Sparkles, f as Settings, g as Radio, j as Flame, m as ScanLine, p as Search, w as Mic, y as PenLine } from "../_libs/lucide-react.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/StaffLines-BwQzv5RY.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function CommandPalette() {
@@ -220,46 +220,57 @@ function Equalizer({ bars = 4, className = "" }) {
       ` })]
 	});
 }
-var NAV = [
-	{
-		to: "/",
-		label: "New analysis",
-		icon: Plus,
-		primary: true
-	},
-	{
-		to: "/library",
-		label: "Search library",
-		icon: Search
-	},
+var NAV_PRIMARY = [{
+	to: "/",
+	label: "New analysis",
+	icon: Plus,
+	kbd: "N"
+}];
+var NAV_MAIN = [
 	{
 		to: "/library",
 		label: "Library",
-		icon: Library
+		icon: Library,
+		kbd: "L"
 	},
 	{
 		to: "/practice",
 		label: "Practice",
-		icon: CirclePlay
+		icon: CirclePlay,
+		kbd: "P"
 	},
 	{
 		to: "/vocal-coach",
 		label: "Vocal Coach",
-		icon: Mic
+		icon: Mic,
+		kbd: "V"
 	}
 ];
 var RECENTS = [
-	"Speak the Truth — Tenor",
-	"Didn't My Lord Deliver Daniel?",
-	"Ave Verum Corpus — Alto",
-	"Sicut Cervus warm-up",
-	"Interval drill · P5s"
+	{
+		title: "Speak the Truth",
+		meta: "Tenor · E♭ · 76 bpm"
+	},
+	{
+		title: "Didn't My Lord Deliver Daniel?",
+		meta: "Soprano · d min"
+	},
+	{
+		title: "Ave Verum Corpus",
+		meta: "Alto · D · 60 bpm"
+	},
+	{
+		title: "Sicut Cervus warm-up",
+		meta: "SATB · F"
+	}
 ];
+/** Small square clef mark used as brand lockup — refined, editorial. */
 function ClefMark({ className = "" }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
-		viewBox: "0 0 200 500",
+		viewBox: "0 0 24 24",
 		className,
 		"aria-hidden": true,
+		fill: "none",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("linearGradient", {
 			id: "clefMarkGold",
 			x1: "0",
@@ -269,7 +280,7 @@ function ClefMark({ className = "" }) {
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", {
 					offset: "0",
-					stopColor: "oklch(0.93 0.11 82)"
+					stopColor: "oklch(0.92 0.11 82)"
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", {
 					offset: ".55",
@@ -281,9 +292,9 @@ function ClefMark({ className = "" }) {
 				})
 			]
 		}) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", {
+			d: "M12.4 2.4c-1.4 0-2.6 1.4-2.6 3.2 0 1.4.7 2.9 1.5 4.3-2.4 1.7-4.7 3.7-4.7 6.7 0 2.8 2 4.7 4.7 5l1 5.6c.15 1-.55 2-1.6 2.1-1.05.1-2-.7-2.15-1.75-.1-.75.3-1.4.9-1.85.1-.05.15-.2.05-.35-.1-.15-.25-.2-.4-.15-1 .55-1.6 1.85-1.35 3.1.3 1.7 1.95 2.85 3.65 2.55 1.7-.3 2.85-1.95 2.55-3.65l-.75-5.35c2.75-.35 4.85-2.85 4.85-5.7 0-2.7-1.9-4.9-4.4-5.35l-.65-3.05c1.2-1.15 2.35-2.55 2.35-4.15 0-1.7-1.3-3.1-2.95-3.1z",
 			fill: "url(#clefMarkGold)",
-			fillRule: "evenodd",
-			d: "M 108 8 C 88 8 72 27 72 51 C 72 71 82 92 93 111 C 68 132 40 158 40 197 C 40 236 68 264 106 269 L 116 341 C 118 351 118 361 116 370 C 112 388 96 400 78 400 C 60 400 46 386 46 368 C 46 356 54 346 66 342 C 60 332 56 322 60 310 C 40 316 26 336 26 360 C 26 390 52 414 84 414 C 116 414 142 390 142 358 C 142 352 141 346 140 340 L 128 264 C 156 258 178 234 178 204 C 178 178 160 158 138 152 L 133 122 C 152 100 168 76 168 50 C 168 27 152 8 132 8 Z M 120 44 C 129 44 136 52 136 62 C 136 78 126 96 112 112 L 108 84 C 106 68 110 44 120 44 Z M 116 176 L 126 240 C 143 236 155 222 155 204 C 155 188 138 176 116 176 Z M 104 176 C 86 178 72 190 72 208 C 72 226 86 240 104 240 C 106 240 108 240 110 240 L 100 176 Z"
+			transform: "scale(0.72) translate(0,0)"
 		})]
 	});
 }
@@ -309,13 +320,13 @@ function ProgressRing({ value, size = 34 }) {
 				cy: size / 2,
 				r,
 				fill: "none",
-				stroke: "var(--teal)",
+				stroke: "var(--gold)",
 				strokeWidth: 3,
 				strokeLinecap: "round",
 				strokeDasharray: c,
 				strokeDashoffset: c * (1 - value / 100),
 				transform: `rotate(-90 ${size / 2} ${size / 2})`,
-				style: { filter: "drop-shadow(0 0 6px color-mix(in oklab, var(--teal) 70%, transparent))" }
+				style: { filter: "drop-shadow(0 0 6px color-mix(in oklab, var(--gold) 70%, transparent))" }
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
 				x: "50%",
@@ -325,16 +336,18 @@ function ProgressRing({ value, size = 34 }) {
 				fontSize: "10",
 				fontWeight: "700",
 				fill: "var(--paper)",
+				style: { fontFamily: "var(--font-mono)" },
 				children: value
 			})
 		]
 	});
 }
-function AppLayout({ children, contentClassName = "", title, subtitle }) {
+function AppLayout({ children, contentClassName = "" }) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const [open, setOpen] = (0, import_react.useState)(true);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "min-h-screen bg-bg text-paper flex",
+		"data-testid": "app-layout",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CommandPalette, {}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
@@ -342,83 +355,125 @@ function AppLayout({ children, contentClassName = "", title, subtitle }) {
 				"aria-hidden": true
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("aside", {
-				className: "hidden md:flex shrink-0 flex-col border-r border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/35 backdrop-blur-xl transition-[width] duration-300 " + (open ? "w-[260px]" : "w-[68px]"),
+				"data-testid": "sidebar",
+				className: "hidden md:flex shrink-0 flex-col border-r border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/60 backdrop-blur-xl transition-[width] duration-300 " + (open ? "w-[268px]" : "w-[68px]"),
 				children: [
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center gap-2 px-3.5 pt-4 pb-2",
+						className: "flex items-center gap-2 px-4 pt-5 pb-4 border-b border-[color:var(--border-dark)]",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
 							to: "/",
-							className: "flex items-center gap-2.5 min-w-0",
+							className: "flex items-center gap-3 min-w-0",
+							"data-testid": "brand-mark",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-								className: "relative grid place-items-center h-9 w-9 rounded-xl bg-[color:var(--bg)] ring-1 ring-[color:var(--teal)]/25 overflow-hidden",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClefMark, { className: "h-6 w-6" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "absolute inset-0 rounded-xl",
-									style: { background: "radial-gradient(ellipse at 30% 20%, color-mix(in oklab, var(--teal) 30%, transparent), transparent 60%)" }
+								className: "relative grid place-items-center h-9 w-9 border border-[color:var(--gold)]/30 bg-[color:var(--bg)]",
+								style: { borderRadius: "2px" },
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClefMark, { className: "h-5 w-5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "absolute inset-0",
+									style: { background: "radial-gradient(ellipse at 30% 20%, color-mix(in oklab, var(--gold) 22%, transparent), transparent 60%)" }
 								})]
 							}), open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 								className: "leading-tight min-w-0",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "serif text-[15px] font-semibold tracking-tight",
+									className: "serif text-[16px] font-medium tracking-tight",
 									children: "Solfai"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "text-[9.5px] uppercase tracking-[0.22em] text-muted-dark truncate",
+									className: "text-[9.5px] uppercase tracking-[0.28em] text-muted-dark truncate",
 									children: "Sight-read studio"
 								})]
 							})]
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 							onClick: () => setOpen((v) => !v),
-							className: "ml-auto grid place-items-center h-8 w-8 rounded-lg text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/60",
+							"data-testid": "sidebar-toggle",
+							className: "ml-auto grid place-items-center h-7 w-7 text-muted-dark hover:text-paper transition-colors",
 							"aria-label": "Toggle sidebar",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PanelLeft, { size: 15 })
+							style: { borderRadius: "2px" },
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PanelLeft, { size: 14 })
 						})]
 					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "px-3 pt-4",
+						children: NAV_PRIMARY.map(({ to, label, icon: Icon, kbd }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
+							to,
+							"data-testid": `nav-${label.toLowerCase().replace(/\s/g, "-")}`,
+							className: "group flex items-center gap-3 px-3 py-2.5 text-[13px] font-semibold transition-colors border border-[color:var(--gold)]/25 bg-[color:var(--gold)]/8 text-paper hover:bg-[color:var(--gold)]/15",
+							style: { borderRadius: "2px" },
+							title: label,
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, {
+								size: 15,
+								className: "text-[color:var(--gold)]"
+							}), open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "truncate",
+								children: label
+							}), kbd && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
+								className: "ml-auto text-[9.5px] font-semibold px-1.5 py-0.5 mono-cap border border-[color:var(--border-dark)] text-muted-dark",
+								children: kbd
+							})] })]
+						}, label))
+					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("nav", {
-						className: "mt-3 px-2 flex flex-col gap-0.5",
-						children: NAV.map(({ to, label, icon: Icon, primary }, i) => {
+						className: "mt-4 px-3 flex flex-col gap-0.5",
+						"data-testid": "nav-main",
+						children: NAV_MAIN.map(({ to, label, icon: Icon, kbd }) => {
+							const active = pathname === to;
 							return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
 								to,
 								title: label,
-								className: "group flex items-center gap-3 rounded-lg px-2.5 py-2 text-[13.5px] transition-colors " + (primary ? "bg-[color:var(--bg)]/60 ring-1 ring-[color:var(--teal)]/30 text-paper hover:bg-[color:var(--bg)]" : (to === "/" ? pathname === "/" : pathname === to) ? "bg-[color:var(--bg)]/70 text-paper" : "text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/50"),
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, {
-									size: 16,
-									className: primary ? "text-[color:var(--teal)]" : ""
-								}), open && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "truncate",
-									children: label
-								})]
-							}, i);
+								"data-testid": `nav-${label.toLowerCase().replace(/\s/g, "-")}`,
+								className: "group relative flex items-center gap-3 px-3 py-2 text-[13px] transition-colors " + (active ? "text-paper bg-[color:var(--bg)]/70" : "text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40"),
+								style: { borderRadius: "2px" },
+								children: [
+									active && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "absolute left-0 top-2 bottom-2 w-[2px] bg-[color:var(--gold)]" }),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, { size: 14 }),
+									open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "truncate",
+										children: label
+									}), kbd && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
+										className: "ml-auto text-[9.5px] font-semibold px-1.5 py-0.5 mono-cap border border-[color:var(--border-dark)] text-muted-dark",
+										children: kbd
+									})] })
+								]
+							}, label);
 						})
 					}),
 					open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "mt-6 px-4",
 						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-								className: "text-[10px] uppercase tracking-[0.24em] text-muted-dark mb-2",
-								children: "Recents"
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-2 text-[9.5px] uppercase tracking-[0.28em] text-muted-dark mb-3",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Recents" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "flex-1 h-px bg-[color:var(--border-dark)]" })]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
 								className: "space-y-0.5",
-								children: RECENTS.map((r) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									className: "w-full text-left rounded-md px-2 py-1.5 text-[12.5px] text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/50 truncate",
-									children: r
-								}) }, r))
+								children: RECENTS.map((r) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									className: "w-full text-left px-2 py-1.5 hover:bg-[color:var(--bg)]/40 transition-colors",
+									style: { borderRadius: "2px" },
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: "text-[12.5px] text-paper/85 truncate",
+										children: r.title
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: "text-[10.5px] text-muted-dark truncate",
+										children: r.meta
+									})]
+								}) }, r.title))
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "mt-5 rounded-xl border border-[color:var(--border-dark)] bg-[color:var(--bg)]/50 p-3",
+								className: "mt-6 border border-[color:var(--border-dark)] bg-[color:var(--bg)]/40 p-3.5",
+								style: { borderRadius: "2px" },
+								"data-testid": "today-mini",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-dark",
+										className: "flex items-center gap-2 text-[9.5px] uppercase tracking-[0.28em] text-muted-dark",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Flame, {
 											size: 11,
-											className: "text-[color:var(--teal)]"
-										}), " Today"]
+											className: "text-[color:var(--gold)]"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Today" })]
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "mt-2 flex items-center gap-3",
+										className: "mt-3 flex items-center gap-3",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressRing, { value: 68 }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 											className: "leading-tight",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "serif text-[15px] font-semibold text-paper",
+												className: "serif text-[16px] font-medium text-paper",
 												children: "17 min"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 												className: "text-[10.5px] text-muted-dark",
@@ -427,7 +482,7 @@ function AppLayout({ children, contentClassName = "", title, subtitle }) {
 										})]
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "mt-2.5 text-[10.5px] text-muted-dark",
+										className: "mt-2 text-[10.5px] text-muted-dark",
 										children: "3 drills · 1 recording"
 									})
 								]
@@ -435,37 +490,44 @@ function AppLayout({ children, contentClassName = "", title, subtitle }) {
 						]
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "mt-auto p-3",
+						className: "mt-auto p-3 border-t border-[color:var(--border-dark)]",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 							onClick: () => window.dispatchEvent(new KeyboardEvent("keydown", {
 								key: "k",
 								metaKey: true
 							})),
-							className: "w-full mb-2 flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12px] text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/50 transition " + (open ? "" : "justify-center"),
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Command, { size: 13 }), open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Quick actions" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
-								className: "ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border border-[color:var(--border-dark)]",
+							"data-testid": "quick-actions-button",
+							className: "w-full mb-2 flex items-center gap-2 px-2.5 py-1.5 text-[11.5px] text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40 transition-colors " + (open ? "" : "justify-center"),
+							style: { borderRadius: "2px" },
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Command, { size: 12 }), open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Quick actions" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
+								className: "ml-auto text-[9.5px] font-semibold px-1.5 py-0.5 mono-cap border border-[color:var(--border-dark)]",
 								children: "⌘K"
 							})] })]
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							className: "w-full flex items-center gap-3 rounded-xl px-2.5 py-2 hover:bg-[color:var(--bg)]/60 transition " + (open ? "" : "justify-center"),
+							className: "w-full flex items-center gap-3 px-2 py-2 hover:bg-[color:var(--bg)]/40 transition-colors " + (open ? "" : "justify-center"),
+							style: { borderRadius: "2px" },
+							"data-testid": "user-profile-button",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "grid place-items-center h-8 w-8 rounded-full text-[11px] font-semibold text-[color:var(--ink)]",
-									style: { background: "linear-gradient(135deg, oklch(0.82 0.14 78), oklch(0.65 0.15 55))" },
+									className: "grid place-items-center h-8 w-8 text-[11px] font-semibold text-[color:var(--ink)]",
+									style: {
+										background: "linear-gradient(135deg, oklch(0.82 0.14 78), oklch(0.62 0.15 55))",
+										borderRadius: "2px"
+									},
 									children: "AV"
 								}),
 								open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 									className: "min-w-0 text-left leading-tight flex-1",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-[13px] font-semibold truncate",
+										className: "text-[12.5px] font-semibold truncate",
 										children: "Ali Veer"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-[10.5px] text-muted-dark",
-										children: "Pro · 23/50 analyses"
+										className: "text-[10px] uppercase tracking-[0.22em] text-muted-dark",
+										children: "Pro · 23/50"
 									})]
 								}),
 								open && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings, {
-									size: 14,
+									size: 13,
 									className: "text-muted-dark"
 								})
 							]
@@ -474,91 +536,134 @@ function AppLayout({ children, contentClassName = "", title, subtitle }) {
 				]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("main", {
-				className: "flex-1 min-w-0 flex flex-col",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
-						className: "sticky top-4 z-30 mx-auto mt-4 flex items-center gap-2 px-2 py-1.5 pl-4 rounded-full border border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/75 backdrop-blur-2xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.7),0_0_0_1px_color-mix(in_oklab,var(--teal)_10%,transparent)]",
-						style: { width: "min(760px, calc(100% - 2.5rem))" },
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "absolute -inset-px rounded-full pointer-events-none opacity-60",
-								style: { background: "radial-gradient(ellipse at 20% 0%, color-mix(in oklab, var(--teal) 18%, transparent), transparent 55%)" }
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								className: "relative flex items-center gap-2 rounded-full px-2 py-1 text-sm hover:bg-[color:var(--bg)]/40 transition",
-								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Music, {
-										size: 14,
-										className: "text-[color:var(--teal)]"
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "serif font-semibold tracking-tight",
-										children: "Solfai"
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, {
-										size: 13,
-										className: "text-muted-dark"
-									})
-								]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "relative h-4 w-px bg-[color:var(--border-dark)] mx-1" }),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "relative hidden md:flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-muted-dark",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Equalizer, { bars: 4 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Live session" })]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								onClick: () => window.dispatchEvent(new KeyboardEvent("keydown", {
-									key: "k",
-									metaKey: true
-								})),
-								className: "relative ml-2 hidden md:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40 transition",
-								"aria-label": "Open command palette",
-								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { size: 12 }),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "normal-case tracking-normal",
-										children: "Search"
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
-										className: "text-[9.5px] font-semibold px-1 py-0.5 rounded border border-[color:var(--border-dark)]",
-										children: "⌘K"
-									})
-								]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "relative ml-auto flex items-center gap-1.5",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									className: "hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40 transition",
-									children: "Share"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									className: "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest shadow-[0_8px_24px_-8px_var(--teal)]",
-									style: {
-										background: "linear-gradient(135deg, var(--teal), var(--teal-deep))",
-										color: "var(--ink)"
-									},
-									children: "Upgrade"
-								})]
-							})
-						]
-					}),
-					(title || subtitle) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "px-5 lg:px-10 pt-8 pb-2 border-b border-[color:var(--border-dark)]/60",
-						children: [title && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-							className: "serif text-3xl md:text-4xl font-semibold tracking-tight",
-							children: title
-						}), subtitle && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-							className: "mt-1.5 text-sm text-muted-dark",
-							children: subtitle
-						})]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "flex-1 min-w-0 " + (title || subtitle ? "px-5 lg:px-10 py-8 " : "") + contentClassName,
-						children
-					})
-				]
+				className: "flex-1 min-w-0 flex flex-col relative",
+				"data-testid": "main-content",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+					className: "sticky top-3 z-30 mx-auto mt-3 flex items-center gap-2 px-3 py-1.5 border border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/85 backdrop-blur-2xl shadow-[0_20px_60px_-24px_rgba(0,0,0,0.7)]",
+					style: {
+						width: "min(760px, calc(100% - 2.5rem))",
+						borderRadius: "3px"
+					},
+					"data-testid": "top-bar",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-muted-dark",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Equalizer, { bars: 4 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Live session" })]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "hidden sm:inline h-3 w-px bg-[color:var(--border-dark)] mx-1" }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							onClick: () => window.dispatchEvent(new KeyboardEvent("keydown", {
+								key: "k",
+								metaKey: true
+							})),
+							"data-testid": "search-button",
+							className: "hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40 transition-colors",
+							style: { borderRadius: "2px" },
+							"aria-label": "Open command palette",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { size: 12 }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "normal-case tracking-normal",
+									children: "Search anything"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
+									className: "text-[9.5px] font-semibold mono-cap px-1 py-0.5 border border-[color:var(--border-dark)]",
+									children: "⌘K"
+								})
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "ml-auto flex items-center gap-1.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								className: "hidden sm:inline-flex items-center gap-2 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-dark hover:text-paper transition-colors",
+								"data-testid": "share-button",
+								style: { borderRadius: "2px" },
+								children: "Share"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								"data-testid": "upgrade-button",
+								className: "inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]",
+								style: {
+									background: "var(--gold)",
+									color: "var(--ink)",
+									borderRadius: "2px"
+								},
+								children: "Upgrade"
+							})]
+						})
+					]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "flex-1 min-w-0 " + contentClassName,
+					children
+				})]
 			})
 		]
 	});
 }
+/**
+* Decorative five-line musical staff — pure SVG so it's crisp at any size.
+* Used as an editorial divider / motif throughout Solfai.
+*/
+function StaffLines({ className = "", opacity = .35, strokeWidth = 1, animated = false }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+		viewBox: "0 0 1000 80",
+		preserveAspectRatio: "none",
+		className,
+		"aria-hidden": true,
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("linearGradient", {
+				id: "staffFade",
+				x1: "0",
+				y1: "0",
+				x2: "1",
+				y2: "0",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", {
+						offset: "0",
+						stopColor: "var(--gold)",
+						stopOpacity: "0"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", {
+						offset: "0.15",
+						stopColor: "var(--gold)",
+						stopOpacity: "1"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", {
+						offset: "0.85",
+						stopColor: "var(--gold)",
+						stopOpacity: "1"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", {
+						offset: "1",
+						stopColor: "var(--gold)",
+						stopOpacity: "0"
+					})
+				]
+			}) }),
+			[
+				10,
+				25,
+				40,
+				55,
+				70
+			].map((y, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+				x1: "0",
+				x2: "1000",
+				y1: y,
+				y2: y,
+				stroke: "url(#staffFade)",
+				strokeWidth,
+				opacity,
+				style: animated ? {
+					strokeDasharray: 1200,
+					strokeDashoffset: 1200,
+					animation: `staffDraw 2.6s ${i * .12}s cubic-bezier(.4,.05,.2,1) both`
+				} : void 0
+			}, y)),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
+        @keyframes staffDraw { to { stroke-dashoffset: 0; } }
+      ` })
+		]
+	});
+}
 //#endregion
-export { AppLayout as t };
+export { StaffLines as n, AppLayout as t };

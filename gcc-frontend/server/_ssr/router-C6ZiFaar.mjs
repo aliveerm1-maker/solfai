@@ -3,10 +3,10 @@ import { c as require_react, s as require_jsx_runtime } from "../_libs/@react-th
 import { c as HeadContent, d as createRouter, f as Outlet, g as Link, h as createRootRouteWithContext, m as createFileRoute, p as lazyRouteComponent, s as Scripts, v as useRouter } from "../_libs/@tanstack/react-router+[...].mjs";
 import { t as QueryClient } from "../_libs/tanstack__query-core.mjs";
 import { t as QueryClientProvider } from "../_libs/tanstack__react-query.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-CvC1uGaF.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-C6ZiFaar.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-var styles_default = "/assets/styles-NHJBBFd1.css";
+var styles_default = "/assets/styles-BgqEuqh-.css";
 function reportLovableError(error, context = {}) {
 	if (typeof window === "undefined") return;
 	window.__lovableEvents?.captureException?.(error, {
@@ -152,7 +152,7 @@ function RootComponent() {
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Outlet, {})
 	});
 }
-var $$splitComponentImporter$3 = () => import("./vocal-coach-Dn49aido.mjs");
+var $$splitComponentImporter$3 = () => import("./vocal-coach-CTRgtocJ.mjs");
 var Route$3 = createFileRoute("/vocal-coach")({
 	head: () => ({ meta: [{ title: "Vocal Coach — Solfai" }, {
 		name: "description",
@@ -160,7 +160,7 @@ var Route$3 = createFileRoute("/vocal-coach")({
 	}] }),
 	component: lazyRouteComponent($$splitComponentImporter$3, "component")
 });
-var $$splitComponentImporter$2 = () => import("./practice-Dxr1PG9F.mjs");
+var $$splitComponentImporter$2 = () => import("./practice-CLUJm_aH.mjs");
 var Route$2 = createFileRoute("/practice")({
 	head: () => ({ meta: [{ title: "Practice — Solfai" }, {
 		name: "description",
@@ -168,7 +168,7 @@ var Route$2 = createFileRoute("/practice")({
 	}] }),
 	component: lazyRouteComponent($$splitComponentImporter$2, "component")
 });
-var $$splitComponentImporter$1 = () => import("./library-DN4APW-T.mjs");
+var $$splitComponentImporter$1 = () => import("./library-DOAwCjVz.mjs");
 var Route$1 = createFileRoute("/library")({
 	head: () => ({ meta: [{ title: "Library — Solfai" }, {
 		name: "description",
@@ -176,7 +176,7 @@ var Route$1 = createFileRoute("/library")({
 	}] }),
 	component: lazyRouteComponent($$splitComponentImporter$1, "component")
 });
-var $$splitComponentImporter = () => import("./routes-D3j95Q5_.mjs");
+var $$splitComponentImporter = () => import("./routes-CMo-M2zH.mjs");
 var Route = createFileRoute("/")({
 	head: () => ({ meta: [
 		{ title: "Solfai — Sight-read studio" },
