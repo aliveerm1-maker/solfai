@@ -59,8 +59,10 @@
     "file": "o-magnum.pdf",
     "title": "O Magnum Mysterium (Victoria)",
     "key": "G minor",
+    "printedFlats": 1,
+    "printedSharps": 0,
     "time": "2/2",
-    "notes": "1 flat, printed cut-C. Renaissance modal (G dorian) — mode label is soft; accidental COUNT is the reliable metric here. Visually verified."
+    "notes": "PRINTED 1 flat (G dorian — modal, so the tonal key name and printed signature disagree by design; printedFlats overrides the count metric). Mode label is soft. Visually verified."
   },
   {
     "file": "abendlied.pdf",

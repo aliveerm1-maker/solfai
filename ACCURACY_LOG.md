@@ -172,3 +172,69 @@ what it's mechanically good at.
 
 Deploy policy per owner: push only the safe subset (harness + rasterization +
 time-sig fixes); OMR integration stays local pending review.
+
+---
+
+## 2026-07-08 — STOPPED HERE (usage limit), NEXT STEPS
+
+### Run 2 result (PARTIAL — 6 of 11 pieces, stopped by usage limit)
+Saved: `tools/results/2026-07-08-run2-timefix-omr-off-PARTIAL.log`
+Config: time-sig schema/prompt fixes ON, OMR off, mode fix NOT in the running
+server (it was edited after boot) → clean attribution.
+
+| piece | key | time |
+|---|---|---|
+| Tu lo sai | ✓ | ✓ |
+| Daniel (Hogan) | ✗ C major (was D minor in baseline — HIGH VARIANCE piece) | ✗ 4/4 |
+| Ave Verum | ✗ E minor 1♯ (same as baseline) | ✓ |
+| Locus Iste | ✓ | ✓ |
+| Sicut Cervus | ✓ | ✗ 4/4 |
+| If Ye Love Me | ✗ A minor (same as baseline) | ✗ 4/4 |
+
+**NEGATIVE RESULT (important):** the TIME_SIG_SCHEMA `what_i_see` example fix
++ prompt rules did NOT fix cut-C→4/4 on the two cut-C pieces measured. The
+model doesn't reliably distinguish plain C from slashed C in these engravings
+regardless of prompt guidance. Conclusion: cut-C needs a non-prompt solution —
+either the OMR path (homr reads <time> structurally and got 4/8 right) or a
+dedicated high-zoom crop of the time-sig region. Do not spend more time on
+prompt-wording for this.
+
+### What is COMMITTED but NOT YET VALIDATED (Run 3 never ran)
+1. **OMR client → homr HF Space** (`tryOmrService`, default URL
+   `https://aliveer-solfai-omr-service.hf.space`, `OMR_SERVICE_URL=off` to
+   disable, 240s timeout, fail-safe null). Space itself went 3/3 on stress
+   pages (tu-lo-sai 4♯/3-4, cantique 5♭, daniel 2♭+4/8).
+2. **Mode-detector rebalance** (leading-tone ≥2 & +2 not +4; tonic tallies
+   capped at 3; minor must win by ≥2).
+3. **OMR-mode architecture**: OMR sets accidental count + time; mode always
+   from notes-detector (homr may omit <mode>; parseMusicXML defaults major).
+
+### NEXT STEPS — exact commands
+1. **Run 3 (the decisive one):** OMR on + mode fix. Boots the NEW code:
+   `SOLFAI_NO_OVERRIDES=1 PORT=3100 node server.js` (OMR defaults on), then
+   `node tools/test-accuracy.mjs --target=http://localhost:3100 --tag=run3-omr-on-modefix`
+   Expect: cut-C + 4/8 fixed by OMR; count off-by-ones fixed by OMR fifths;
+   mode flips fixed by detector rebalance. Attribute per piece via server-log
+   trace tags `OMR_KEY_APPLIED` / `OMR_TIME_APPLIED` / `MODE_DETECT_DECISION`.
+   Watch first pieces for HF cold start (first OMR call may take ~2-4 min;
+   consider `curl https://aliveer-solfai-omr-service.hf.space/` first).
+2. **Raw-PDF spot check** (1 piece, proves server-side rasterization wiring):
+   `node tools/test-accuracy.mjs --target=http://localhost:3100 --raw-pdf --only=ave --tag=rawpdf-spot`
+   Expect identical result to the rasterized path; look for `PDF_RASTER`-ish
+   trace lines from lib/pdf-raster.mjs.
+3. **Decide OMR policy from Run 3 numbers** (owner chose "measure first"):
+   if OMR-on ≥ OMR-off on key-count AND time with no new errors → keep
+   OMR-primary; if mixed → agreement-gating; then owner reviews before push.
+4. **Push policy:** owner approved pushing ONLY the safe subset
+   (7d8819d, f51f9f2, 7162167 + docs commits). NOT pushed yet — usage ran out
+   before Run 2 could fully validate; run Run 3 first anyway since the deploy
+   would include the OMR default-on client (commit below) unless cherry-picked.
+   Simplest: after Run 3 validates, push everything at once.
+5. **Backlog (unmeasured ideas, cheapest first):** dedicated extreme-zoom
+   time-sig crop read (like key_region_extreme); count-retry when tournament
+   margin < 0.3; daniel variance investigation (percussive texture destabilizes
+   extraction); homr as batch pre-processor for piece-database entries.
+
+### Security note
+The HF Space repo's `.git/config` (local clone used to deploy) embeds a write
+token — rotate it when convenient; it is NOT in this repo.

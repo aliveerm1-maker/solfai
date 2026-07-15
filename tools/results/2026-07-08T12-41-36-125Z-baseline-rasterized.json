@@ -1,0 +1,184 @@
+{
+  "summary": {
+    "tag": "baseline-rasterized",
+    "target": "http://localhost:3100",
+    "rawPdf": false,
+    "when": "2026-07-08T12:41:35.426Z",
+    "gitRev": "7162167",
+    "pieces": 11,
+    "completed": 11,
+    "errors": 0,
+    "keyFullPct": "36% (4/11)",
+    "keyCountPct": "45% (5/11)",
+    "keyModePct": "64% (7/11)",
+    "timePct": "55% (6/11)",
+    "avgSeconds": 95
+  },
+  "results": [
+    {
+      "entry": {
+        "file": "tu-lo-sai.pdf",
+        "title": "Tu lo sai (Torelli)",
+        "key": "E major",
+        "time": "3/4"
+      },
+      "ms": 126603,
+      "predKeyRaw": "E major (4 sharps)",
+      "predTimeRaw": "3/4",
+      "keyFull": true,
+      "keyCount": true,
+      "keyMode": true,
+      "timeOk": true
+    },
+    {
+      "entry": {
+        "file": "daniel.pdf",
+        "title": "Didn't My Lord Deliver Daniel (Hogan)",
+        "key": "G minor",
+        "time": "4/8"
+      },
+      "ms": 72383,
+      "predKeyRaw": "D minor (1 flat)",
+      "predTimeRaw": "4/4",
+      "keyFull": false,
+      "keyCount": false,
+      "keyMode": true,
+      "timeOk": false
+    },
+    {
+      "entry": {
+        "file": "ave-verum-mozart.pdf",
+        "title": "Ave Verum Corpus (Mozart)",
+        "key": "D major",
+        "time": "4/4"
+      },
+      "ms": 61548,
+      "predKeyRaw": "E minor (1 sharp)",
+      "predTimeRaw": "4/4",
+      "keyFull": false,
+      "keyCount": false,
+      "keyMode": false,
+      "timeOk": true
+    },
+    {
+      "entry": {
+        "file": "locus-iste.pdf",
+        "title": "Locus Iste (Bruckner)",
+        "key": "C major",
+        "time": "4/4"
+      },
+      "ms": 58698,
+      "predKeyRaw": "C major (no sharps or flats)",
+      "predTimeRaw": "4/4",
+      "keyFull": true,
+      "keyCount": true,
+      "keyMode": true,
+      "timeOk": true
+    },
+    {
+      "entry": {
+        "file": "sicut-cervus.pdf",
+        "title": "Sicut Cervus (Palestrina, Spanish ed.)",
+        "key": "G major",
+        "time": "2/2"
+      },
+      "ms": 81604,
+      "predKeyRaw": "G major (1 sharp)",
+      "predTimeRaw": "4/4",
+      "keyFull": true,
+      "keyCount": true,
+      "keyMode": true,
+      "timeOk": false
+    },
+    {
+      "entry": {
+        "file": "if-ye-love-me.pdf",
+        "title": "If Ye Love Me (Tallis, AATB ed.)",
+        "key": "C major",
+        "time": "2/2"
+      },
+      "ms": 80878,
+      "predKeyRaw": "A minor (no sharps or flats)",
+      "predTimeRaw": "4/4",
+      "keyFull": false,
+      "keyCount": true,
+      "keyMode": false,
+      "timeOk": false
+    },
+    {
+      "entry": {
+        "file": "cantique.pdf",
+        "title": "Cantique de Jean Racine (Fauré)",
+        "key": "Db major",
+        "time": "4/4"
+      },
+      "ms": 76250,
+      "predKeyRaw": "F minor (4 flats)",
+      "predTimeRaw": "4/4",
+      "keyFull": false,
+      "keyCount": false,
+      "keyMode": false,
+      "timeOk": true
+    },
+    {
+      "entry": {
+        "file": "panis-angelicus.pdf",
+        "title": "Panis Angelicus (Franck, G ed.)",
+        "key": "G major",
+        "time": "4/4"
+      },
+      "ms": 137195,
+      "predKeyRaw": "G major (1 sharp)",
+      "predTimeRaw": "4/4",
+      "keyFull": true,
+      "keyCount": true,
+      "keyMode": true,
+      "timeOk": true
+    },
+    {
+      "entry": {
+        "file": "o-magnum.pdf",
+        "title": "O Magnum Mysterium (Victoria)",
+        "key": "G minor",
+        "time": "2/2"
+      },
+      "ms": 113397,
+      "predKeyRaw": "D minor (1 flat)",
+      "predTimeRaw": "4/4",
+      "keyFull": false,
+      "keyCount": false,
+      "keyMode": true,
+      "timeOk": false
+    },
+    {
+      "entry": {
+        "file": "abendlied.pdf",
+        "title": "Abendlied (Rheinberger)",
+        "key": "F major",
+        "time": "4/4"
+      },
+      "ms": 118185,
+      "predKeyRaw": "G minor (2 flats)",
+      "predTimeRaw": "4/4",
+      "keyFull": false,
+      "keyCount": false,
+      "keyMode": false,
+      "timeOk": true
+    },
+    {
+      "entry": {
+        "file": "god-so-loved.pdf",
+        "title": "God So Loved the World (Stainer)",
+        "key": "D major",
+        "time": "3/4"
+      },
+      "ms": 119744,
+      "predKeyRaw": "A major (3 sharps)",
+      "predTimeRaw": "4/4",
+      "keyFull": false,
+      "keyCount": false,
+      "keyMode": true,
+      "timeOk": false
+    }
+  ]
+}

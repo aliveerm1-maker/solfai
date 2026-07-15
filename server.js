@@ -131,11 +131,52 @@ function makeTrace() {
 // ─── OMR Microservice ─────────────────────────────────────
 // Posts a page image to the OMR service and returns the MusicXML string, or null
 // on any failure. All outcomes are logged through the caller's trace.
+//
+// Primary: the homr-based HF Space (free CPU, ~50-90 s/page measured — the
+// old oemer build timed out at 5+ min, which is why OMR silently contributed
+// nothing until now). Override with OMR_SERVICE_URL, disable with
+// OMR_SERVICE_URL=off. Legacy RunPod path still used if RUNPOD_* env are set.
+const OMR_SERVICE_URL = process.env.OMR_SERVICE_URL || 'https://aliveer-solfai-omr-service.hf.space';
+
 async function tryOmrService(imageBuffer, mimeType, trace) {
-  if (!RUNPOD_ENDPOINT_ID || !RUNPOD_API_KEY) {
-    trace?.warn('OMR_CONFIG_MISSING', { hasEndpointId: !!RUNPOD_ENDPOINT_ID, hasApiKey: !!RUNPOD_API_KEY });
+  // Legacy RunPod path (only when explicitly configured)
+  if (RUNPOD_ENDPOINT_ID && RUNPOD_API_KEY) {
+    return tryOmrRunpod(imageBuffer, mimeType, trace);
+  }
+  if (!OMR_SERVICE_URL || OMR_SERVICE_URL === 'off') {
+    trace?.warn('OMR_CONFIG_MISSING', { note: 'OMR disabled (OMR_SERVICE_URL=off) and no RunPod config' });
     return null;
   }
+  const url = `${OMR_SERVICE_URL.replace(/\/$/, '')}/omr`;
+  try {
+    trace?.log('OMR_START', { url, mimeType, bytes: imageBuffer.length });
+    const response = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({ image_base64: imageBuffer.toString('base64') }),
+      headers: { 'Content-Type': 'application/json' },
+      // Free-tier Space: ~50-90s warm; cold starts add container boot + model
+      // load. 240s keeps us inside the analyze request's own budget.
+      signal: AbortSignal.timeout(240000),
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      trace?.warn('OMR_HTTP_ERROR', { status: response.status, body: errText.slice(0, 200) });
+      return null;
+    }
+    const musicxml = await response.text();
+    if (!musicxml.includes('<score-partwise')) {
+      trace?.warn('OMR_NO_MUSICXML', { bodyPrefix: musicxml.slice(0, 120) });
+      return null;
+    }
+    trace?.log('OMR_DONE', { xmlLength: musicxml.length });
+    return musicxml;
+  } catch (err) {
+    trace?.warn('OMR_EXCEPTION', { error: err.message });
+    return null;
+  }
+}
+
+async function tryOmrRunpod(imageBuffer, mimeType, trace) {
   const url = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/runsync`;
   try {
     trace?.log('OMR_START', { url, mimeType, bytes: imageBuffer.length });
@@ -780,19 +821,27 @@ function detectModeFromNotes(flatCount, sharpCount, allNotes = [], firstNotes = 
   const firstChroma = chromaOf(firstNote);
 
   // Tonic-frequency counts and leading-tone presence across all notes
-  let majorTonicCount = 0, minorTonicCount = 0, hasLeadingTone = false;
+  let majorTonicCount = 0, minorTonicCount = 0, leadingToneCount = 0;
   for (const n of (allNotes || [])) {
     const c = chromaOf(n);
     if (c === null) continue;
     if (c === majorChroma) majorTonicCount++;
     if (c === minorChroma) minorTonicCount++;
-    if (c === leadingToneChroma) hasLeadingTone = true;
+    if (c === leadingToneChroma) leadingToneCount++;
   }
 
   log('CANDIDATES', { major: entry.major, minor: entry.minor, majorTonic, minorTonic });
-  log('SIGNALS', { lastNote: lastNote || null, firstNote: firstNote || null, hasLeadingTone, majorTonicCount, minorTonicCount });
+  log('SIGNALS', { lastNote: lastNote || null, firstNote: firstNote || null, leadingToneCount, majorTonicCount, minorTonicCount });
 
-  // Weighted scoring
+  // Weighted scoring. Rebalanced 2026-07-08 after harness baseline showed 4
+  // major pieces flipping to minor (If Ye Love Me→Am, Ave Verum→Em, etc.):
+  //  - a SINGLE raised-leading-tone note is routine chromaticism in major keys
+  //    (secondary dominants, musica ficta) — it used to add +4 minor on its
+  //    own. Now needs ≥2 occurrences and only adds +2.
+  //  - tonic-frequency tallies are capped at 3 so scale-degree-6 notes in long
+  //    major melodies can't drown the final-note signal.
+  //  - ties/1-point edges resolve MAJOR (choral repertoire prior): minor must
+  //    win by ≥2.
   let majorScore = 0, minorScore = 0;
   if (lastChroma !== null) {
     if (lastChroma === minorChroma) minorScore += 5;
@@ -802,9 +851,9 @@ function detectModeFromNotes(flatCount, sharpCount, allNotes = [], firstNotes = 
     if (firstChroma === minorChroma) minorScore += 2;
     else if (firstChroma === majorChroma) majorScore += 2;
   }
-  if (hasLeadingTone) minorScore += 4;
-  minorScore += minorTonicCount;
-  majorScore += majorTonicCount;
+  if (leadingToneCount >= 2) minorScore += 2;
+  minorScore += Math.min(minorTonicCount, 3);
+  majorScore += Math.min(majorTonicCount, 3);
 
   const total = majorScore + minorScore;
   log('SCORES', { majorScore, minorScore });
@@ -814,14 +863,14 @@ function detectModeFromNotes(flatCount, sharpCount, allNotes = [], firstNotes = 
     return { mode: 'major', confidence: 0.0, evidence: { reason: 'no_notes_default_major', majorScore, minorScore } };
   }
 
-  const mode = minorScore > majorScore ? 'minor' : 'major';
+  const mode = minorScore > majorScore + 1 ? 'minor' : 'major';
   const confidence = Math.min(1, Math.abs(majorScore - minorScore) / total);
   log('DECISION', { mode, confidence: Math.round(confidence * 100) / 100 });
 
   return {
     mode,
     confidence,
-    evidence: { lastNote: lastNote || null, firstNote: firstNote || null, hasLeadingTone, majorTonicCount, minorTonicCount, majorScore, minorScore },
+    evidence: { lastNote: lastNote || null, firstNote: firstNote || null, leadingToneCount, majorTonicCount, minorTonicCount, majorScore, minorScore },
   };
 }
 
@@ -2728,16 +2777,28 @@ Step 4: Apply any key signature accidentals unless cancelled by a natural sign.`
         trace?.log('OMR_PARSED', { key: omrParsed.keySignature, time: omrParsed.timeSignature, notes: omrNoteCount, sane: omrSane });
 
         if (omrSane) {
-          const omrKey  = omrParsed.keySignature;
+          // OMR is trusted for the mechanical facts it reads structurally: the
+          // accidental COUNT (<fifths>) and the time signature. Major-vs-minor
+          // is NOT taken from OMR — homr often omits <mode>, and parseMusicXML
+          // defaults it to major, which would wreck genuinely minor pieces.
+          // Mode comes from the notes-based detector instead (same one the
+          // Gemini path uses), so each source contributes its strength.
+          const fifthsM   = omrXml.match(/<fifths>(-?\d+)<\/fifths>/);
+          const omrFifths = fifthsM ? parseInt(fifthsM[1], 10) : 0;
+          const omrFlats  = omrFifths < 0 ? -omrFifths : 0;
+          const omrSharps = omrFifths > 0 ? omrFifths : 0;
+          const omrModeRes = detectModeFromNotes(omrFlats, omrSharps, noteEvidence, longestFirstNotes, finalNote, trace);
+          const omrEntry  = KEY_FROM_COUNT[omrSharps > 0 ? `${omrSharps}s` : omrFlats > 0 ? `${omrFlats}b` : '0'];
+          const omrKey  = omrEntry ? (omrModeRes.mode === 'minor' ? omrEntry.minor : omrEntry.major) : omrParsed.keySignature;
           const omrTime = omrParsed.timeSignature;
           const normK   = s => s.toLowerCase().replace(/\s+/g, '').replace(/\(.*\)/g, '');
           const keyAgrees  = normK(omrKey) === normK(geminiVotedKey);
           const timeAgrees = omrTime === geminiVotedTime;
-          trace?.log('OMR_CROSS_CHECK', { omrKey, omrTime, geminiKey: geminiVotedKey, geminiTime: geminiVotedTime, keyAgrees, timeAgrees });
+          trace?.log('OMR_CROSS_CHECK', { omrKey, omrTime, omrFifths, modeFromNotes: omrModeRes.mode, geminiKey: geminiVotedKey, geminiTime: geminiVotedTime, keyAgrees, timeAgrees });
 
           if (!cached?.keySignature && !dbOverrideApplied && !pieceDbKeyOverride) {
             finalKey = omrKey;
-            tonic    = omrParsed.tonic || omrKey.split(' ')[0];
+            tonic    = omrKey.split(' ')[0];
             trace?.log('OMR_KEY_APPLIED', { key: omrKey });
           }
           if (!cached?.timeSignature && !pieceDbTimeOverride) {
