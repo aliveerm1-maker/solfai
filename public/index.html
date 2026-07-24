@@ -4709,7 +4709,10 @@ const SolfegePlayerUI = (() => {
 
 // Render solfège results AND (re)mount the player transport for the current data.
 function renderSolfege(el, structured) {
-  if (structured) _solfegeStructured = structured;
+  if (!el) return;
+  structured = structured || _solfegeStructured;
+  if (!structured) return;
+  _solfegeStructured = structured;
   el.innerHTML = renderSolfegeStructured(structured);
   try { SolfegePlayerUI.mount(structured); } catch (e) { console.warn('[player] mount failed', e); }
 }
