@@ -4374,11 +4374,14 @@ const SolfegePlayer = (() => {
     pts.push({ t: totalSec + 0.001, level: cur });
     pts.sort((a,b) => a.t - b.t);
     return function gainAtTime(tt) {
-      if (tt <= pts[0].t) return pts[0].level;
-      for (let i = 1; i < pts.length; i++) {
-        if (tt <= pts[i].t) { const a = pts[i-1], b = pts[i]; if (b.t <= a.t) return b.level; return a.level + (b.level - a.level) * ((tt - a.t) / (b.t - a.t)); }
-      }
-      return pts[pts.length-1].level;
+      // last point with t <= tt → a dynamic change applies FROM its downbeat
+      // (post-jump value at an exact change boundary, not the approaching value).
+      let i = 0; while (i + 1 < pts.length && pts[i+1].t <= tt) i++;
+      const a = pts[i];
+      if (i + 1 >= pts.length) return a.level;
+      const b = pts[i+1];
+      if (b.t <= a.t) return b.level;
+      return a.level + (b.level - a.level) * ((tt - a.t) / (b.t - a.t));
     };
   }
 

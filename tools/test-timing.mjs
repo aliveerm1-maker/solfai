@@ -72,6 +72,39 @@ function buildSchedule(structured, tempoMult = 1) {
   return { events, totalSec: t, usedFallbackTempo: usedFallback, fallbackBpm };
 }
 
+// ── dynamics envelope (mirror of window.SolfegePlayer.buildGainEnvelope) ──
+const DYN_LEVEL = { ppp:0.08, pp:0.12, p:0.2, mp:0.3, mf:0.42, f:0.58, ff:0.78, fff:0.9, fp:0.2, sf:0.6 };
+const levelOf = mark => { const k = String(mark||'').toLowerCase().replace(/[^a-z]/g,''); return DYN_LEVEL[k] != null ? DYN_LEVEL[k] : null; };
+function buildGainEnvelope(structured, events) {
+  const DEFAULT = 0.42;
+  if (!events.length) return () => DEFAULT;
+  const totalSec = events[events.length-1].startSec + events[events.length-1].durSec;
+  const mstart = {}; for (const e of events) if (mstart[e.measureNum] == null) mstart[e.measureNum] = e.startSec;
+  const dyn = (structured.dynamicChanges || []).map(d => ({ measure: d.measure, mark: String(d.mark||'') }))
+    .filter(d => mstart[d.measure] != null).sort((a,b) => a.measure - b.measure);
+  const pts = []; let cur = DEFAULT;
+  const firstConcrete = dyn.find(d => levelOf(d.mark) != null);
+  if (firstConcrete && firstConcrete.measure <= events[0].measureNum) cur = levelOf(firstConcrete.mark);
+  pts.push({ t: 0, level: cur });
+  for (let i = 0; i < dyn.length; i++) {
+    const d = dyn[i], t = mstart[d.measure], lvl = levelOf(d.mark);
+    if (lvl != null) { pts.push({ t, level: cur }); pts.push({ t, level: lvl }); cur = lvl; }
+    else if (/cres/i.test(d.mark) || /dim|decres/i.test(d.mark)) {
+      const dir = /cres/i.test(d.mark) ? 1 : -1;
+      const nextC = dyn.slice(i+1).find(x => levelOf(x.mark) != null);
+      let tEnd, lEnd;
+      if (nextC) { tEnd = mstart[nextC.measure]; lEnd = levelOf(nextC.mark); }
+      else { tEnd = totalSec; lEnd = Math.min(0.9, Math.max(0.08, cur + dir*0.18)); }
+      pts.push({ t, level: cur }); pts.push({ t: tEnd, level: lEnd }); cur = lEnd;
+    }
+  }
+  pts.push({ t: totalSec + 0.001, level: cur });
+  pts.sort((a,b) => a.t - b.t);
+  const fn = tt => { let i=0; while(i+1<pts.length && pts[i+1].t<=tt) i++; const a=pts[i]; if(i+1>=pts.length) return a.level; const b=pts[i+1]; if(b.t<=a.t) return b.level; return a.level+(b.level-a.level)*((tt-a.t)/(b.t-a.t)); };
+  fn._mstart = mstart;
+  return fn;
+}
+
 // ─── TEST ───────────────────────────────────────────────────────────────────
 import { readFileSync } from 'fs';
 import { execSync } from 'child_process';
@@ -119,6 +152,19 @@ ok('tempoMult 1.5 → total/1.5', approx(fast.totalSec, sched.totalSec / 1.5, 1e
 const m5ev = sched.events.find(e => e.measureNum === 5);
 ok('null-bpm tempo change keeps prior bpm (72, not fallback 80)', m5ev && approx(m5ev.bpm, 72));
 ok('usedFallbackTempo = false (score has a tempo)', sched.usedFallbackTempo === false);
+
+// ── dynamics: ave-maria = p@1, cresc@3, mf@4, pp@6 ──
+const gainAt = buildGainEnvelope(S, sched.events);
+const ms = gainAt._mstart;
+ok('opening dynamic p → 0.20 gain', approx(gainAt(ms[1]), 0.2, 1e-6), gainAt(ms[1]).toFixed(3));
+ok('m2 holds p (0.20)', approx(gainAt(ms[2]), 0.2, 1e-6));
+ok('mf@m4 → 0.42 gain', approx(gainAt(ms[4]), 0.42, 1e-6), gainAt(ms[4]).toFixed(3));
+ok('pp@m6 → 0.12 gain', approx(gainAt(ms[6]), 0.12, 1e-6), gainAt(ms[6]).toFixed(3));
+// cresc. across m3: strictly rising from 0.20 toward 0.42
+const m3a = gainAt(ms[3] + 0.01), m3mid = gainAt((ms[3]+ms[4])/2), m3b = gainAt(ms[4] - 0.01);
+ok('cresc. m3 ramps upward (p→mf, strictly rising)', m3a < m3mid && m3mid < m3b && m3a >= 0.2 - 1e-6 && m3b <= 0.42 + 1e-6,
+   `${m3a.toFixed(3)} < ${m3mid.toFixed(3)} < ${m3b.toFixed(3)}`);
+ok('m5 (poco rit, non-dynamic) holds mf 0.42', approx(gainAt(ms[5]), 0.42, 1e-6));
 
 console.log(`\n${fail === 0 ? 'ALL PASS' : 'FAILURES'}: ${pass} passed, ${fail} failed  |  totalSec=${sched.totalSec.toFixed(3)}  notes=${totalNotes}  sumDurWhole=${sumDur}`);
 process.exit(fail === 0 ? 0 : 1);
