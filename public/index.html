@@ -4236,6 +4236,277 @@ function playPiano(frequency, duration = 2.5, btn = null) {
   if (btn) { btn.classList.add('playing'); setTimeout(() => btn.classList.remove('playing'), duration * 1000); }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SOLFÈGE PLAYER — measure-by-measure playback in real rhythm/tempo/dynamics.
+// Built ONLY on the MusicXML path (structured.source === 'musicxml'), where
+// durations are exact. Timing math mirrors tools/test-timing.mjs (verified
+// drift-free). Notes are scheduled on the shared AudioContext clock via a
+// lookahead scheduler (NOT setTimeout) — the standard accurate-timing pattern.
+// ═══════════════════════════════════════════════════════════════════════════
+const SolfegePlayer = (() => {
+  // ── pure timing math (mirror of tools/test-timing.mjs) ──
+  const BEAT_UNIT_FRACTION = { whole:1, half:0.5, quarter:0.25, eighth:0.125, '16th':0.0625, '32nd':0.03125 };
+  const beatUnitFraction = u => BEAT_UNIT_FRACTION[u] || 0.25;
+  const noteSeconds = (durWhole, bpm, beatUnit) => (durWhole / beatUnitFraction(beatUnit)) * (60 / bpm);
+
+  function buildTempoMap(measures, tempoChanges, fallbackBpm) {
+    const changes = (tempoChanges || []).filter(t => t && t.measure != null).sort((a,b) => a.measure - b.measure);
+    const map = new Map();
+    let bpm = fallbackBpm, beatUnit = 'quarter';
+    for (const m of measures) {
+      for (const c of changes) {
+        if (c.measure <= m.num) { if (c.bpm != null) bpm = c.bpm; if (c.beatUnit) beatUnit = c.beatUnit; }
+      }
+      map.set(m.num, { bpm, beatUnit });
+    }
+    const anyNumeric = changes.some(c => c.bpm != null);
+    return { map, usedFallback: !anyNumeric };
+  }
+
+  function buildSchedule(structured, tempoMult) {
+    const measures = structured.measures || [];
+    const fallbackBpm = 80;
+    const { map: tempoMap, usedFallback } = buildTempoMap(measures, structured.tempoChanges, fallbackBpm);
+    const events = []; let t = 0;
+    for (const m of measures) {
+      const tm = tempoMap.get(m.num) || { bpm: fallbackBpm, beatUnit: 'quarter' };
+      const effBpm = tm.bpm * tempoMult;
+      const notes = m.notes || [], durs = m.durations || [];
+      for (let i = 0; i < notes.length; i++) {
+        const durWhole = (typeof durs[i] === 'number' && durs[i] > 0) ? durs[i] : 0.25;
+        const secs = noteSeconds(durWhole, effBpm, tm.beatUnit);
+        events.push({ measureNum: m.num, noteIdx: i, note: notes[i], startSec: t, durSec: secs });
+        t += secs;
+      }
+    }
+    return { events, totalSec: t, usedFallbackTempo: usedFallback, fallbackBpm };
+  }
+
+  // ── dynamics → gain envelope (time-based; cresc./dim. ramp smoothly) ──
+  const DYN_LEVEL = { ppp:0.08, pp:0.12, p:0.2, mp:0.3, mf:0.42, f:0.58, ff:0.78, fff:0.9, fp:0.2, sf:0.6, sfz:0.6, sffz:0.68, fz:0.6, rf:0.55, rfz:0.55 };
+  const levelOf = mark => { const k = String(mark||'').toLowerCase().replace(/[^a-z]/g,''); return DYN_LEVEL[k] != null ? DYN_LEVEL[k] : null; };
+  const isCresc = mark => /cres/i.test(mark);
+  const isDim   = mark => /dim|decres|dcres/i.test(mark);
+
+  function buildGainEnvelope(structured, events) {
+    const DEFAULT = 0.42;
+    if (!events.length) return () => DEFAULT;
+    const totalSec = events[events.length-1].startSec + events[events.length-1].durSec;
+    const mstart = {}; for (const e of events) if (mstart[e.measureNum] == null) mstart[e.measureNum] = e.startSec;
+    const dyn = (structured.dynamicChanges || []).map(d => ({ measure: d.measure, mark: String(d.mark||'') }))
+      .filter(d => mstart[d.measure] != null).sort((a,b) => a.measure - b.measure);
+    const pts = []; let cur = DEFAULT;
+    const firstConcrete = dyn.find(d => levelOf(d.mark) != null);
+    if (firstConcrete && firstConcrete.measure <= (events[0].measureNum)) cur = levelOf(firstConcrete.mark);
+    pts.push({ t: 0, level: cur });
+    for (let i = 0; i < dyn.length; i++) {
+      const d = dyn[i], t = mstart[d.measure], lvl = levelOf(d.mark);
+      if (lvl != null) { pts.push({ t, level: cur }); pts.push({ t, level: lvl }); cur = lvl; }
+      else if (isCresc(d.mark) || isDim(d.mark)) {
+        const dir = isCresc(d.mark) ? 1 : -1;
+        const nextC = dyn.slice(i+1).find(x => levelOf(x.mark) != null);
+        let tEnd, lEnd;
+        if (nextC) { tEnd = mstart[nextC.measure]; lEnd = levelOf(nextC.mark); }
+        else { tEnd = totalSec; lEnd = Math.min(0.9, Math.max(0.08, cur + dir*0.18)); }
+        pts.push({ t, level: cur }); pts.push({ t: tEnd, level: lEnd }); cur = lEnd;
+      }
+    }
+    pts.push({ t: totalSec + 0.001, level: cur });
+    pts.sort((a,b) => a.t - b.t);
+    return function gainAtTime(tt) {
+      if (tt <= pts[0].t) return pts[0].level;
+      for (let i = 1; i < pts.length; i++) {
+        if (tt <= pts[i].t) { const a = pts[i-1], b = pts[i]; if (b.t <= a.t) return b.level; return a.level + (b.level - a.level) * ((tt - a.t) / (b.t - a.t)); }
+      }
+      return pts[pts.length-1].level;
+    };
+  }
+
+  // ── note name → frequency ──
+  const SEMI = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+  function noteToFreq(name) {
+    const m = String(name||'').trim().match(/^([A-Ga-g])([#b]*)(-?\d+)$/);
+    if (!m) return null;
+    let semi = SEMI[m[1].toUpperCase()];
+    for (const c of m[2]) semi += (c === '#') ? 1 : -1;
+    const midi = 12 * (parseInt(m[3],10) + 1) + semi;
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  }
+
+  // ── audio: one shared context; each note = short additive voice (playPiano tone) ──
+  let ctx = null, masterGain = null;
+  function ensureCtx() {
+    if (!ctx || ctx.state === 'closed') {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = ctx.createGain(); masterGain.gain.value = 0.9; masterGain.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  let activeNodes = [];
+  function scheduleVoice(freq, when, dur, velocity) {
+    const peak = Math.max(0.02, Math.min(0.9, velocity));
+    const tail = 0.12;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(5200, when);
+    filter.frequency.exponentialRampToValueAtTime(900, when + dur + tail);
+    const vGain = ctx.createGain();
+    vGain.gain.setValueAtTime(0.0001, when);
+    vGain.gain.exponentialRampToValueAtTime(peak, when + 0.006);
+    vGain.gain.exponentialRampToValueAtTime(0.0001, when + dur + tail);
+    filter.connect(vGain); vGain.connect(masterGain);
+    const harmonics = [1,2,3,4,5,6], vols = [1,0.5,0.3,0.2,0.1,0.05];
+    const created = [];
+    harmonics.forEach((h,i) => {
+      const osc = ctx.createOscillator(); const g = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq * h;
+      g.gain.setValueAtTime(vols[i] * 0.3, when);
+      g.gain.exponentialRampToValueAtTime(0.0001, Math.max(when + dur * (1 - i*0.1), when + 0.05));
+      osc.connect(g); g.connect(filter);
+      osc.start(when); osc.stop(when + dur + tail);
+      created.push(osc);
+    });
+    activeNodes.push(...created);
+    return created;
+  }
+  function killAllVoices() {
+    for (const n of activeNodes) { try { n.stop(); } catch(e) {} }
+    activeNodes = [];
+  }
+
+  // ── player state ──
+  let structured = null, tempoMult = 1, sched = null, gainAt = null, mstart = {};
+  let state = 'stopped'; // 'stopped' | 'playing' | 'paused'
+  let startAudioTime = 0, pausedAt = 0, nextIdx = 0, schedTimer = null, rafId = null, lastHlKey = null;
+  const cbs = {}; // {onState, onPosition, onEnd}
+
+  const LOOKAHEAD_MS = 25, SCHEDULE_AHEAD = 0.15;
+
+  function load(s) {
+    stop();
+    structured = s; tempoMult = 1;
+    rebuild();
+    return { available: true, usedFallbackTempo: sched.usedFallbackTempo, fallbackBpm: sched.fallbackBpm, totalSec: sched.totalSec };
+  }
+  function rebuild() {
+    sched = buildSchedule(structured, tempoMult);
+    gainAt = buildGainEnvelope(structured, sched.events);
+    mstart = {}; for (const e of sched.events) if (mstart[e.measureNum] == null) mstart[e.measureNum] = e.startSec;
+  }
+
+  function schedulerTick() {
+    if (state !== 'playing') return;
+    const now = ctx.currentTime;
+    while (nextIdx < sched.events.length && (startAudioTime + sched.events[nextIdx].startSec) < now + SCHEDULE_AHEAD) {
+      const e = sched.events[nextIdx];
+      const when = startAudioTime + e.startSec;
+      const freq = noteToFreq(e.note);
+      if (freq) scheduleVoice(freq, Math.max(when, now), Math.max(0.05, e.durSec * 0.95), gainAt(e.startSec));
+      nextIdx++;
+    }
+  }
+
+  function tick() {
+    if (state !== 'playing') return;
+    const pos = ctx.currentTime - startAudioTime;
+    if (pos >= sched.totalSec + 0.15) { finish(); return; }
+    // find current event by position (self-correcting; locked to audio clock)
+    let idx = 0;
+    for (let i = 0; i < sched.events.length; i++) { if (sched.events[i].startSec <= pos + 1e-3) idx = i; else break; }
+    const e = sched.events[idx];
+    const key = e.measureNum + ':' + e.noteIdx;
+    if (key !== lastHlKey) { lastHlKey = key; if (cbs.onPosition) cbs.onPosition(e, pos); }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function beginLoops() {
+    if (schedTimer) clearInterval(schedTimer);
+    schedTimer = setInterval(schedulerTick, LOOKAHEAD_MS);
+    schedulerTick();
+    if (rafId) cancelAnimationFrame(rafId);
+    lastHlKey = null;
+    rafId = requestAnimationFrame(tick);
+  }
+  function stopLoops() {
+    if (schedTimer) { clearInterval(schedTimer); schedTimer = null; }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+
+  function seekIndexFor(pos) {
+    let idx = sched.events.length;
+    for (let i = 0; i < sched.events.length; i++) { if (sched.events[i].startSec >= pos - 1e-6) { idx = i; break; } }
+    return idx;
+  }
+
+  function play() {
+    if (!structured || !sched || !sched.events.length) return;
+    ensureCtx();
+    const resumeFrom = (state === 'paused') ? pausedAt : 0;
+    startAudioTime = ctx.currentTime + 0.08 - resumeFrom;
+    nextIdx = seekIndexFor(resumeFrom);
+    state = 'playing';
+    beginLoops();
+    setState();
+  }
+  function pause() {
+    if (state !== 'playing') return;
+    pausedAt = Math.max(0, ctx.currentTime - startAudioTime);
+    state = 'paused';
+    stopLoops(); killAllVoices();
+    setState();
+  }
+  function stop() {
+    stopLoops(); killAllVoices();
+    state = 'stopped'; pausedAt = 0; nextIdx = 0; lastHlKey = null;
+    setState();
+    if (cbs.onPosition) cbs.onPosition(null, 0);
+  }
+  function finish() {
+    stopLoops(); killAllVoices();
+    state = 'stopped'; pausedAt = 0; nextIdx = 0; lastHlKey = null;
+    setState();
+    if (cbs.onPosition) cbs.onPosition(null, sched.totalSec);
+    if (cbs.onEnd) cbs.onEnd();
+  }
+  function setState() { if (cbs.onState) cbs.onState(state); }
+
+  function setTempo(mult) {
+    const wasPlaying = state === 'playing';
+    const pos = (state === 'stopped') ? 0 : Math.max(0, (wasPlaying ? ctx.currentTime - startAudioTime : pausedAt));
+    // preserve measure position across tempo change
+    let curMeasure = null;
+    for (const e of sched.events) { if (e.startSec <= pos + 1e-3) curMeasure = e.measureNum; else break; }
+    stopLoops(); killAllVoices();
+    tempoMult = Math.max(0.25, Math.min(2, mult));
+    rebuild();
+    const newPos = (curMeasure != null && mstart[curMeasure] != null) ? mstart[curMeasure] : 0;
+    if (wasPlaying) { ensureCtx(); startAudioTime = ctx.currentTime + 0.08 - newPos; nextIdx = seekIndexFor(newPos); state = 'playing'; beginLoops(); }
+    else { pausedAt = newPos; if (state === 'stopped') pausedAt = 0; state = (state === 'playing') ? 'paused' : state; }
+    setState();
+  }
+
+  function jumpToMeasure(num) {
+    if (mstart[num] == null) return;
+    const wasPlaying = state === 'playing';
+    stopLoops(); killAllVoices();
+    pausedAt = mstart[num];
+    if (wasPlaying) { ensureCtx(); startAudioTime = ctx.currentTime + 0.08 - pausedAt; nextIdx = seekIndexFor(pausedAt); state = 'playing'; beginLoops(); }
+    else { state = 'paused'; }
+    setState();
+  }
+
+  return {
+    load, play, pause, stop, setTempo, jumpToMeasure,
+    getState: () => state,
+    getTempoMult: () => tempoMult,
+    on: (name, fn) => { cbs[name] = fn; },
+    // helpers exposed for the UI
+    _levelName: (v) => { let best = 'mf', bd = 9; for (const k in DYN_LEVEL) { const d = Math.abs(DYN_LEVEL[k]-v); if (d < bd && k.length<=3) { bd = d; best = k; } } return best; },
+    _schedule: () => sched,
+  };
+})();
+
 // \u2500\u2500\u2500 Tone.js piano sampler (Salamander Grand Piano) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 let _tonePlayer = null, _toneLoaded = false;
 async function _ensurePianoSampler() {
