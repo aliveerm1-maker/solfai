@@ -2393,6 +2393,66 @@
       border-top: 1px solid var(--border); font-size: 0.68rem; color: var(--muted);
     }
 
+    /* ── Solfège player ── */
+    .sp-bar {
+      position: sticky; top: 8px; z-index: 20;
+      background: color-mix(in oklab, var(--card) 92%, var(--gold) 8%);
+      border: 1px solid color-mix(in oklab, var(--gold) 35%, var(--border));
+      border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 18px;
+      box-shadow: 0 8px 28px color-mix(in oklab, var(--bg) 55%, transparent);
+      backdrop-filter: blur(8px);
+    }
+    .sp-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .sp-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      border: none; cursor: pointer; border-radius: 999px; font-weight: 600;
+      font-size: 0.82rem; padding: 9px 18px; color: var(--ink, #1a1410);
+      background: linear-gradient(135deg, var(--gold), var(--gold-warm));
+      box-shadow: 0 4px 12px color-mix(in oklab, var(--gold) 24%, transparent);
+      transition: transform .12s, box-shadow .12s, opacity .12s;
+    }
+    .sp-btn:hover { transform: translateY(-1px); }
+    .sp-btn:active { transform: translateY(0); }
+    .sp-btn.sp-ghost {
+      background: transparent; color: var(--text2);
+      border: 1px solid var(--border); box-shadow: none;
+    }
+    .sp-btn.sp-ghost:hover { color: var(--text); border-color: var(--gold); }
+    .sp-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+    .sp-now {
+      display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+      font-size: 0.8rem; color: var(--muted); min-height: 20px;
+    }
+    .sp-now b { color: var(--text); font-weight: 600; }
+    .sp-now .sp-syl { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 700; color: var(--gold); }
+    .sp-dyn {
+      font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 700;
+      color: var(--gold); font-size: 1rem;
+    }
+    .sp-tempo { display: flex; align-items: center; gap: 9px; font-size: 0.75rem; color: var(--muted); }
+    .sp-tempo input[type=range] { width: 128px; accent-color: var(--gold); cursor: pointer; }
+    .sp-tempo b { color: var(--text); font-weight: 600; min-width: 34px; display: inline-block; text-align: right; }
+    .sp-note-tip { font-size: 0.72rem; color: var(--gold); font-style: italic; margin-top: 8px; opacity: 0.9; }
+    .sp-progress { height: 4px; border-radius: 2px; background: var(--card2); overflow: hidden; margin-top: 12px; }
+    .sp-progress > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), var(--gold-light)); transition: width .1s linear; }
+    /* highlight states */
+    .sp-measure.sp-active {
+      border-color: var(--gold) !important;
+      box-shadow: 0 0 0 1px var(--gold), 0 10px 30px color-mix(in oklab, var(--gold) 22%, transparent) !important;
+    }
+    .sp-measure:hover .sp-play-hint { opacity: 0.75 !important; }
+    .sp-note.sp-active {
+      background: color-mix(in oklab, var(--gold) 26%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in oklab, var(--gold) 55%, transparent);
+    }
+    .sp-note.sp-active .sp-note-syl { color: var(--gold-light) !important; text-shadow: 0 0 12px color-mix(in oklab, var(--gold) 55%, transparent); }
+    .sp-unavailable {
+      background: var(--card2); border: 1px dashed var(--border); border-radius: var(--radius-md);
+      padding: 14px 18px; margin-bottom: 16px; font-size: 0.82rem; color: var(--text2); line-height: 1.5;
+    }
+    .sp-unavailable b { color: var(--text); }
+    .sp-unavailable a { color: var(--gold); text-decoration: none; border-bottom: 1px solid color-mix(in oklab, var(--gold) 40%, transparent); }
+
   </style>
 </head>
 <body>
@@ -3969,7 +4029,7 @@ async function handleMusicXML() {
     if (data.structured) {
       // Populate solfege tab
       _solfegeStructured = data.structured;
-      $('solfegeOutput').innerHTML = renderSolfegeStructured(data.structured);
+      renderSolfege($('solfegeOutput'), data.structured);
       $('solfegeOutput').classList.add('show');
       $('solfegeBtn').style.display = 'none';
       practiceData = data.structured.measures.map(m => ({ num: String(m.num), notes: m.notes || [], solfege: m.solfege || [], lyrics: m.lyrics || '', confidence: 'high', disagreement: false }));
@@ -4507,6 +4567,150 @@ const SolfegePlayer = (() => {
   };
 })();
 
+// ── Player UI controller: injects the transport bar into #solfegeOutput and
+//    keeps the highlight/now-playing display locked to the audio position. ──
+const SolfegePlayerUI = (() => {
+  let S = null, playable = false, openingBpm = null, usedFallback = false, totalSec = 0, wired = false;
+
+  const DYN_MARKS = { ppp:'ppp', pp:'pp', p:'p', mp:'mp', mf:'mf', f:'f', ff:'ff', fff:'fff' };
+  function activeDynamicFor(measureNum) {
+    const dyn = (S.dynamicChanges || []).filter(d => d.measure <= measureNum);
+    return dyn.length ? dyn[dyn.length-1].mark : (S.dynamics && S.dynamics !== 'Not found in score' ? String(S.dynamics).split(' ')[0] : null);
+  }
+  function rehearsalFor(measureNum) {
+    const r = (S.rehearsalMarks || []).find(x => x.measure === measureNum);
+    return r ? r.mark : null;
+  }
+  function solfegeFor(measureNum, noteIdx) {
+    const m = (S.measures || []).find(x => String(x.num) === String(measureNum));
+    if (!m) return { syl: '', note: '' };
+    return { syl: (m.solfege || [])[noteIdx] || '', note: (m.notes || [])[noteIdx] || '' };
+  }
+
+  function barHTML() {
+    const bpmLabel = openingBpm ? `&#9833;=${Math.round(openingBpm)}` : '';
+    const tempoNote = usedFallback
+      ? `<div class="sp-note-tip">&#9432; No tempo marking found in this file &mdash; playing at a default 80&nbsp;BPM. Use the slider to adjust.</div>` : '';
+    return `<div class="sp-bar" id="spBar">
+      <div class="sp-row">
+        <button class="sp-btn" id="spPlay" onclick="SolfegePlayerUI.toggle()">&#9654; Play</button>
+        <button class="sp-btn sp-ghost" id="spStop" onclick="SolfegePlayerUI.stop()" disabled>&#9632; Stop</button>
+        <div class="sp-tempo" title="Practice tempo">
+          <span>Tempo</span>
+          <input type="range" id="spTempo" min="50" max="150" step="5" value="100" oninput="SolfegePlayerUI.tempo(this.value)">
+          <b id="spTempoLbl">100%</b>
+          <span id="spBpmLbl" style="opacity:0.8;">${bpmLabel}</span>
+        </div>
+      </div>
+      <div class="sp-now" id="spNow"><span style="opacity:0.7;">Press Play, or click any measure to start there.</span></div>
+      ${tempoNote}
+      <div class="sp-progress"><div id="spProg"></div></div>
+    </div>`;
+  }
+
+  function clearHighlights() {
+    const out = document.getElementById('solfegeOutput'); if (!out) return;
+    out.querySelectorAll('.sp-measure.sp-active').forEach(el => el.classList.remove('sp-active'));
+    out.querySelectorAll('.sp-note.sp-active').forEach(el => el.classList.remove('sp-active'));
+  }
+
+  function highlight(e) {
+    const out = document.getElementById('solfegeOutput'); if (!out) return;
+    clearHighlights();
+    if (!e) return;
+    const mEl = out.querySelector(`.sp-measure[data-sp-measure="${e.measureNum}"]`);
+    if (mEl) {
+      mEl.classList.add('sp-active');
+      const noteEl = mEl.querySelector(`.sp-note[data-sp-note="${e.noteIdx}"]`);
+      if (noteEl) {
+        noteEl.classList.add('sp-active');
+        // keep the playing measure comfortably in view
+        const r = mEl.getBoundingClientRect();
+        if (r.top < 90 || r.bottom > window.innerHeight - 40) mEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }
+
+  function updateNow(e, pos) {
+    const now = document.getElementById('spNow'); const prog = document.getElementById('spProg');
+    if (prog) prog.style.width = (totalSec > 0 ? Math.min(100, 100 * pos / totalSec) : 0) + '%';
+    if (!now) return;
+    if (!e) { now.innerHTML = `<span style="opacity:0.7;">Press Play, or click any measure to start there.</span>`; return; }
+    const sf = solfegeFor(e.measureNum, e.noteIdx);
+    const dyn = activeDynamicFor(e.measureNum);
+    const reh = rehearsalFor(e.measureNum);
+    now.innerHTML =
+      `<span>Measure <b>${e.measureNum}</b></span>` +
+      (sf.syl ? `<span class="sp-syl">${escHtml(sf.syl)}</span>` : '') +
+      (sf.note ? `<span style="font-family:monospace;">${escHtml(sf.note)}</span>` : '') +
+      (dyn ? `<span class="sp-dyn">${escHtml(dyn)}</span>` : '') +
+      (reh ? `<span style="border:1.5px solid var(--gold);border-radius:3px;color:var(--gold);font-weight:700;font-size:0.7rem;padding:1px 5px;">${escHtml(reh)}</span>` : '');
+  }
+  function escHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  function setButtons(state) {
+    const p = document.getElementById('spPlay'), st = document.getElementById('spStop');
+    if (p) p.innerHTML = state === 'playing' ? '&#10073;&#10073; Pause' : '&#9654; Play';
+    if (st) st.disabled = (state === 'stopped');
+  }
+
+  function wireCallbacks() {
+    if (wired) return; wired = true;
+    SolfegePlayer.on('onState', setButtons);
+    SolfegePlayer.on('onPosition', (e, pos) => { highlight(e); updateNow(e, pos); });
+    SolfegePlayer.on('onEnd', () => { /* natural end: buttons/highlights reset via onState+onPosition(null) */ });
+  }
+
+  function mount(structured) {
+    S = structured || null;
+    const out = document.getElementById('solfegeOutput');
+    if (!out || !S) return;
+    playable = S.source === 'musicxml' && Array.isArray(S.measures) && S.measures.some(m => (m.notes || []).length);
+    if (!playable) {
+      const why = S.source === 'musicxml'
+        ? 'This file has no playable notes for the selected part.'
+        : 'Full measure-by-measure playback needs exact note durations, which only a <b>MusicXML</b> file provides (image/PDF analysis can\'t give reliable rhythm).';
+      out.insertAdjacentHTML('afterbegin',
+        `<div class="sp-unavailable">&#9834; <b>Playback unavailable.</b> ${why}` +
+        (S.source !== 'musicxml' ? ` <br>Tip: open your score in <a href="https://musescore.org" target="_blank" rel="noopener">MuseScore</a> (free) and export as MusicXML, then upload that.` : '') +
+        `</div>`);
+      return;
+    }
+    wireCallbacks();
+    const info = SolfegePlayer.load(S);
+    usedFallback = info.usedFallbackTempo; totalSec = info.totalSec;
+    const tc = (S.tempoChanges || []).find(t => t.bpm != null);
+    openingBpm = usedFallback ? 80 : (tc ? tc.bpm : 80);
+    out.insertAdjacentHTML('afterbegin', barHTML());
+  }
+
+  // ── control handlers (wired from inline onclick) ──
+  function toggle() { const st = SolfegePlayer.getState(); if (st === 'playing') SolfegePlayer.pause(); else SolfegePlayer.play(); }
+  function stop() { SolfegePlayer.stop(); }
+  function tempo(v) {
+    const mult = Number(v) / 100;
+    SolfegePlayer.setTempo(mult);
+    const lbl = document.getElementById('spTempoLbl'), bpml = document.getElementById('spBpmLbl');
+    if (lbl) lbl.textContent = Math.round(mult*100) + '%';
+    if (bpml && openingBpm) bpml.innerHTML = '&#9833;=' + Math.round(openingBpm * mult);
+  }
+  function clickMeasure(num, ev) {
+    if (!playable) return;
+    if (ev && ev.target && ev.target.closest && ev.target.closest('button')) return; // ignore edit button
+    SolfegePlayer.jumpToMeasure(num);
+    if (SolfegePlayer.getState() !== 'playing') SolfegePlayer.play();
+  }
+
+  return { mount, toggle, stop, tempo, clickMeasure };
+})();
+
+// Render solfège results AND (re)mount the player transport for the current data.
+function renderSolfege(el, structured) {
+  if (structured) _solfegeStructured = structured;
+  el.innerHTML = renderSolfegeStructured(structured);
+  try { SolfegePlayerUI.mount(structured); } catch (e) { console.warn('[player] mount failed', e); }
+}
+
 // \u2500\u2500\u2500 Tone.js piano sampler (Salamander Grand Piano) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 let _tonePlayer = null, _toneLoaded = false;
 async function _ensurePianoSampler() {
@@ -4620,7 +4824,7 @@ async function loadSolfege() {
     const out = $('solfegeOutput');
     if (data.structured?.measures?.length) {
       _solfegeStructured = data.structured;
-      out.innerHTML = renderSolfegeStructured(data.structured);
+      renderSolfege(out, data.structured);
       practiceData = data.structured.measures.map(m => ({ num: String(m.num), notes: m.notes || [], solfege: m.solfege || [], lyrics: m.lyrics || '', confidence: m.confidence || 'medium', disagreement: m.disagreement || false }));
       enablePracticeMode();
       showToast(`Solfege loaded: ${data.structured.measures.length} measures`, 'success');
@@ -4742,15 +4946,18 @@ function renderSolfegeStructured(s) {
 
   h += '<div style="display:flex;flex-direction:column;gap:10px;">';
 
+  const playable = s.source === 'musicxml';
   for (const m of s.measures) {
     const bc = m.disagreement ? 'rgba(212,168,83,0.4)' : 'var(--border)';
-    h += `<div style="background:var(--card);border:1px solid ${bc};border-radius:var(--radius-md);padding:18px 22px;box-shadow:var(--shadow-card);">`;
+    const cardClick = playable ? ` onclick="SolfegePlayerUI.clickMeasure(${m.num}, event)"` : '';
+    const cardCursor = playable ? 'cursor:pointer;' : '';
+    h += `<div class="sp-measure" data-sp-measure="${m.num}"${cardClick} style="background:var(--card);border:1px solid ${bc};border-radius:var(--radius-md);padding:18px 22px;box-shadow:var(--shadow-card);${cardCursor}transition:border-color .12s,box-shadow .12s;">`;
     h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">`;
-    h += `<span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:500;">Measure ${esc(String(m.num))}</span>`;
+    h += `<span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:500;">Measure ${esc(String(m.num))}${playable ? ' <span class="sp-play-hint" style="text-transform:none;letter-spacing:0;color:var(--gold);opacity:0;transition:opacity .12s;">&#9654; play from here</span>' : ''}</span>`;
     if (m.confidence === 'high' && !m.disagreement) h += `<span class="confidence-badge high">confident</span>`;
     else if (m.disagreement) h += `<span class="confidence-badge medium">reviewed</span>`;
     if (m.durationWarning) h += `<span title="${esc(m.durationWarning)}" style="font-size:0.65rem;color:var(--gold);cursor:help;" >&#x26A0; timing</span>`;
-    h += `<button onclick="editMeasureSolfege(${m.num})" style="background:none;border:none;color:var(--muted);font-size:0.7rem;cursor:pointer;padding:2px 8px;border-radius:4px;" onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--muted)'">&crarr; edit</button></div>`;
+    h += `<button onclick="event.stopPropagation();editMeasureSolfege(${m.num})" style="background:none;border:none;color:var(--muted);font-size:0.7rem;cursor:pointer;padding:2px 8px;border-radius:4px;" onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--muted)'">&crarr; edit</button></div>`;
 
     const notes = m.notes || [], sol = m.solfege || [];
     if (notes.length) {
@@ -4775,7 +4982,7 @@ function renderSolfegeStructured(s) {
             h += `<div style="display:flex;align-items:center;justify-content:center;min-width:18px;padding:0 1px;"><span style="font-size:0.52rem;color:var(--muted);background:var(--card2);border-radius:4px;padding:1px 4px;white-space:nowrap;margin-top:14px;">${esc(intv)}</span></div>`;
           }
         }
-        h += `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:38px;padding:0 3px;"><div style="font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:700;color:${displayColor};line-height:1;">${esc(displayText)}</div><div style="font-size:0.62rem;color:var(--muted);font-family:monospace;line-height:1;">${esc(n)}</div></div>`;
+        h += `<div class="sp-note" data-sp-measure="${m.num}" data-sp-note="${i}" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:38px;padding:2px 3px;border-radius:6px;transition:background .08s;"><div class="sp-note-syl" style="font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:700;color:${displayColor};line-height:1;">${esc(displayText)}</div><div style="font-size:0.62rem;color:var(--muted);font-family:monospace;line-height:1;">${esc(n)}</div></div>`;
       }
       h += '</div>';
     }
@@ -4802,7 +5009,7 @@ function editMeasureSolfege(num) {
   m.confidence = 'high'; m.disagreement = false;
   const pi = practiceData.findIndex(x => String(x.num) === String(num));
   if (pi >= 0) practiceData[pi].solfege = m.solfege;
-  $('solfegeOutput').innerHTML = renderSolfegeStructured(_solfegeStructured);
+  renderSolfege($('solfegeOutput'), _solfegeStructured);
   showToast('Correction saved', 'success');
   const imgHash = currentAnalysis?._imageHash;
   if (imgHash) fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'correct', imageHash: imgHash, field: `solfege_m${num}`, value: corrected.trim() }) }).catch(() => {});
@@ -4819,7 +5026,7 @@ async function submitManualNotes() {
     $('solfegeLoading').classList.remove('show');
     if (data.structured?.measures?.length) {
       _solfegeStructured = data.structured;
-      $('solfegeOutput').innerHTML = renderSolfegeStructured(data.structured);
+      renderSolfege($('solfegeOutput'), data.structured);
       $('solfegeOutput').classList.add('show');
       $('solfegeBtn').style.display = 'none';
       practiceData = data.structured.measures.map(m => ({ num: String(m.num), notes: m.notes || [], solfege: m.solfege || [], lyrics: '', confidence: 'high', disagreement: false }));
@@ -5516,7 +5723,7 @@ function setSolfegeSystem(sys) {
   if (sys === 'movable') $('movableDoBtn').classList.add('active');
   else if (sys === 'fixed') $('fixedDoBtn').classList.add('active');
   else $('degreesBtn').classList.add('active');
-  if (_solfegeStructured) $('solfegeOutput').innerHTML = renderSolfegeStructured(_solfegeStructured);
+  if (_solfegeStructured) renderSolfege($('solfegeOutput'), _solfegeStructured);
 }
 // Restore saved solfege system on load
 (function() {
@@ -7285,7 +7492,7 @@ async function executeTranspose(toKey) {
       _solfegeStructured.measures = data.measures;
       _solfegeStructured.tonic = toKey;
       _solfegeStructured.key = toKey;
-      $('solfegeOutput').innerHTML = renderSolfegeStructured(_solfegeStructured);
+      renderSolfege($('solfegeOutput'), _solfegeStructured);
       practiceData = _solfegeStructured.measures.map(m => ({
         num: String(m.num), notes: m.notes || [], solfege: m.solfege || [],
         lyrics: m.lyrics || '', confidence: m.confidence || 'medium',
