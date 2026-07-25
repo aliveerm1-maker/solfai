@@ -2453,6 +2453,24 @@
     .sp-unavailable b { color: var(--text); }
     .sp-unavailable a { color: var(--gold); text-decoration: none; border-bottom: 1px solid color-mix(in oklab, var(--gold) 40%, transparent); }
 
+    /* ── Full-window drop overlay ── */
+    .global-drop-overlay {
+      position: fixed; inset: 0; z-index: 4000; display: none;
+      align-items: center; justify-content: center; padding: 24px;
+      background: color-mix(in oklab, var(--bg) 72%, transparent);
+      backdrop-filter: blur(6px);
+    }
+    .global-drop-overlay.show { display: flex; animation: fadeUp 0.15s var(--transition); }
+    .global-drop-card {
+      pointer-events: none; text-align: center; color: var(--gold);
+      border: 2.5px dashed color-mix(in oklab, var(--gold) 62%, transparent);
+      border-radius: 22px; padding: 42px 64px;
+      background: color-mix(in oklab, var(--card) 88%, var(--gold) 12%);
+      box-shadow: 0 24px 70px color-mix(in oklab, var(--bg) 60%, transparent);
+    }
+    .global-drop-title { font-family: 'Fraunces', serif; font-size: 1.7rem; font-weight: 600; color: var(--text); margin-top: 12px; }
+    .global-drop-sub { font-size: 0.85rem; color: var(--muted); margin-top: 6px; }
+
   </style>
 </head>
 <body>
@@ -3838,7 +3856,7 @@ const analyzeBtn = $('analyzeBtn');
 uploadZone.addEventListener('click', () => fileInput.click());
 uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+uploadZone.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); uploadZone.classList.remove('drag-over'); const o = document.getElementById('globalDropOverlay'); if (o) o.classList.remove('show'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
 
 function handleFile(file) {
@@ -8790,6 +8808,52 @@ function buildWeakPanel() {
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initClef);
   else initClef();
+</script>
+
+<!-- Full-window drop target: prevents the browser from opening a dropped file
+     (image/PDF/MusicXML) in a new tab, and makes a drop ANYWHERE upload it. -->
+<div class="global-drop-overlay" id="globalDropOverlay" aria-hidden="true">
+  <div class="global-drop-card">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="46" height="46"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <div class="global-drop-title">Drop to upload</div>
+    <div class="global-drop-sub">Image, PDF, or MusicXML (.musicxml &middot; .mxl &middot; .xml)</div>
+  </div>
+</div>
+<script>
+(function () {
+  // Route a file dropped anywhere in the window to the existing handleFile().
+  // Without window-level preventDefault, drops outside #uploadZone hit the
+  // browser default and open the file in a new tab (the reported bug).
+  const overlay = document.getElementById('globalDropOverlay');
+  const dragHasFiles = e => !!(e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files'));
+  let depth = 0;
+  const show = () => { if (overlay) overlay.classList.add('show'); };
+  const hide = () => { depth = 0; if (overlay) overlay.classList.remove('show'); };
+
+  window.addEventListener('dragenter', e => { if (!dragHasFiles(e)) return; e.preventDefault(); depth++; show(); });
+  window.addEventListener('dragover', e => { if (!dragHasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+  window.addEventListener('dragleave', e => { if (!dragHasFiles(e)) return; depth = Math.max(0, depth - 1); if (depth === 0) hide(); });
+  window.addEventListener('drop', e => {
+    // Always stop the browser from navigating to/opening the file.
+    e.preventDefault();
+    hide();
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return;
+    if (typeof handleFile === 'function') {
+      try {
+        handleFile(f);
+        const uz = document.getElementById('uploadZone');
+        if (uz) {
+          uz.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          uz.classList.add('drag-over');
+          setTimeout(() => uz.classList.remove('drag-over'), 700);
+        }
+      } catch (err) { console.warn('[drop] handleFile failed', err); }
+    }
+  });
+  // Safety: dropping on the tab while the page has focus but event slipped past.
+  window.addEventListener('dragend', hide);
+})();
 </script>
 </body>
 </html>
