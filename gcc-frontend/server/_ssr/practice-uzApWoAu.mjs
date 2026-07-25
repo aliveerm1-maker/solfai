@@ -1,8 +1,8 @@
 import { s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
 import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { C as Ear, E as CirclePlay, O as ArrowRight, d as ScanLine } from "../_libs/lucide-react.mjs";
-import { n as StaffLines, t as AppLayout } from "./StaffLines-4L9_3J30.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/practice-BaE6g4VN.js
+import { A as Ear, I as ArrowRight, N as CirclePlay, d as ScanLine } from "../_libs/lucide-react.mjs";
+import { r as StaffLines, t as AppLayout } from "./StaffLines-DCfF9t-v.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/practice-uzApWoAu.js
 var import_jsx_runtime = require_jsx_runtime();
 var TOOLS = [
 	{

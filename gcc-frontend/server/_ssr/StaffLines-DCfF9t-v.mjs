@@ -1,8 +1,8 @@
 import { i as __toESM } from "../_runtime.mjs";
 import { c as require_react, s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
 import { _ as useNavigate, g as Link, l as useRouterState } from "../_libs/@tanstack/react-router+[...].mjs";
-import { C as Ear, E as CirclePlay, O as ArrowRight, _ as Music2, b as Library, c as Sparkles, d as ScanLine, f as Radio, g as PanelLeft, l as Settings, m as PenLine, p as Plus, u as Search, v as Mic, w as Command } from "../_libs/lucide-react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/StaffLines-4L9_3J30.js
+import { A as Ear, I as ArrowRight, N as CirclePlay, _ as Music2, c as Sparkles, d as ScanLine, f as Radio, g as PanelLeft, j as Command, l as Settings, m as PenLine, p as Plus, u as Search, v as Mic, w as Library } from "../_libs/lucide-react.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/StaffLines-DCfF9t-v.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function CommandPalette() {
@@ -246,15 +246,20 @@ var NAV_MAIN = [
 		kbd: "V"
 	}
 ];
-/** Small square clef mark used as brand lockup — refined, editorial. */
+/** Small square clef mark used as brand lockup — refined, editorial.
+*  The gradient id must be unique per instance: a hardcoded id makes every
+*  copy point at the first one in document order, and when that copy sits
+*  inside a `display:none` subtree (the desktop rail on mobile) the fill
+*  resolves to nothing and the mark renders as an empty box. */
 function ClefMark({ className = "" }) {
+	const gradientId = `clefMarkGold-${(0, import_react.useId)()}`;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
 		viewBox: "0 0 24 24",
 		className,
 		"aria-hidden": true,
 		fill: "none",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("linearGradient", {
-			id: "clefMarkGold",
+			id: gradientId,
 			x1: "0",
 			y1: "0",
 			x2: "1",
@@ -275,7 +280,7 @@ function ClefMark({ className = "" }) {
 			]
 		}) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", {
 			d: "M12.4 2.4c-1.4 0-2.6 1.4-2.6 3.2 0 1.4.7 2.9 1.5 4.3-2.4 1.7-4.7 3.7-4.7 6.7 0 2.8 2 4.7 4.7 5l1 5.6c.15 1-.55 2-1.6 2.1-1.05.1-2-.7-2.15-1.75-.1-.75.3-1.4.9-1.85.1-.05.15-.2.05-.35-.1-.15-.25-.2-.4-.15-1 .55-1.6 1.85-1.35 3.1.3 1.7 1.95 2.85 3.65 2.55 1.7-.3 2.85-1.95 2.55-3.65l-.75-5.35c2.75-.35 4.85-2.85 4.85-5.7 0-2.7-1.9-4.9-4.4-5.35l-.65-3.05c1.2-1.15 2.35-2.55 2.35-4.15 0-1.7-1.3-3.1-2.95-3.1z",
-			fill: "url(#clefMarkGold)",
+			fill: `url(#${gradientId})`,
 			transform: "scale(0.72) translate(0,0)"
 		})]
 	});
@@ -596,4 +601,4 @@ function StaffLines({ className = "", opacity = .35, strokeWidth = 1, animated =
 	});
 }
 //#endregion
-export { StaffLines as n, AppLayout as t };
+export { ClefMark as n, StaffLines as r, AppLayout as t };

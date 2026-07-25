@@ -128,6 +128,19 @@ var ArrowRight = createLucideIcon("arrow-right", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var BookOpen = createLucideIcon("book-open", [["path", {
+	d: "M12 7v14",
+	key: "1akyts"
+}], ["path", {
+	d: "M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z",
+	key: "ruj8y"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Check = createLucideIcon("check", [["path", {
 	d: "M20 6 9 17l-5-5",
 	key: "1gmf2c"
@@ -191,6 +204,26 @@ var Ear = createLucideIcon("ear", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var ExternalLink = createLucideIcon("external-link", [
+	["path", {
+		d: "M15 3h6v6",
+		key: "1q9fwt"
+	}],
+	["path", {
+		d: "M10 14 21 3",
+		key: "gplh6r"
+	}],
+	["path", {
+		d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
+		key: "a6xqqp"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var FileMusic = createLucideIcon("file-music", [
 	["path", {
 		d: "M11.65 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v10.35",
@@ -227,6 +260,78 @@ var Flame = createLucideIcon("flame", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Languages = createLucideIcon("languages", [
+	["path", {
+		d: "m5 8 6 6",
+		key: "1wu5hv"
+	}],
+	["path", {
+		d: "m4 14 6-6 2-3",
+		key: "1k1g8d"
+	}],
+	["path", {
+		d: "M2 5h12",
+		key: "or177f"
+	}],
+	["path", {
+		d: "M7 2h1",
+		key: "1t2jsx"
+	}],
+	["path", {
+		d: "m22 22-5-10-5 10",
+		key: "don7ne"
+	}],
+	["path", {
+		d: "M14 18h6",
+		key: "1m8k6r"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var LayoutList = createLucideIcon("layout-list", [
+	["rect", {
+		width: "7",
+		height: "7",
+		x: "3",
+		y: "3",
+		rx: "1",
+		key: "1g98yp"
+	}],
+	["rect", {
+		width: "7",
+		height: "7",
+		x: "3",
+		y: "14",
+		rx: "1",
+		key: "1bb6yr"
+	}],
+	["path", {
+		d: "M14 4h7",
+		key: "3xa0d5"
+	}],
+	["path", {
+		d: "M14 9h7",
+		key: "1icrd9"
+	}],
+	["path", {
+		d: "M14 15h7",
+		key: "1mj8o2"
+	}],
+	["path", {
+		d: "M14 20h7",
+		key: "11slyb"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Library = createLucideIcon("library", [
 	["path", {
 		d: "m16 6 4 14",
@@ -251,9 +356,87 @@ var Library = createLucideIcon("library", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Lightbulb = createLucideIcon("lightbulb", [
+	["path", {
+		d: "M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5",
+		key: "1gvzjb"
+	}],
+	["path", {
+		d: "M9 18h6",
+		key: "x1upvd"
+	}],
+	["path", {
+		d: "M10 22h4",
+		key: "ceow96"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var ListMusic = createLucideIcon("list-music", [
+	["path", {
+		d: "M16 5H3",
+		key: "m91uny"
+	}],
+	["path", {
+		d: "M11 12H3",
+		key: "51ecnj"
+	}],
+	["path", {
+		d: "M11 19H3",
+		key: "zflm78"
+	}],
+	["path", {
+		d: "M21 16V5",
+		key: "yxg4q8"
+	}],
+	["circle", {
+		cx: "18",
+		cy: "16",
+		r: "3",
+		key: "1hluhg"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var LoaderCircle = createLucideIcon("loader-circle", [["path", {
 	d: "M21 12a9 9 0 1 1-6.219-8.56",
 	key: "13zald"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Lock = createLucideIcon("lock", [["rect", {
+	width: "18",
+	height: "11",
+	x: "3",
+	y: "11",
+	rx: "2",
+	ry: "2",
+	key: "1w4ew1"
+}], ["path", {
+	d: "M7 11V7a5 5 0 0 1 10 0v4",
+	key: "fwvmzm"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var MessageSquare = createLucideIcon("message-square", [["path", {
+	d: "M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z",
+	key: "18887p"
 }]]);
 /**
 * @license lucide-react v0.575.0 - ISC
@@ -575,4 +758,4 @@ var X = createLucideIcon("x", [["path", {
 	key: "d8bk6v"
 }]]);
 //#endregion
-export { Ear as C, Check as D, CirclePlay as E, ArrowRight as O, FileMusic as S, Clock3 as T, Music2 as _, TrendingUp as a, Library as b, Sparkles as c, ScanLine as d, Radio as f, PanelLeft as g, Paperclip as h, TriangleAlert as i, Settings as l, PenLine as m, Waves as n, TrendingDown as o, Plus as p, Upload as r, Square as s, X as t, Search as u, Mic as v, Command as w, Flame as x, LoaderCircle as y };
+export { Ear as A, Lightbulb as C, Flame as D, Languages as E, BookOpen as F, ArrowRight as I, Clock3 as M, CirclePlay as N, FileMusic as O, Check as P, ListMusic as S, LayoutList as T, Music2 as _, TrendingUp as a, Lock as b, Sparkles as c, ScanLine as d, Radio as f, PanelLeft as g, Paperclip as h, TriangleAlert as i, Command as j, ExternalLink as k, Settings as l, PenLine as m, Waves as n, TrendingDown as o, Plus as p, Upload as r, Square as s, X as t, Search as u, Mic as v, Library as w, LoaderCircle as x, MessageSquare as y };

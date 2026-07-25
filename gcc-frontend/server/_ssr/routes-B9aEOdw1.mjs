@@ -1,13 +1,848 @@
 import { i as __toESM } from "../_runtime.mjs";
 import { c as require_react, s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
 import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { C as Ear, O as ArrowRight, S as FileMusic, T as Clock3, _ as Music2, d as ScanLine, f as Radio, h as Paperclip, i as TriangleAlert, m as PenLine, n as Waves, r as Upload, t as X, v as Mic, x as Flame, y as LoaderCircle } from "../_libs/lucide-react.mjs";
-import { n as StaffLines, t as AppLayout } from "./StaffLines-4L9_3J30.mjs";
+import { A as Ear, C as Lightbulb, D as Flame, E as Languages, F as BookOpen, I as ArrowRight, M as Clock3, O as FileMusic, S as ListMusic, T as LayoutList, _ as Music2, b as Lock, c as Sparkles, d as ScanLine, f as Radio, g as PanelLeft, h as Paperclip, i as TriangleAlert, k as ExternalLink, m as PenLine, n as Waves, p as Plus, r as Upload, t as X, v as Mic, x as LoaderCircle, y as MessageSquare } from "../_libs/lucide-react.mjs";
+import { n as ClefMark, r as StaffLines, t as AppLayout } from "./StaffLines-DCfF9t-v.mjs";
 import { t as bronze_material_default } from "./bronze_material-CBP8JZx1.mjs";
 import { a as postAnalyze, i as pdfFileToPages, o as postParseMusicXML, r as imageFileToBase64, t as AnalyzeApiError } from "./analyzeClient-D8-hzk1Y.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-B2Ar1YDn.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-B9aEOdw1.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
+function SessionShell({ sections, active, onSelect, title, subtitle, meta, onNewAnalysis, navOpen, onToggleNav, children }) {
+	(0, import_react.useEffect)(() => {
+		if (!navOpen) return;
+		const onKey = (e) => {
+			if (e.key === "Escape") onToggleNav();
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [navOpen, onToggleNav]);
+	const rail = /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+		/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "flex items-center gap-2.5 px-4 h-[57px] border-b border-[color:var(--border-dark)] shrink-0",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: "relative grid place-items-center h-8 w-8 border border-[color:var(--gold)]/30 bg-[color:var(--bg)] shrink-0",
+					style: { borderRadius: "2px" },
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClefMark, { className: "h-4.5 w-4.5" })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "leading-tight min-w-0",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "serif text-[15px] font-medium tracking-tight text-paper",
+						children: "Solfai"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "text-[9px] uppercase tracking-[0.26em] text-muted-dark truncate",
+						children: "Session"
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					onClick: onToggleNav,
+					className: "ml-auto md:hidden grid place-items-center h-7 w-7 text-muted-dark hover:text-paper transition-colors",
+					"aria-label": "Close navigation",
+					"data-testid": "session-nav-close",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { size: 15 })
+				})
+			]
+		}),
+		/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "px-3 pt-3.5 shrink-0",
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				onClick: onNewAnalysis,
+				"data-testid": "session-new-analysis",
+				className: "w-full flex items-center gap-2.5 px-3 py-2.5 text-[12.5px] font-semibold transition-colors border border-[color:var(--gold)]/25 bg-[color:var(--gold)]/8 text-paper hover:bg-[color:var(--gold)]/15",
+				style: { borderRadius: "2px" },
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
+					size: 14,
+					className: "text-[color:var(--gold)] shrink-0"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: "truncate",
+					children: "New analysis"
+				})]
+			})
+		}),
+		/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("nav", {
+			className: "mt-4 px-3 pb-4 flex flex-col gap-0.5 overflow-y-auto",
+			"data-testid": "session-nav",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center gap-2 text-[9px] uppercase tracking-[0.26em] text-muted-dark px-2.5 mb-1.5",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Sections" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "flex-1 h-px bg-[color:var(--border-dark)]" })]
+			}), sections.map(({ id, label, icon: Icon, hint, disabled, badge }) => {
+				const isActive = id === active && !disabled;
+				return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					onClick: () => !disabled && onSelect(id),
+					disabled,
+					title: disabled ? `${label} — not available yet` : label,
+					"data-testid": `session-nav-${id}`,
+					"aria-current": isActive ? "page" : void 0,
+					className: "group relative flex items-center gap-2.5 px-2.5 py-2 text-[12.5px] text-left transition-colors " + (disabled ? "text-muted-dark/45 cursor-not-allowed" : isActive ? "text-paper bg-[color:var(--bg)]/70" : "text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40"),
+					style: { borderRadius: "2px" },
+					children: [
+						isActive && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-[color:var(--gold)]" }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, {
+							size: 14,
+							className: isActive ? "text-[color:var(--gold)] shrink-0" : "shrink-0"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "min-w-0 flex-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "block truncate leading-tight",
+								children: label
+							}), hint && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "block text-[10px] text-muted-dark/70 truncate leading-tight mt-0.5",
+								children: hint
+							})]
+						}),
+						disabled && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+							size: 10,
+							className: "shrink-0 opacity-60"
+						}),
+						badge && !disabled && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "shrink-0 text-[8.5px] font-bold uppercase tracking-[0.14em] px-1.5 py-0.5 border border-[color:var(--border-dark)] text-muted-dark",
+							children: badge
+						})
+					]
+				}, id);
+			})]
+		})
+	] });
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "min-h-screen bg-bg text-paper flex",
+		"data-testid": "session-shell",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "grain",
+				"aria-hidden": true
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("aside", {
+				className: "hidden md:flex w-[248px] shrink-0 flex-col border-r border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/60 backdrop-blur-xl",
+				"data-testid": "session-sidebar",
+				children: rail
+			}),
+			navOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "md:hidden fixed inset-0 z-[100] flex",
+				"data-testid": "session-drawer",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "absolute inset-0 bg-[color:var(--ink)]/70 backdrop-blur-sm",
+					onClick: onToggleNav,
+					"aria-hidden": true
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("aside", {
+					className: "relative flex w-[272px] max-w-[82vw] flex-col border-r border-[color:var(--border-dark)] bg-[color:var(--bg-2)] shadow-[0_0_60px_rgba(0,0,0,0.6)]",
+					children: rail
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex-1 min-w-0 flex flex-col",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+					className: "sticky top-0 z-40 flex items-center gap-3 px-4 md:px-6 h-[57px] border-b border-[color:var(--border-dark)] bg-[color:var(--bg)]/90 backdrop-blur-xl shrink-0",
+					"data-testid": "session-header",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							onClick: onToggleNav,
+							className: "md:hidden grid place-items-center h-8 w-8 text-muted-dark hover:text-paper transition-colors shrink-0",
+							"aria-label": "Open navigation",
+							"data-testid": "session-nav-open",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PanelLeft, { size: 16 })
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClefMark, { className: "hidden md:block h-5 w-5 shrink-0 opacity-90" }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "min-w-0 flex-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "serif text-[15px] md:text-[16px] font-medium leading-tight text-paper truncate",
+								"data-testid": "session-title",
+								children: title
+							}), subtitle && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "text-[10.5px] text-muted-dark truncate leading-tight",
+								children: subtitle
+							})]
+						}),
+						meta && meta.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "hidden lg:flex items-center gap-px shrink-0",
+							"data-testid": "session-header-meta",
+							children: meta.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "px-3 text-right border-l border-[color:var(--border-dark)] first:border-l-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "text-[8.5px] uppercase tracking-[0.22em] text-muted-dark leading-none",
+									children: m.k
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "serif text-[13px] text-paper leading-tight mt-1 max-w-[150px] truncate",
+									children: m.v
+								})]
+							}, m.k))
+						})
+					]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "flex-1 min-w-0 overflow-x-hidden",
+					"data-testid": "session-content",
+					children
+				})]
+			})
+		]
+	});
+}
+function SectionHead({ eyebrow, title, sub }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "mb-6",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "eyebrow eyebrow-dot text-[color:var(--gold)]",
+				children: eyebrow
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+				className: "mt-3 serif-tight text-[30px] md:text-[38px] leading-[1.02] font-medium text-paper",
+				children: title
+			}),
+			sub && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "mt-3 max-w-2xl text-[13px] leading-relaxed text-muted-dark",
+				children: sub
+			})
+		]
+	});
+}
+function Empty({ title, body, action }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "border border-dashed border-[color:var(--border-dark)] px-6 py-10 text-center",
+		style: { borderRadius: "3px" },
+		"data-testid": "section-empty",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "serif text-[19px] text-paper",
+				children: title
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "mt-2.5 mx-auto max-w-md text-[12.5px] leading-relaxed text-muted-dark",
+				children: body
+			}),
+			action && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "mt-5 flex flex-wrap items-center justify-center gap-2.5",
+				children: action
+			})
+		]
+	});
+}
+var btnGold = "inline-flex items-center gap-2 px-4 h-9 text-[11px] font-bold uppercase tracking-[0.18em]";
+var btnGoldStyle = {
+	background: "var(--gold)",
+	color: "var(--ink)",
+	borderRadius: "2px"
+};
+var btnGhost = "inline-flex items-center gap-2 px-4 h-9 text-[11px] font-semibold uppercase tracking-[0.18em] border border-[color:var(--border-dark)] text-paper hover:border-[color:var(--gold)]/50 transition-colors";
+function Meter({ label, value }) {
+	const pct = Math.max(0, Math.min(100, value / 10 * 100));
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex items-center gap-3 mb-2",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				className: "w-20 shrink-0 text-[10px] uppercase tracking-wide text-muted-dark",
+				children: label
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "relative h-[3px] flex-1 overflow-hidden bg-[color:var(--bg)]",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "absolute inset-y-0 left-0 bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--bronze)]",
+					style: { width: `${pct}%` }
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				className: "w-5 shrink-0 text-right text-[10.5px] mono-cap text-paper/80",
+				children: value
+			})
+		]
+	});
+}
+function StatCard({ k, v, wide }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "bg-[color:var(--bg-2)] p-4 " + (wide ? "col-span-2 sm:col-span-1" : ""),
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "text-[9px] uppercase tracking-[0.24em] text-muted-dark",
+			children: k
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "mt-1.5 serif text-[19px] font-medium text-paper leading-tight break-words",
+			children: v
+		})]
+	});
+}
+/** Solfège + note chips for one measure (or the opening notes). */
+function NoteRow({ solfege, notes }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		className: "flex flex-wrap gap-1.5",
+		children: solfege.map((sol, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+			className: "px-2.5 py-1 text-[11.5px] font-semibold border border-[color:var(--border-dark)] text-paper/90",
+			style: { borderRadius: "2px" },
+			children: [sol, notes?.[i] && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+				className: "font-normal text-muted-dark",
+				children: [" · ", notes[i]]
+			})]
+		}, i))
+	});
+}
+function SessionSection({ id, result, part, onNewAnalysis }) {
+	const s = result.structured;
+	const isXml = s.source === "musicxml";
+	switch (id) {
+		case "overview": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Overview, {
+			s,
+			part
+		});
+		case "solfege": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Solfege, {
+			s,
+			part,
+			isXml
+		});
+		case "rhythm": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Rhythm, { s });
+		case "measures": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Measures, {
+			s,
+			isXml
+		});
+		case "tips": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tips, {
+			s,
+			part
+		});
+		case "composer": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Composer, { s });
+		case "pronunciation": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pronunciation, { s });
+		case "eartraining": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EarTraining, {});
+		case "vocalcoach": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VocalCoachLink, {});
+		case "ask": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AskPlaceholder, { onNewAnalysis });
+		default: return null;
+	}
+}
+function Overview({ s, part }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-overview",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+				eyebrow: "Section I · Overview",
+				title: s.pieceTitle || "Your score",
+				sub: s.composerName ? `${s.composerName} · analyzed for ${part}` : `Analyzed for ${part}`
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "grid grid-cols-2 sm:grid-cols-4 gap-px bg-[color:var(--border-dark)] border border-[color:var(--border-dark)]",
+				style: { borderRadius: "3px" },
+				"data-testid": "overview-stats",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatCard, {
+						k: "Key",
+						v: s.keySignature
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatCard, {
+						k: "Meter",
+						v: s.timeSignature
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatCard, {
+						k: "Tempo",
+						v: s.tempo
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatCard, {
+						k: "Dynamics",
+						v: s.dynamics
+					})
+				]
+			}),
+			s.keyWarning && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mt-4 flex items-start gap-2 text-[12px] text-[color:var(--gold)]",
+				"data-testid": "overview-key-warning",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TriangleAlert, {
+					size: 13,
+					className: "shrink-0 mt-0.5"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: s.keyWarning })]
+			}),
+			s.source === "musicxml" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mt-4 inline-flex items-center gap-2 px-3 py-1.5 text-[10.5px] uppercase tracking-[0.18em] border border-[color:var(--border-gold)] text-[color:var(--gold)]",
+				style: { borderRadius: "2px" },
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileMusic, { size: 12 }), " MusicXML — exact notes, no guessing"]
+			}),
+			s.overview && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mt-8 max-w-3xl",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "eyebrow text-muted-dark mb-2.5",
+					children: "What you're looking at"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-[14px] leading-[1.75] text-paper/85 whitespace-pre-line",
+					"data-testid": "overview-text",
+					children: s.overview
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mt-8 max-w-md",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "eyebrow text-muted-dark mb-3",
+						children: "Difficulty"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Meter, {
+						label: "Overall",
+						value: s.difficulty.overall
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Meter, {
+						label: "Rhythm",
+						value: s.difficulty.rhythm
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Meter, {
+						label: "Range",
+						value: s.difficulty.range
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Meter, {
+						label: "Intervals",
+						value: s.difficulty.intervals
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Meter, {
+						label: "Text",
+						value: s.difficulty.text
+					})
+				]
+			})
+		]
+	});
+}
+function Solfege({ s, part, isXml }) {
+	const measures = s.measures ?? [];
+	const hasFull = isXml && measures.length > 0;
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-solfege",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+				eyebrow: "Section II · Solfège",
+				title: "Movable-do, your part.",
+				sub: hasFull ? `Every measure of the ${part} line, computed from the parsed notes — not generated by a language model.` : `Opening pitches for ${part}. Full measure-by-measure solfège needs exact note durations, which only a MusicXML upload provides.`
+			}),
+			s.firstNotesSolfege && s.firstNotesSolfege.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mb-8",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "eyebrow text-muted-dark mb-2.5",
+					children: "Starting notes"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NoteRow, {
+					solfege: s.firstNotesSolfege,
+					notes: s.firstNotes ?? void 0
+				})]
+			}),
+			hasFull ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "border border-[color:var(--border-dark)] divide-y divide-[color:var(--border-dark)]",
+				style: { borderRadius: "3px" },
+				"data-testid": "solfege-measures",
+				children: measures.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex gap-4 px-4 py-3.5 hover:bg-[color:var(--bg-2)]/50 transition-colors",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "mono-cap text-[11px] text-[color:var(--gold)] w-9 shrink-0 pt-1",
+						children: String(m.num).padStart(2, "0")
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "min-w-0 flex-1",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NoteRow, {
+								solfege: m.solfege || [],
+								notes: m.notes
+							}),
+							m.lyrics && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "mt-2 text-[12px] italic text-muted-dark",
+								children: m.lyrics
+							}),
+							m.durationWarning && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "mt-2 flex items-start gap-1.5 text-[11px] text-[color:var(--gold)]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TriangleAlert, {
+									size: 11,
+									className: "shrink-0 mt-0.5"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: m.durationWarning })]
+							})
+						]
+					})]
+				}, m.num))
+			}) : !s.firstNotesSolfege?.length && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Empty, {
+				title: "No solfège returned for this score",
+				body: "The analyzer couldn't read clear pitches off this file. A cleaner scan, or a MusicXML export from MuseScore, will give exact notes.",
+				action: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					onClick: () => {
+						window.location.href = "/classic";
+					},
+					className: btnGhost,
+					style: { borderRadius: "2px" },
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExternalLink, { size: 13 }), " Try Classic Studio"]
+				})
+			})
+		]
+	});
+}
+function Rhythm({ s }) {
+	const tempoChanges = s.tempoChanges ?? [];
+	const dynamicChanges = s.dynamicChanges ?? [];
+	const marks = s.rehearsalMarks ?? [];
+	const warnings = s.durationWarnings ?? [];
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-rhythm",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+				eyebrow: "Section III · Rhythm & meter",
+				title: "Counting, tempo, and shape.",
+				sub: "Meter and tempo as printed, plus everything that changes along the way."
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "grid grid-cols-2 sm:grid-cols-3 gap-px bg-[color:var(--border-dark)] border border-[color:var(--border-dark)]",
+				style: { borderRadius: "3px" },
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatCard, {
+						k: "Time signature",
+						v: s.timeSignature
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatCard, {
+						k: "Tempo",
+						v: s.tempo
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatCard, {
+						k: "Opening dynamic",
+						v: s.dynamics
+					})
+				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mt-8 max-w-md",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "eyebrow text-muted-dark mb-3",
+						children: "Rhythmic difficulty"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Meter, {
+						label: "Rhythm",
+						value: s.difficulty.rhythm
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Meter, {
+						label: "Overall",
+						value: s.difficulty.overall
+					})
+				]
+			}),
+			(tempoChanges.length > 0 || dynamicChanges.length > 0 || marks.length > 0) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mt-9 grid gap-6 md:grid-cols-3",
+				"data-testid": "rhythm-changes",
+				children: [
+					tempoChanges.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "eyebrow text-muted-dark mb-2.5",
+						children: "Tempo changes"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+						className: "space-y-1.5",
+						children: tempoChanges.map((t, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+							className: "text-[12.5px] text-paper/85",
+							children: [t.measure != null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								className: "mono-cap text-[10.5px] text-[color:var(--gold)] mr-2",
+								children: ["m.", t.measure]
+							}), t.display || "—"]
+						}, i))
+					})] }),
+					dynamicChanges.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "eyebrow text-muted-dark mb-2.5",
+						children: "Dynamics"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+						className: "space-y-1.5",
+						children: dynamicChanges.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+							className: "text-[12.5px] text-paper/85",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								className: "mono-cap text-[10.5px] text-[color:var(--gold)] mr-2",
+								children: ["m.", d.measure]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "italic serif",
+								children: d.mark
+							})]
+						}, i))
+					})] }),
+					marks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "eyebrow text-muted-dark mb-2.5",
+						children: "Rehearsal marks"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+						className: "space-y-1.5",
+						children: marks.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+							className: "text-[12.5px] text-paper/85",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								className: "mono-cap text-[10.5px] text-[color:var(--gold)] mr-2",
+								children: ["m.", r.measure]
+							}), r.mark]
+						}, i))
+					})] })
+				]
+			}),
+			warnings.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mt-9",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "eyebrow text-muted-dark mb-2.5",
+					children: "Measures that don't add up"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+					className: "space-y-1.5 max-w-2xl",
+					children: warnings.map((w, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+						className: "flex gap-2 text-[12px] text-[color:var(--gold)]",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TriangleAlert, {
+							size: 12,
+							className: "shrink-0 mt-0.5"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: w })]
+					}, i))
+				})]
+			}),
+			tempoChanges.length === 0 && dynamicChanges.length === 0 && marks.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "mt-8 text-[12.5px] text-muted-dark max-w-2xl",
+				children: "No tempo or dynamic changes were found in this file. Detailed change tracking comes from MusicXML uploads — image and PDF analysis reports the opening tempo and dynamic only."
+			})
+		]
+	});
+}
+function Measures({ s, isXml }) {
+	const measures = s.measures ?? [];
+	if (!isXml || measures.length === 0) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-measures",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+			eyebrow: "Section IV · Measure by measure",
+			title: "One bar at a time.",
+			sub: "Practising a single measure in real rhythm needs exact note durations."
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Empty, {
+			title: "Not available for this upload",
+			body: "Measure-by-measure work needs a MusicXML file (.musicxml / .mxl) — image and PDF analysis can't recover reliable rhythm. Export from MuseScore and upload that, or use the Classic Studio's player.",
+			action: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_jsx_runtime.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				onClick: () => {
+					window.location.href = "/classic";
+				},
+				className: btnGold,
+				style: btnGoldStyle,
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExternalLink, { size: 13 }), " Open Classic Studio"]
+			}) })
+		})]
+	});
+	const totalNotes = measures.reduce((n, m) => n + (m.notes?.length || 0), 0);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-measures",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+				eyebrow: "Section IV · Measure by measure",
+				title: "One bar at a time.",
+				sub: `${measures.length} measures · ${totalNotes} notes, read structurally from your MusicXML.`
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mb-7 flex flex-wrap items-center gap-3 border border-[color:var(--border-gold)] px-4 py-3",
+				style: {
+					borderRadius: "3px",
+					background: "color-mix(in oklab, var(--gold) 5%, transparent)"
+				},
+				"data-testid": "measures-playback-note",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Music2, {
+						size: 15,
+						className: "text-[color:var(--gold)] shrink-0"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "text-[12.5px] text-paper/85 flex-1 min-w-[220px]",
+						children: "Audio playback for these measures runs in the Classic Studio — it isn't wired into this view yet."
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						onClick: () => {
+							window.location.href = "/classic";
+						},
+						className: btnGhost,
+						style: { borderRadius: "2px" },
+						children: ["Play there ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, { size: 13 })]
+					})
+				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3",
+				"data-testid": "measures-grid",
+				children: measures.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "border border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/50 p-3.5",
+					style: { borderRadius: "3px" },
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2 mb-2.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								className: "mono-cap text-[10.5px] text-[color:var(--gold)]",
+								children: ["Measure ", m.num]
+							}), m.valid === false && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "ml-auto text-[9px] uppercase tracking-[0.16em] text-[color:var(--gold)]",
+								children: "check"
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NoteRow, {
+							solfege: m.solfege || [],
+							notes: m.notes
+						}),
+						m.lyrics && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "mt-2.5 text-[11.5px] italic text-muted-dark",
+							children: m.lyrics
+						})
+					]
+				}, m.num))
+			})
+		]
+	});
+}
+function Tips({ s, part }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-tips",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+			eyebrow: "Section V · Practice",
+			title: "Where to spend your time.",
+			sub: `Written for the ${part} line of this specific score.`
+		}), s.practiceTips.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ol", {
+			className: "max-w-3xl divide-y divide-[color:var(--border-dark)] border-y border-[color:var(--border-dark)]",
+			"data-testid": "tips-list",
+			children: s.practiceTips.map((tip, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+				className: "flex gap-4 py-4",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: "mono-cap text-[11px] text-[color:var(--gold)] w-7 shrink-0 pt-0.5",
+					children: String(i + 1).padStart(2, "0")
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: "text-[13.5px] leading-relaxed text-paper/85",
+					children: tip
+				})]
+			}, i))
+		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Empty, {
+			title: "No practice notes for this one",
+			body: "The analyzer didn't return practice tips for this score. That usually means the page was too unclear to say anything specific — a cleaner scan tends to fix it."
+		})]
+	});
+}
+function Composer({ s }) {
+	const hasProse = !!(s.composerBio || s.pieceInfo);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-composer",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+				eyebrow: "Section VI · Context",
+				title: s.composerName || "Composer & context",
+				sub: s.pieceTitle ? `On ${s.pieceTitle}.` : void 0
+			}),
+			!hasProse && s.composerName && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Empty, {
+				title: `Credited to ${s.composerName}`,
+				body: "That name came from the score file itself. No composer biography or historical write-up was returned for this piece, so there's nothing further to show here — we won't invent one."
+			}),
+			hasProse ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "max-w-3xl space-y-7",
+				children: [s.composerBio && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "eyebrow text-muted-dark mb-2.5",
+					children: "The composer"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-[14px] leading-[1.75] text-paper/85 whitespace-pre-line",
+					"data-testid": "composer-bio",
+					children: s.composerBio
+				})] }), s.pieceInfo && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "eyebrow text-muted-dark mb-2.5",
+					children: "The piece"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-[14px] leading-[1.75] text-paper/85 whitespace-pre-line",
+					"data-testid": "composer-piece-info",
+					children: s.pieceInfo
+				})] })]
+			}) : !s.composerName ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Empty, {
+				title: "No composer information",
+				body: "Solfai couldn't identify the composer or the piece from this file. Scores with a printed title and composer line on the first page identify far more reliably."
+			}) : null
+		]
+	});
+}
+function Pronunciation({ s }) {
+	const p = s.pronunciation;
+	const words = p?.words ?? [];
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-pronunciation",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+			eyebrow: "Section VII · Diction",
+			title: "Say it right.",
+			sub: p?.language ? `Text language: ${p.language}.` : void 0
+		}), words.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "max-w-3xl border border-[color:var(--border-dark)] divide-y divide-[color:var(--border-dark)]",
+			style: { borderRadius: "3px" },
+			"data-testid": "pronunciation-list",
+			children: words.map((w, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex flex-wrap items-baseline gap-x-4 gap-y-1 px-4 py-3",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "serif italic text-[17px] text-[color:var(--gold)] min-w-[120px]",
+						children: w.word
+					}),
+					w.ipa && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "mono-cap text-[11.5px] text-muted-dark",
+						children: w.ipa
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "text-[13px] text-paper/85",
+						children: w.approx
+					})
+				]
+			}, i))
+		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Empty, {
+			title: p?.needsGuide === false ? "No guide needed" : "No pronunciation guide",
+			body: p?.needsGuide === false ? `Solfai read this text as ${p?.language || "English"} and decided a pronunciation guide wasn't necessary.` : "No lyrics were detected clearly enough to build a pronunciation guide for this score."
+		})]
+	});
+}
+function EarTraining() {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-eartraining",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+			eyebrow: "Section VIII · Ear training",
+			title: "Train the interval, not the guess.",
+			sub: "Interval and chord drills with adaptive difficulty."
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Empty, {
+			title: "Runs in the Classic Studio",
+			body: "Ear-training drills are real and working today — they just haven't been rebuilt in this view yet. We'd rather send you to the working one than fake a drill here.",
+			action: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				onClick: () => {
+					window.location.href = "/classic";
+				},
+				className: btnGold,
+				style: btnGoldStyle,
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExternalLink, { size: 13 }), " Open ear training"]
+			})
+		})]
+	});
+}
+function VocalCoachLink() {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-vocalcoach",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+			eyebrow: "Section IX · Vocal coach",
+			title: "Sing it, get real feedback.",
+			sub: "Record or upload a take and get pitch, tone, breath, rhythm and diction scores from the real evaluator."
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "max-w-2xl border border-[color:var(--border-gold)] px-6 py-8",
+			style: {
+				borderRadius: "3px",
+				background: "linear-gradient(180deg, var(--bg-2) 0%, var(--bg-3) 100%)"
+			},
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mic, {
+					size: 26,
+					className: "text-[color:var(--gold)]"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "mt-4 serif text-[22px] text-paper",
+					children: "The Vocal Coach is fully working."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-2.5 text-[13px] leading-relaxed text-muted-dark",
+					children: "It opens as its own page so recording isn't interrupted by this session. Your analysis stays here — come straight back when you're done."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
+					to: "/vocal-coach",
+					className: "inline-flex items-center gap-2 px-4 h-9 text-[11px] font-bold uppercase tracking-[0.18em] mt-6",
+					style: btnGoldStyle,
+					"data-testid": "goto-vocal-coach",
+					children: ["Open Vocal Coach ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, { size: 13 })]
+				})
+			]
+		})]
+	});
+}
+function AskPlaceholder({ onNewAnalysis }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-testid": "section-ask",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHead, {
+			eyebrow: "Section X · Ask",
+			title: "Ask about this score.",
+			sub: "A conversational panel for questions about the piece you've just analyzed."
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Empty, {
+			title: "Not built yet",
+			body: "This is where you'll be able to ask follow-up questions about your score — 'why is measure 34 hard?', 'transpose my part down a third'. It isn't wired to anything yet, so it's disabled rather than pretending to answer.",
+			action: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				onClick: onNewAnalysis,
+				className: btnGhost,
+				style: { borderRadius: "2px" },
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { size: 13 }), " Back to analysis"]
+			})
+		})]
+	});
+}
 var parchment_texture_default = "/assets/parchment_texture-CReDGOXh.png";
 var glass_clef_study_default = "/assets/glass_clef_study-CEbqousS.png";
 var TrebleClef3D = (0, import_react.lazy)(() => import("./TrebleClef3D-zbN2ifz0.mjs").then((m) => ({ default: m.TrebleClef3D })));
@@ -190,6 +1025,66 @@ var MODES = [
 		]
 	}
 ];
+var SECTIONS = [
+	{
+		id: "overview",
+		label: "Overview",
+		icon: LayoutList,
+		hint: "Key, meter, difficulty"
+	},
+	{
+		id: "solfege",
+		label: "Solfège",
+		icon: Music2,
+		hint: "Your part, movable-do"
+	},
+	{
+		id: "rhythm",
+		label: "Rhythm & meter",
+		icon: Clock3,
+		hint: "Tempo and changes"
+	},
+	{
+		id: "measures",
+		label: "Measure by measure",
+		icon: ListMusic,
+		hint: "MusicXML uploads"
+	},
+	{
+		id: "tips",
+		label: "Practice tips",
+		icon: Lightbulb
+	},
+	{
+		id: "composer",
+		label: "Composer",
+		icon: BookOpen,
+		hint: "Context & history"
+	},
+	{
+		id: "pronunciation",
+		label: "Pronunciation",
+		icon: Languages
+	},
+	{
+		id: "eartraining",
+		label: "Ear training",
+		icon: Ear,
+		badge: "Classic"
+	},
+	{
+		id: "vocalcoach",
+		label: "Vocal Coach",
+		icon: Mic
+	},
+	{
+		id: "ask",
+		label: "Ask",
+		icon: MessageSquare,
+		hint: "Coming soon",
+		disabled: true
+	}
+];
 function Home() {
 	const [modeId, setModeId] = (0, import_react.useState)("analyze");
 	const mode = (0, import_react.useMemo)(() => MODES.find((m) => m.id === modeId), [modeId]);
@@ -202,6 +1097,42 @@ function Home() {
 	const [analyzeResult, setAnalyzeResult] = (0, import_react.useState)(null);
 	const [analyzeElapsed, setAnalyzeElapsed] = (0, import_react.useState)(0);
 	const [isDraggingFile, setIsDraggingFile] = (0, import_react.useState)(false);
+	const [view, setView] = (0, import_react.useState)("hero");
+	const [phase, setPhase] = (0, import_react.useState)("idle");
+	const [activeSection, setActiveSection] = (0, import_react.useState)("overview");
+	const [navOpen, setNavOpen] = (0, import_react.useState)(false);
+	const transitionTimers = (0, import_react.useRef)([]);
+	(0, import_react.useEffect)(() => () => {
+		transitionTimers.current.forEach(window.clearTimeout);
+	}, []);
+	function clearTransitionTimers() {
+		transitionTimers.current.forEach(window.clearTimeout);
+		transitionTimers.current = [];
+	}
+	function enterSession() {
+		if (view === "session") return;
+		clearTransitionTimers();
+		setPhase("leaving");
+		transitionTimers.current.push(window.setTimeout(() => {
+			setActiveSection("overview");
+			setView("session");
+			setPhase("entering");
+			transitionTimers.current.push(window.setTimeout(() => setPhase("idle"), 300));
+		}, 230));
+	}
+	function returnToHero() {
+		clearTransitionTimers();
+		setNavOpen(false);
+		setView("hero");
+		setPhase("idle");
+		setAnalyzeUpload(null);
+		setAnalyzeStage("idle");
+		setAnalyzeError(null);
+		setAnalyzeResult(null);
+		setActiveSection("overview");
+		setText("");
+		if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+	}
 	(0, import_react.useEffect)(() => {
 		if (analyzeStage !== "analyzing") return;
 		setAnalyzeElapsed(0);
@@ -234,6 +1165,9 @@ function Home() {
 			setIsDraggingFile(false);
 			const file = e.dataTransfer?.files?.[0];
 			if (!file) return;
+			setView("hero");
+			setPhase("idle");
+			setAnalyzeResult(null);
 			setModeId("analyze");
 			handleAnalyzeFileSelected(file);
 		};
@@ -305,6 +1239,7 @@ function Home() {
 		if (!analyzeUpload) return;
 		setAnalyzeStage("analyzing");
 		setAnalyzeError(null);
+		enterSession();
 		try {
 			const result = analyzeUpload.kind === "musicxml" && analyzeUpload.file ? await postParseMusicXML({
 				file: analyzeUpload.file,
@@ -323,7 +1258,7 @@ function Home() {
 		}
 	}
 	const analyzeCanRun = modeId === "analyze" && !!analyzeUpload && analyzeStage !== "analyzing" && analyzeStage !== "reading";
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AppLayout, { children: [isDraggingFile && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+	const dropOverlay = isDraggingFile && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 		className: "fixed inset-0 z-[999] flex items-center justify-center pointer-events-none",
 		style: { background: "color-mix(in oklab, var(--ink) 78%, transparent)" },
 		"data-testid": "global-drop-overlay",
@@ -354,8 +1289,140 @@ function Home() {
 				]
 			})]
 		})
-	}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "relative",
+	});
+	if (view === "session") {
+		const s = analyzeResult?.structured;
+		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [dropOverlay, /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SessionShell, {
+			sections: SECTIONS,
+			active: activeSection,
+			onSelect: (id) => {
+				setActiveSection(id);
+				setNavOpen(false);
+			},
+			title: s?.pieceTitle || analyzeUpload?.name || "Your score",
+			subtitle: s?.composerName ? `${s.composerName} · ${part}` : part,
+			meta: s ? [
+				{
+					k: "Key",
+					v: s.keySignature.split(" ")[0]
+				},
+				{
+					k: "Meter",
+					v: s.timeSignature
+				},
+				{
+					k: "Tempo",
+					v: s.tempo
+				}
+			] : void 0,
+			onNewAnalysis: returnToHero,
+			navOpen,
+			onToggleNav: () => setNavOpen((v) => !v),
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mx-auto w-full max-w-[1100px] px-5 md:px-8 py-8 md:py-11 " + (phase === "entering" ? "session-enter" : ""),
+				"data-testid": "session-body",
+				children: [
+					analyzeStage === "analyzing" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						"data-testid": "session-loading",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "eyebrow eyebrow-dot text-[color:var(--gold)]",
+								children: "Analyzing"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+								className: "mt-3 serif-tight text-[30px] md:text-[38px] leading-[1.02] font-medium text-paper",
+								children: "Reading your score…"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "mt-6 flex items-center gap-3",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+									size: 20,
+									className: "animate-spin text-[color:var(--gold)]"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "mono-cap text-[11.5px] text-muted-dark",
+									children: [analyzeElapsed, "s elapsed"]
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+								className: "mt-5 max-w-xl text-[13px] leading-relaxed text-muted-dark",
+								children: [
+									"Full scores can take up to a minute — Solfai cross-checks the key, tempo and your",
+									" ",
+									part.toLowerCase(),
+									" part before responding."
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "mt-9 grid gap-2.5 sm:grid-cols-3 max-w-2xl",
+								"aria-hidden": true,
+								children: [
+									0,
+									1,
+									2
+								].map((i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "h-20 border border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/40 animate-pulse",
+									style: {
+										borderRadius: "3px",
+										animationDelay: `${i * 140}ms`
+									}
+								}, i))
+							})
+						]
+					}),
+					analyzeStage === "error" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						"data-testid": "session-error",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "eyebrow eyebrow-dot text-[color:var(--gold)]",
+								children: "Analysis failed"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+								className: "mt-3 serif-tight text-[30px] md:text-[38px] leading-[1.02] font-medium text-paper",
+								children: "That didn't work."
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "mt-5 flex items-start gap-2.5 max-w-2xl",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TriangleAlert, {
+									size: 16,
+									className: "shrink-0 mt-0.5 text-[color:var(--gold)]"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-[13.5px] leading-relaxed text-paper/85",
+									children: analyzeError || "Something went wrong. Please try again."
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "mt-7 flex flex-wrap gap-2.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									onClick: runAnalyze,
+									"data-testid": "session-retry",
+									className: "inline-flex items-center gap-2 px-4 h-9 text-[11px] font-bold uppercase tracking-[0.18em]",
+									style: {
+										background: "var(--gold)",
+										color: "var(--ink)",
+										borderRadius: "2px"
+									},
+									children: "Try again"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									onClick: returnToHero,
+									className: "inline-flex items-center gap-2 px-4 h-9 text-[11px] font-semibold uppercase tracking-[0.18em] border border-[color:var(--border-dark)] text-paper hover:border-[color:var(--gold)]/50 transition-colors",
+									style: { borderRadius: "2px" },
+									children: "New analysis"
+								})]
+							})
+						]
+					}),
+					analyzeStage === "done" && analyzeResult && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SessionSection, {
+						id: activeSection,
+						result: analyzeResult,
+						part,
+						onNewAnalysis: returnToHero
+					})
+				]
+			})
+		})] });
+	}
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AppLayout, { children: [dropOverlay, /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "relative " + (phase === "leaving" ? "hero-leaving" : ""),
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
 				className: "relative overflow-hidden",
@@ -438,7 +1505,12 @@ function Home() {
 										style: { background: "radial-gradient(circle, color-mix(in oklab, var(--gold) 50%, transparent), transparent 65%)" }
 									})
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_react.Suspense, {
+								phase === "leaving" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+									src: glass_clef_study_default,
+									alt: "",
+									"aria-hidden": true,
+									className: "max-h-[540px] w-auto object-contain opacity-90"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_react.Suspense, {
 									fallback: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
 										src: glass_clef_study_default,
 										alt: "",
