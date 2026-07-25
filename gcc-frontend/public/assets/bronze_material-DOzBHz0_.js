@@ -1,1 +1,0 @@
-var e=`/assets/parchment_texture-CReDGOXh.png`,t=`/assets/bronze_material-Ca4AnOB5.png`;export{e as n,t};

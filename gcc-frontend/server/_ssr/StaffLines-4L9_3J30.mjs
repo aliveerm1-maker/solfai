@@ -1,8 +1,8 @@
 import { i as __toESM } from "../_runtime.mjs";
 import { c as require_react, s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
 import { _ as useNavigate, g as Link, l as useRouterState } from "../_libs/@tanstack/react-router+[...].mjs";
-import { B as ArrowRight, C as Music2, F as Command, L as CirclePlay, O as Library, P as Ear, S as PanelLeft, _ as Plus, d as Sparkles, f as Settings, g as Radio, j as Flame, m as ScanLine, p as Search, w as Mic, y as PenLine } from "../_libs/lucide-react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/StaffLines-BwQzv5RY.js
+import { C as Ear, E as CirclePlay, O as ArrowRight, _ as Music2, b as Library, c as Sparkles, d as ScanLine, f as Radio, g as PanelLeft, l as Settings, m as PenLine, p as Plus, u as Search, v as Mic, w as Command } from "../_libs/lucide-react.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/StaffLines-4L9_3J30.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function CommandPalette() {
@@ -246,24 +246,6 @@ var NAV_MAIN = [
 		kbd: "V"
 	}
 ];
-var RECENTS = [
-	{
-		title: "Speak the Truth",
-		meta: "Tenor · E♭ · 76 bpm"
-	},
-	{
-		title: "Didn't My Lord Deliver Daniel?",
-		meta: "Soprano · d min"
-	},
-	{
-		title: "Ave Verum Corpus",
-		meta: "Alto · D · 60 bpm"
-	},
-	{
-		title: "Sicut Cervus warm-up",
-		meta: "SATB · F"
-	}
-];
 /** Small square clef mark used as brand lockup — refined, editorial. */
 function ClefMark({ className = "" }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
@@ -298,53 +280,31 @@ function ClefMark({ className = "" }) {
 		})]
 	});
 }
-function ProgressRing({ value, size = 34 }) {
-	const r = (size - 4) / 2;
-	const c = 2 * Math.PI * r;
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
-		width: size,
-		height: size,
-		viewBox: `0 0 ${size} ${size}`,
-		className: "shrink-0",
-		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
-				cx: size / 2,
-				cy: size / 2,
-				r,
-				fill: "none",
-				stroke: "color-mix(in oklab, white 8%, transparent)",
-				strokeWidth: 3
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
-				cx: size / 2,
-				cy: size / 2,
-				r,
-				fill: "none",
-				stroke: "var(--gold)",
-				strokeWidth: 3,
-				strokeLinecap: "round",
-				strokeDasharray: c,
-				strokeDashoffset: c * (1 - value / 100),
-				transform: `rotate(-90 ${size / 2} ${size / 2})`,
-				style: { filter: "drop-shadow(0 0 6px color-mix(in oklab, var(--gold) 70%, transparent))" }
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
-				x: "50%",
-				y: "52%",
-				textAnchor: "middle",
-				dominantBaseline: "middle",
-				fontSize: "10",
-				fontWeight: "700",
-				fill: "var(--paper)",
-				style: { fontFamily: "var(--font-mono)" },
-				children: value
-			})
-		]
-	});
-}
 function AppLayout({ children, contentClassName = "" }) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const [open, setOpen] = (0, import_react.useState)(true);
+	const [notice, setNotice] = (0, import_react.useState)(null);
+	const flash = (msg) => {
+		setNotice(msg);
+		window.setTimeout(() => setNotice(null), 2800);
+	};
+	const onShare = async () => {
+		const url = typeof window !== "undefined" ? window.location.origin : "";
+		try {
+			if (typeof navigator !== "undefined" && navigator.share) {
+				await navigator.share({
+					title: "Solfai",
+					text: "AI sheet-music coach for choir",
+					url
+				});
+				return;
+			}
+			await navigator.clipboard.writeText(url);
+			flash("Link copied to clipboard");
+		} catch {
+			flash("Couldn't share — copy the URL from the address bar.");
+		}
+	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "min-h-screen bg-bg text-paper flex",
 		"data-testid": "app-layout",
@@ -437,57 +397,15 @@ function AppLayout({ children, contentClassName = "" }) {
 					}),
 					open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "mt-6 px-4",
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex items-center gap-2 text-[9.5px] uppercase tracking-[0.28em] text-muted-dark mb-3",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Recents" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "flex-1 h-px bg-[color:var(--border-dark)]" })]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-								className: "space-y-0.5",
-								children: RECENTS.map((r) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-									className: "w-full text-left px-2 py-1.5 hover:bg-[color:var(--bg)]/40 transition-colors",
-									style: { borderRadius: "2px" },
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-[12.5px] text-paper/85 truncate",
-										children: r.title
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-[10.5px] text-muted-dark truncate",
-										children: r.meta
-									})]
-								}) }, r.title))
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "mt-6 border border-[color:var(--border-dark)] bg-[color:var(--bg)]/40 p-3.5",
-								style: { borderRadius: "2px" },
-								"data-testid": "today-mini",
-								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "flex items-center gap-2 text-[9.5px] uppercase tracking-[0.28em] text-muted-dark",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Flame, {
-											size: 11,
-											className: "text-[color:var(--gold)]"
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Today" })]
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "mt-3 flex items-center gap-3",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressRing, { value: 68 }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "leading-tight",
-											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "serif text-[16px] font-medium text-paper",
-												children: "17 min"
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "text-[10.5px] text-muted-dark",
-												children: "of 25 goal"
-											})]
-										})]
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "mt-2 text-[10.5px] text-muted-dark",
-										children: "3 drills · 1 recording"
-									})
-								]
-							})
-						]
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2 text-[9.5px] uppercase tracking-[0.28em] text-muted-dark mb-3",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Recents" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "flex-1 h-px bg-[color:var(--border-dark)]" })]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "border border-dashed border-[color:var(--border-dark)] px-3 py-3 text-[11px] leading-snug text-muted-dark",
+							style: { borderRadius: "2px" },
+							"data-testid": "recents-empty",
+							children: "No recent pieces yet. Analyzed scores will appear here once account sync ships."
+						})]
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "mt-auto p-3 border-t border-[color:var(--border-dark)]",
@@ -514,16 +432,16 @@ function AppLayout({ children, contentClassName = "" }) {
 										background: "linear-gradient(135deg, oklch(0.82 0.14 78), oklch(0.62 0.15 55))",
 										borderRadius: "2px"
 									},
-									children: "AV"
+									children: "S"
 								}),
 								open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 									className: "min-w-0 text-left leading-tight flex-1",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 										className: "text-[12.5px] font-semibold truncate",
-										children: "Ali Veer"
+										children: "Singer"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 										className: "text-[10px] uppercase tracking-[0.22em] text-muted-dark",
-										children: "Pro · 23/50"
+										children: "Preview · free"
 									})]
 								}),
 								open && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings, {
@@ -538,63 +456,75 @@ function AppLayout({ children, contentClassName = "" }) {
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("main", {
 				className: "flex-1 min-w-0 flex flex-col relative",
 				"data-testid": "main-content",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
-					className: "sticky top-3 z-30 mx-auto mt-3 flex items-center gap-2 px-3 py-1.5 border border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/85 backdrop-blur-2xl shadow-[0_20px_60px_-24px_rgba(0,0,0,0.7)]",
-					style: {
-						width: "min(760px, calc(100% - 2.5rem))",
-						borderRadius: "3px"
-					},
-					"data-testid": "top-bar",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-muted-dark",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Equalizer, { bars: 4 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Live session" })]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "hidden sm:inline h-3 w-px bg-[color:var(--border-dark)] mx-1" }),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							onClick: () => window.dispatchEvent(new KeyboardEvent("keydown", {
-								key: "k",
-								metaKey: true
-							})),
-							"data-testid": "search-button",
-							className: "hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40 transition-colors",
-							style: { borderRadius: "2px" },
-							"aria-label": "Open command palette",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { size: 12 }),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "normal-case tracking-normal",
-									children: "Search anything"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
-									className: "text-[9.5px] font-semibold mono-cap px-1 py-0.5 border border-[color:var(--border-dark)]",
-									children: "⌘K"
-								})
-							]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "ml-auto flex items-center gap-1.5",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								className: "hidden sm:inline-flex items-center gap-2 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-dark hover:text-paper transition-colors",
-								"data-testid": "share-button",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+						className: "sticky top-3 z-30 mx-auto mt-3 flex items-center gap-2 px-3 py-1.5 border border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/85 backdrop-blur-2xl shadow-[0_20px_60px_-24px_rgba(0,0,0,0.7)]",
+						style: {
+							width: "min(760px, calc(100% - 2.5rem))",
+							borderRadius: "3px"
+						},
+						"data-testid": "top-bar",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-muted-dark",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Equalizer, { bars: 4 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Live session" })]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "hidden sm:inline h-3 w-px bg-[color:var(--border-dark)] mx-1" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								onClick: () => window.dispatchEvent(new KeyboardEvent("keydown", {
+									key: "k",
+									metaKey: true
+								})),
+								"data-testid": "search-button",
+								className: "hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40 transition-colors",
 								style: { borderRadius: "2px" },
-								children: "Share"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								"data-testid": "upgrade-button",
-								className: "inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]",
-								style: {
-									background: "var(--gold)",
-									color: "var(--ink)",
-									borderRadius: "2px"
-								},
-								children: "Upgrade"
-							})]
-						})
-					]
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "flex-1 min-w-0 " + contentClassName,
-					children
-				})]
+								"aria-label": "Open command palette",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { size: 12 }),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "normal-case tracking-normal",
+										children: "Search anything"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
+										className: "text-[9.5px] font-semibold mono-cap px-1 py-0.5 border border-[color:var(--border-dark)]",
+										children: "⌘K"
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "ml-auto flex items-center gap-1.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									onClick: onShare,
+									className: "hidden sm:inline-flex items-center gap-2 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-dark hover:text-paper transition-colors",
+									"data-testid": "share-button",
+									style: { borderRadius: "2px" },
+									children: "Share"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									onClick: () => flash("Solfai is free during preview — paid plans aren't available yet."),
+									title: "Paid plans coming soon",
+									"data-testid": "upgrade-button",
+									className: "inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]",
+									style: {
+										background: "var(--gold)",
+										color: "var(--ink)",
+										borderRadius: "2px"
+									},
+									children: "Upgrade"
+								})]
+							})
+						]
+					}),
+					notice && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "fixed bottom-5 left-1/2 -translate-x-1/2 z-[80] border border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/95 px-4 py-2 text-[12.5px] text-paper shadow-[0_16px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl",
+						style: { borderRadius: "3px" },
+						"data-testid": "app-notice",
+						children: notice
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "flex-1 min-w-0 " + contentClassName,
+						children
+					})
+				]
 			})
 		]
 	});

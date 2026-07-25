@@ -1,135 +1,15 @@
 import { i as __toESM } from "../_runtime.mjs";
 import { c as require_react, s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
-import { B as ArrowRight, C as Music2, E as LoaderCircle, I as Clock3, M as FileMusic, P as Ear, a as Upload, g as Radio, j as Flame, m as ScanLine, n as Waves, o as TriangleAlert, t as X, w as Mic, x as Paperclip, y as PenLine } from "../_libs/lucide-react.mjs";
-import { n as StaffLines, t as AppLayout } from "./StaffLines-BwQzv5RY.mjs";
-import { n as parchment_texture_default, t as bronze_material_default } from "./bronze_material-Dk6Ht3dD.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-CMo-M2zH.js
+import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
+import { C as Ear, O as ArrowRight, S as FileMusic, T as Clock3, _ as Music2, d as ScanLine, f as Radio, h as Paperclip, i as TriangleAlert, m as PenLine, n as Waves, r as Upload, t as X, v as Mic, x as Flame, y as LoaderCircle } from "../_libs/lucide-react.mjs";
+import { n as StaffLines, t as AppLayout } from "./StaffLines-4L9_3J30.mjs";
+import { t as bronze_material_default } from "./bronze_material-CBP8JZx1.mjs";
+import { a as postAnalyze, i as pdfFileToPages, o as postParseMusicXML, r as imageFileToBase64, t as AnalyzeApiError } from "./analyzeClient-D8-hzk1Y.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-B2Ar1YDn.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
+var parchment_texture_default = "/assets/parchment_texture-CReDGOXh.png";
 var glass_clef_study_default = "/assets/glass_clef_study-CEbqousS.png";
-var AnalyzeApiError = class extends Error {
-	retryable;
-	constructor(message, retryable = false) {
-		super(message);
-		this.retryable = retryable;
-	}
-};
-var PDFJS_VERSION = "3.11.174";
-var pdfjsLoadPromise = null;
-function loadPdfJs() {
-	if (typeof window === "undefined") return Promise.reject(/* @__PURE__ */ new Error("PDF reading is only available in the browser"));
-	const w = window;
-	if (w.pdfjsLib) return Promise.resolve(w.pdfjsLib);
-	if (pdfjsLoadPromise) return pdfjsLoadPromise;
-	pdfjsLoadPromise = new Promise((resolve, reject) => {
-		const script = document.createElement("script");
-		script.src = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
-		script.onload = () => {
-			const lib = window.pdfjsLib;
-			if (!lib) {
-				reject(/* @__PURE__ */ new Error("PDF reader failed to load"));
-				return;
-			}
-			lib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
-			resolve(lib);
-		};
-		script.onerror = () => {
-			pdfjsLoadPromise = null;
-			reject(/* @__PURE__ */ new Error("Could not load the PDF reader — check your connection and try again"));
-		};
-		document.head.appendChild(script);
-	});
-	return pdfjsLoadPromise;
-}
-async function pdfFileToPages(file, maxPages = 5) {
-	const pdfjsLib = await loadPdfJs();
-	const buf = await file.arrayBuffer();
-	let pdf;
-	try {
-		pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
-	} catch {
-		throw new Error("That PDF couldn't be read — it may be corrupted or password-protected.");
-	}
-	const total = Math.min(pdf.numPages, maxPages);
-	const pages = [];
-	for (let p = 1; p <= total; p++) {
-		const page = await pdf.getPage(p);
-		const viewport = page.getViewport({ scale: 3 });
-		const canvas = document.createElement("canvas");
-		canvas.width = viewport.width;
-		canvas.height = viewport.height;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) throw new Error("This browser can't render PDFs to images (canvas unsupported)");
-		await page.render({
-			canvasContext: ctx,
-			viewport
-		}).promise;
-		pages.push(canvas.toDataURL("image/jpeg", .92).split(",")[1]);
-	}
-	if (!pages.length) throw new Error("This PDF has no pages Solfai could read");
-	return pages;
-}
-function imageFileToBase64(file, maxDim = 2400) {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onerror = () => reject(/* @__PURE__ */ new Error("Could not read the selected file"));
-		reader.onload = (e) => {
-			const img = new Image();
-			img.onerror = () => reject(/* @__PURE__ */ new Error("That file isn't a readable image"));
-			img.onload = () => {
-				let w = img.width;
-				let h = img.height;
-				if (w > maxDim || h > maxDim) if (w > h) {
-					h = Math.round(h * maxDim / w);
-					w = maxDim;
-				} else {
-					w = Math.round(w * maxDim / h);
-					h = maxDim;
-				}
-				const canvas = document.createElement("canvas");
-				canvas.width = w;
-				canvas.height = h;
-				const ctx = canvas.getContext("2d");
-				if (!ctx) {
-					reject(/* @__PURE__ */ new Error("This browser can't process images (canvas unsupported)"));
-					return;
-				}
-				ctx.drawImage(img, 0, 0, w, h);
-				resolve({
-					base64: canvas.toDataURL("image/jpeg", .92).split(",")[1],
-					mime: "image/jpeg"
-				});
-			};
-			img.src = e.target?.result;
-		};
-		reader.readAsDataURL(file);
-	});
-}
-async function postAnalyze(params) {
-	const hasPdfPages = params.pdfPages.length > 0;
-	const res = await fetch("/api/analyze", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({
-			mode: "analyze",
-			imageBase64: hasPdfPages ? null : params.imageBase64,
-			imageMime: hasPdfPages ? "image/jpeg" : params.imageMime,
-			pdfPages: params.pdfPages,
-			selectedPart: params.selectedPart
-		})
-	});
-	if (!res.ok) {
-		let message = `Analysis failed (${res.status})`;
-		let retryable = false;
-		try {
-			const data = await res.json();
-			if (data?.error) message = data.error;
-			if (data?.retryable) retryable = true;
-		} catch {}
-		throw new AnalyzeApiError(message, retryable);
-	}
-	return res.json();
-}
 var TrebleClef3D = (0, import_react.lazy)(() => import("./TrebleClef3D-zbN2ifz0.mjs").then((m) => ({ default: m.TrebleClef3D })));
 var PARTS = [
 	"Soprano",
@@ -321,6 +201,7 @@ function Home() {
 	const [analyzeError, setAnalyzeError] = (0, import_react.useState)(null);
 	const [analyzeResult, setAnalyzeResult] = (0, import_react.useState)(null);
 	const [analyzeElapsed, setAnalyzeElapsed] = (0, import_react.useState)(0);
+	const [isDraggingFile, setIsDraggingFile] = (0, import_react.useState)(false);
 	(0, import_react.useEffect)(() => {
 		if (analyzeStage !== "analyzing") return;
 		setAnalyzeElapsed(0);
@@ -328,6 +209,45 @@ function Home() {
 		const id = window.setInterval(() => setAnalyzeElapsed(Math.round((Date.now() - start) / 1e3)), 1e3);
 		return () => window.clearInterval(id);
 	}, [analyzeStage]);
+	(0, import_react.useEffect)(() => {
+		let depth = 0;
+		const hasFiles = (e) => !!(e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files"));
+		const onDragEnter = (e) => {
+			if (!hasFiles(e)) return;
+			e.preventDefault();
+			depth++;
+			setIsDraggingFile(true);
+		};
+		const onDragOver = (e) => {
+			if (!hasFiles(e)) return;
+			e.preventDefault();
+			if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+		};
+		const onDragLeave = (e) => {
+			if (!hasFiles(e)) return;
+			depth = Math.max(0, depth - 1);
+			if (depth === 0) setIsDraggingFile(false);
+		};
+		const onDrop = (e) => {
+			e.preventDefault();
+			depth = 0;
+			setIsDraggingFile(false);
+			const file = e.dataTransfer?.files?.[0];
+			if (!file) return;
+			setModeId("analyze");
+			handleAnalyzeFileSelected(file);
+		};
+		window.addEventListener("dragenter", onDragEnter);
+		window.addEventListener("dragover", onDragOver);
+		window.addEventListener("dragleave", onDragLeave);
+		window.addEventListener("drop", onDrop);
+		return () => {
+			window.removeEventListener("dragenter", onDragEnter);
+			window.removeEventListener("dragover", onDragOver);
+			window.removeEventListener("dragleave", onDragLeave);
+			window.removeEventListener("drop", onDrop);
+		};
+	}, []);
 	function openAnalyzeFilePicker() {
 		fileInputRef.current?.click();
 	}
@@ -342,14 +262,26 @@ function Home() {
 		setAnalyzeError(null);
 		setAnalyzeStage("reading");
 		try {
-			if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+			const lower = file.name.toLowerCase();
+			const isMusicXml = lower.endsWith(".musicxml") || lower.endsWith(".mxl") || lower.endsWith(".xml");
+			const isPdf = file.type === "application/pdf" || lower.endsWith(".pdf");
+			if (isMusicXml) setAnalyzeUpload({
+				name: file.name,
+				kind: "musicxml",
+				base64: null,
+				mime: null,
+				pdfPages: [],
+				file
+			});
+			else if (isPdf) {
 				const pdfPages = await pdfFileToPages(file);
 				setAnalyzeUpload({
 					name: file.name,
 					kind: "pdf",
 					base64: null,
 					mime: null,
-					pdfPages
+					pdfPages,
+					file: null
 				});
 			} else if (file.type.startsWith("image/")) {
 				const { base64, mime } = await imageFileToBase64(file);
@@ -358,9 +290,10 @@ function Home() {
 					kind: "image",
 					base64,
 					mime,
-					pdfPages: []
+					pdfPages: [],
+					file: null
 				});
-			} else throw new Error("Please upload an image (JPG/PNG) or a PDF of your sheet music.");
+			} else throw new Error("Please upload an image (JPG/PNG), a PDF, or a MusicXML file (.musicxml/.mxl/.xml).");
 			setAnalyzeStage("ready");
 		} catch (err) {
 			setAnalyzeUpload(null);
@@ -373,7 +306,10 @@ function Home() {
 		setAnalyzeStage("analyzing");
 		setAnalyzeError(null);
 		try {
-			const result = await postAnalyze({
+			const result = analyzeUpload.kind === "musicxml" && analyzeUpload.file ? await postParseMusicXML({
+				file: analyzeUpload.file,
+				selectedPart: part
+			}) : await postAnalyze({
 				imageBase64: analyzeUpload.base64,
 				imageMime: analyzeUpload.mime,
 				pdfPages: analyzeUpload.pdfPages,
@@ -387,7 +323,38 @@ function Home() {
 		}
 	}
 	const analyzeCanRun = modeId === "analyze" && !!analyzeUpload && analyzeStage !== "analyzing" && analyzeStage !== "reading";
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AppLayout, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AppLayout, { children: [isDraggingFile && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		className: "fixed inset-0 z-[999] flex items-center justify-center pointer-events-none",
+		style: { background: "color-mix(in oklab, var(--ink) 78%, transparent)" },
+		"data-testid": "global-drop-overlay",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "relative border border-[color:var(--border-gold)] px-12 py-10 text-center",
+			style: {
+				background: "var(--bg-2)",
+				borderRadius: "3px"
+			},
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StaffLines, {
+				className: "absolute left-0 right-0 top-1/2 h-16 w-full -translate-y-1/2",
+				opacity: .14
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "relative",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileMusic, {
+						size: 38,
+						className: "mx-auto text-[color:var(--gold)]"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "mt-4 serif text-[24px] font-medium text-paper",
+						children: "Drop to upload"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "mt-1.5 text-[12px] text-muted-dark",
+						children: "Image, PDF, or MusicXML (.musicxml · .mxl · .xml)"
+					})
+				]
+			})]
+		})
+	}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "relative",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
@@ -571,7 +538,7 @@ function Home() {
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
 					ref: fileInputRef,
 					type: "file",
-					accept: "image/*,.pdf,application/pdf",
+					accept: "image/*,.pdf,application/pdf,.musicxml,.mxl,.xml",
 					className: "hidden",
 					"data-testid": "analyze-file-input",
 					onChange: (e) => {
@@ -625,7 +592,7 @@ function Home() {
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 									className: "text-[10.5px] text-muted-dark shrink-0",
-									children: analyzeUpload.kind === "pdf" ? `${analyzeUpload.pdfPages.length} page${analyzeUpload.pdfPages.length === 1 ? "" : "s"}` : "image"
+									children: analyzeUpload.kind === "pdf" ? `${analyzeUpload.pdfPages.length} page${analyzeUpload.pdfPages.length === 1 ? "" : "s"}` : analyzeUpload.kind === "musicxml" ? "MusicXML" : "image"
 								}),
 								analyzeStage === "reading" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
 									size: 12,
@@ -658,14 +625,16 @@ function Home() {
 									onClick: modeId === "analyze" ? openAnalyzeFilePicker : void 0,
 									className: "grid h-9 w-9 place-items-center text-muted-dark hover:text-paper transition-colors",
 									"aria-label": "Attach",
-									title: modeId === "analyze" ? "Upload a score (PDF or image)" : void 0,
+									title: modeId === "analyze" ? "Upload a score (PDF, image, or MusicXML)" : void 0,
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Paperclip, { size: 15 })
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 									type: "button",
 									"data-testid": "composer-mic",
-									className: "grid h-9 w-9 place-items-center text-muted-dark hover:text-paper transition-colors",
-									"aria-label": "Voice",
+									disabled: true,
+									title: "Voice prompts — coming soon",
+									className: "grid h-9 w-9 place-items-center text-muted-dark/50 cursor-not-allowed",
+									"aria-label": "Voice (coming soon)",
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mic, { size: 15 })
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "h-4 w-px bg-[color:var(--border-dark)] mx-1" }),
@@ -725,7 +694,10 @@ function Home() {
 								"data-testid": "quick-actions",
 								children: mode.actions.map(({ icon: Icon, label, hint }, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 									"data-testid": `quick-action-${i}`,
-									onClick: modeId === "analyze" && label === "Upload a score" ? openAnalyzeFilePicker : void 0,
+									title: modeId === "analyze" && label === "Upload a score" ? void 0 : modeId === "compose" ? "Coming soon" : "Available in the Classic Studio",
+									onClick: modeId === "analyze" && label === "Upload a score" ? openAnalyzeFilePicker : modeId === "compose" ? void 0 : () => {
+										window.location.href = "/classic";
+									},
 									className: "group relative overflow-hidden panel-sharp p-5 text-left hover:border-[color:var(--gold)]/45 transition-colors",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 										className: "absolute -right-6 -top-6 w-24 h-24 opacity-0 group-hover:opacity-100 transition-opacity",
@@ -812,77 +784,56 @@ function Home() {
 										onUpload: openAnalyzeFilePicker,
 										onRetry: runAnalyze,
 										onReset: resetAnalyzeUpload
-									}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "flex items-center justify-between",
-											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										"data-testid": "mode-status",
+										children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 												className: "eyebrow eyebrow-dot text-[color:var(--gold)]",
-												children: "In progress"
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-												className: "text-[10.5px] uppercase tracking-[0.22em] text-muted-dark hover:text-paper transition-colors",
-												children: "Skip"
-											})]
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-											className: "mt-4 serif text-[26px] leading-[1.05] font-medium text-paper",
-											"data-testid": "continue-title",
-											children: ["Speak the Truth", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												className: "block text-[color:var(--gold)] italic text-[19px] font-light mt-1",
-												children: "Tenor part · movement II"
-											})]
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-											className: "mt-5 grid grid-cols-3 gap-px bg-[color:var(--border-dark)]",
-											children: [
-												{
-													k: "Key",
-													v: "E♭"
-												},
-												{
-													k: "Meter",
-													v: "4/4"
-												},
-												{
-													k: "Tempo",
-													v: "76"
-												}
-											].map((s) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												className: "bg-[color:var(--bg-2)] p-3",
-												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													className: "text-[9.5px] uppercase tracking-[0.24em] text-muted-dark",
-													children: s.k
-												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													className: "mt-1 serif text-[26px] font-medium text-paper leading-none",
-													children: s.v
+												children: modeId === "compose" ? "In development" : "Available now"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+												className: "mt-4 serif text-[26px] leading-[1.05] font-medium text-paper",
+												children: [mode.label, /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+													className: "block text-[color:var(--gold)] italic text-[18px] font-light mt-1",
+													children: mode.tagline
 												})]
-											}, s.k))
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "mt-6",
-											"data-testid": "measure-progress",
-											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												className: "flex items-center justify-between text-[10.5px] uppercase tracking-[0.22em] text-muted-dark mb-2",
-												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Measure" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-													className: "mono-cap text-paper/85",
-													children: "34 / 118"
-												})]
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "relative h-[3px] w-full overflow-hidden bg-[color:var(--bg)]",
-												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													className: "absolute inset-y-0 left-0 bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--bronze)]",
-													style: { width: "28.8%" }
-												})
-											})]
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-											className: "mt-6 group inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.22em] text-[color:var(--gold)] hover:text-paper transition-colors",
-											"data-testid": "resume-button",
-											children: ["Resume where I left off", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, {
-												size: 13,
-												className: "transition-transform group-hover:translate-x-1"
-											})]
-										})
-									] })
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+												className: "mt-4 text-[13px] leading-relaxed text-muted-dark",
+												children: [
+													modeId === "sightread" && "Measure-by-measure solfège playback — in real rhythm at the written tempo, with the current note highlighted — is live in the Classic Studio. Upload a MusicXML score there and press Play.",
+													modeId === "ear" && "Interval and chord ear-training drills run in the Classic Studio today. A native drill for this view is on the roadmap.",
+													modeId === "vocal" && "Record or upload a take and get real pitch, tone, breath, rhythm and diction feedback — it's fully working.",
+													modeId === "compose" && "Drafting exercises, reharmonizing charts and voicing SATB from a lead sheet isn't built yet. We won't fake it — this one is genuinely coming later."
+												]
+											}),
+											modeId === "vocal" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
+												to: "/vocal-coach",
+												"data-testid": "mode-cta",
+												className: "mt-6 inline-flex items-center gap-2 px-4 h-9 text-[11.5px] font-bold uppercase tracking-[0.18em]",
+												style: {
+													background: "var(--gold)",
+													color: "var(--ink)",
+													borderRadius: "2px"
+												},
+												children: ["Go to Vocal Coach ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, { size: 13 })]
+											}) : modeId === "compose" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+												className: "mt-6 inline-flex items-center gap-2 px-4 h-9 text-[11.5px] font-bold uppercase tracking-[0.18em] border border-[color:var(--border-dark)] text-muted-dark",
+												style: { borderRadius: "2px" },
+												children: "Not ready yet"
+											}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+												href: "/classic",
+												"data-testid": "mode-cta",
+												className: "mt-6 inline-flex items-center gap-2 px-4 h-9 text-[11.5px] font-bold uppercase tracking-[0.18em]",
+												style: {
+													background: "var(--gold)",
+													color: "var(--ink)",
+													borderRadius: "2px"
+												},
+												children: ["Open Classic Studio ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, { size: 13 })]
+											})
+										]
+									})
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 									className: "relative h-14 border-t border-[color:var(--border-dark)] overflow-hidden",
@@ -902,46 +853,28 @@ function Home() {
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Flame, {
 												size: 12,
 												className: "text-[color:var(--gold)]"
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "12-day streak · 3 drills left today" })]
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Movable-do solfège · built for choir" })]
 										})
 									]
 								})
 							]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "mt-4 grid grid-cols-2 gap-3",
-							"data-testid": "stats-row",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "border border-[color:var(--border-dark)] p-4",
-								style: {
-									borderRadius: "3px",
-									background: "var(--bg-2)"
-								},
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "text-[10px] uppercase tracking-[0.24em] text-muted-dark",
-									children: "Analyses"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "mt-1 serif text-[28px] font-medium text-paper leading-none",
-									children: ["23", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "text-muted-dark text-[15px]",
-										children: " / 50"
-									})]
-								})]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "border border-[color:var(--border-dark)] p-4",
-								style: {
-									borderRadius: "3px",
-									background: "var(--bg-2)"
-								},
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "text-[10px] uppercase tracking-[0.24em] text-muted-dark",
-									children: "This week"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "mt-1 serif text-[28px] font-medium text-paper leading-none",
-									children: ["2h ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "italic text-[color:var(--gold)] text-[19px]",
-										children: "14m"
-									})]
-								})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+							href: "/classic",
+							"data-testid": "classic-link",
+							className: "group mt-4 flex items-center justify-between gap-3 border border-[color:var(--border-dark)] px-4 py-4 hover:border-[color:var(--gold)]/45 transition-colors",
+							style: {
+								borderRadius: "3px",
+								background: "var(--bg-2)"
+							},
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "block text-[13.5px] font-semibold text-paper",
+								children: "Classic Studio"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "block text-[11px] text-muted-dark mt-0.5",
+								children: "Measure-by-measure playback, transpose, sight-read, pitch guide"
+							})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, {
+								size: 15,
+								className: "text-muted-dark group-hover:text-[color:var(--gold)] transition-colors"
 							})]
 						})]
 					})]
@@ -1106,7 +1039,7 @@ function Home() {
 				})]
 			})
 		]
-	}) });
+	})] });
 }
 function DifficultyMeter({ label, value }) {
 	const pct = Math.max(0, Math.min(100, value / 10 * 100));
