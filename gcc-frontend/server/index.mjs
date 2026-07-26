@@ -23,6 +23,13 @@ var headers = ((m) => function headersRouteRule(event) {
 //#endregion
 //#region #nitro/virtual/public-assets-data
 var public_assets_data_default = {
+	"/assets/analyzeClient-DOQqin7s.js": {
+		"type": "text/javascript; charset=utf-8",
+		"etag": "\"fe0-yH6Z2Podb3zjfI+Zcqb4pYdgBKc\"",
+		"mtime": "2026-07-26T02:12:56.285Z",
+		"size": 4064,
+		"path": "../public/assets/analyzeClient-DOQqin7s.js"
+	},
 	"/favicon.ico": {
 		"type": "image/vnd.microsoft.icon",
 		"etag": "\"4f95-3RXc3p2mhEAs1WBwaIvE0Y0uu0Y\"",
@@ -30,103 +37,96 @@ var public_assets_data_default = {
 		"size": 20373,
 		"path": "../public/favicon.ico"
 	},
-	"/assets/analyzeClient-CvpS0ToL.js": {
+	"/assets/bronze_material-BsZL-Xx_.js": {
 		"type": "text/javascript; charset=utf-8",
-		"etag": "\"f14-Dswpa1gBoXNk7i/+Ic1UQEtYysA\"",
-		"mtime": "2026-07-25T21:30:04.444Z",
-		"size": 3860,
-		"path": "../public/assets/analyzeClient-CvpS0ToL.js"
+		"etag": "\"3c-CBVIYukFSGvgeK97fzSjSmwnDY8\"",
+		"mtime": "2026-07-26T02:12:56.288Z",
+		"size": 60,
+		"path": "../public/assets/bronze_material-BsZL-Xx_.js"
 	},
-	"/assets/bronze_material-mDQ8c2a0.js": {
+	"/assets/practice-C8J2lis2.js": {
 		"type": "text/javascript; charset=utf-8",
-		"etag": "\"19c-QSIjbQUXlQMRfqQnx7Ua33q1XXM\"",
-		"mtime": "2026-07-25T21:30:04.446Z",
-		"size": 412,
-		"path": "../public/assets/bronze_material-mDQ8c2a0.js"
+		"etag": "\"f5f-mUSVfatmWwouRD2uQeFPQD2CKRA\"",
+		"mtime": "2026-07-26T02:12:56.293Z",
+		"size": 3935,
+		"path": "../public/assets/practice-C8J2lis2.js"
 	},
-	"/assets/library-DRJbM84d.js": {
+	"/assets/routes-D8okmzzT.js": {
 		"type": "text/javascript; charset=utf-8",
-		"etag": "\"124a-Jdrm4Yeai7ljqaP6cH1za2iXdsw\"",
-		"mtime": "2026-07-25T21:30:04.448Z",
-		"size": 4682,
-		"path": "../public/assets/library-DRJbM84d.js"
+		"etag": "\"10f3b-4aoj9MzEvpeLxbjJJ/p0id6r4EI\"",
+		"mtime": "2026-07-26T02:12:56.296Z",
+		"size": 69435,
+		"path": "../public/assets/routes-D8okmzzT.js"
 	},
-	"/assets/practice-Bn_ISQxS.js": {
+	"/assets/StaffLines-B1gR0vqV.js": {
 		"type": "text/javascript; charset=utf-8",
-		"etag": "\"db7-kJMvFaoLX7n8DfcOvQK6lC34Wnw\"",
-		"mtime": "2026-07-25T21:30:04.450Z",
-		"size": 3511,
-		"path": "../public/assets/practice-Bn_ISQxS.js"
+		"etag": "\"6102-iQee3NS7SLalQ1waGt0rBcZPiuQ\"",
+		"mtime": "2026-07-26T02:12:56.273Z",
+		"size": 24834,
+		"path": "../public/assets/StaffLines-B1gR0vqV.js"
 	},
-	"/assets/routes-IrRWWtqJ.js": {
-		"type": "text/javascript; charset=utf-8",
-		"etag": "\"102d6-aBvYTs4F5Ps1KSarTZ+sZxGiQc8\"",
-		"mtime": "2026-07-25T21:30:04.452Z",
-		"size": 66262,
-		"path": "../public/assets/routes-IrRWWtqJ.js"
-	},
-	"/assets/StaffLines-By5fq8xD.js": {
-		"type": "text/javascript; charset=utf-8",
-		"etag": "\"4cb4-PuW9Vg7WF2JH+Qs2CQuHAvufqu4\"",
-		"mtime": "2026-07-25T21:30:04.435Z",
-		"size": 19636,
-		"path": "../public/assets/StaffLines-By5fq8xD.js"
-	},
-	"/assets/styles-BYSOEg2O.css": {
+	"/assets/styles-Bl7RrEZW.css": {
 		"type": "text/css; charset=utf-8",
-		"etag": "\"1790d-rmuDqQI3qeBU8GPSyh6jdynjmAM\"",
-		"mtime": "2026-07-25T21:30:04.465Z",
-		"size": 96525,
-		"path": "../public/assets/styles-BYSOEg2O.css"
+		"etag": "\"17b13-zOiDZpnu/v0pauvSp6vgE7Ba9IQ\"",
+		"mtime": "2026-07-26T02:12:56.314Z",
+		"size": 97043,
+		"path": "../public/assets/styles-Bl7RrEZW.css"
 	},
-	"/assets/vocal-coach-CY_S3ehs.js": {
+	"/assets/library-BRlu5wZ_.js": {
 		"type": "text/javascript; charset=utf-8",
-		"etag": "\"31c5-9IqvX9diV8HtWwBfJ0niLwIoJ08\"",
-		"mtime": "2026-07-25T21:30:04.455Z",
-		"size": 12741,
-		"path": "../public/assets/vocal-coach-CY_S3ehs.js"
+		"etag": "\"1131-TPu+tGywtCNFJBjHdD+0kom3Yho\"",
+		"mtime": "2026-07-26T02:12:56.290Z",
+		"size": 4401,
+		"path": "../public/assets/library-BRlu5wZ_.js"
 	},
-	"/assets/index-BDVAYiWH.js": {
+	"/assets/vocal-coach-Ck2xhC-v.js": {
 		"type": "text/javascript; charset=utf-8",
-		"etag": "\"546a1-HLqYJZPlXXD1ycWgE2XLEtYY5SQ\"",
-		"mtime": "2026-07-25T21:30:04.431Z",
-		"size": 345761,
-		"path": "../public/assets/index-BDVAYiWH.js"
+		"etag": "\"31bb-W+xBOF8Zl2CrFKjGBfJ2BS45Xm4\"",
+		"mtime": "2026-07-26T02:12:56.301Z",
+		"size": 12731,
+		"path": "../public/assets/vocal-coach-Ck2xhC-v.js"
 	},
 	"/assets/bronze_material-Ca4AnOB5.png": {
 		"type": "image/png",
 		"etag": "\"ac054-1ajIZhX7q0EjLaieOZeYql14J9c\"",
-		"mtime": "2026-07-25T21:30:04.457Z",
+		"mtime": "2026-07-26T02:12:56.304Z",
 		"size": 704596,
 		"path": "../public/assets/bronze_material-Ca4AnOB5.png"
 	},
 	"/assets/choir_ambient-BpSitkoo.png": {
 		"type": "image/png",
 		"etag": "\"b33a8-1ia25Dg+mFgnP4YduccbHJkfrcQ\"",
-		"mtime": "2026-07-25T21:30:04.459Z",
+		"mtime": "2026-07-26T02:12:56.307Z",
 		"size": 734120,
 		"path": "../public/assets/choir_ambient-BpSitkoo.png"
 	},
 	"/assets/parchment_texture-CReDGOXh.png": {
 		"type": "image/png",
 		"etag": "\"e9ca3-+76aKCll5lGGi274r4DEpO75vLY\"",
-		"mtime": "2026-07-25T21:30:04.463Z",
+		"mtime": "2026-07-26T02:12:56.311Z",
 		"size": 957603,
 		"path": "../public/assets/parchment_texture-CReDGOXh.png"
+	},
+	"/assets/TrebleClef3D-CE2_3ZYj.js": {
+		"type": "text/javascript; charset=utf-8",
+		"etag": "\"eda15-Z5x9GiHu2NhFYwaK8zu7fgyrdZw\"",
+		"mtime": "2026-07-26T02:12:56.280Z",
+		"size": 973333,
+		"path": "../public/assets/TrebleClef3D-CE2_3ZYj.js"
+	},
+	"/assets/index-DaaOcR1m.js": {
+		"type": "text/javascript; charset=utf-8",
+		"etag": "\"546a1-Tu4rChNV1frkOyQIZ2vl6SsV+xA\"",
+		"mtime": "2026-07-26T02:12:56.269Z",
+		"size": 345761,
+		"path": "../public/assets/index-DaaOcR1m.js"
 	},
 	"/assets/glass_clef_study-CEbqousS.png": {
 		"type": "image/png",
 		"etag": "\"a4360-HLk+kX0FvDAiKiCZWs3o/rLCm9A\"",
-		"mtime": "2026-07-25T21:30:04.461Z",
+		"mtime": "2026-07-26T02:12:56.309Z",
 		"size": 672608,
 		"path": "../public/assets/glass_clef_study-CEbqousS.png"
-	},
-	"/assets/TrebleClef3D-CiiVguHz.js": {
-		"type": "text/javascript; charset=utf-8",
-		"etag": "\"eda15-nnILUgIymo+78UQhCEaQobaUJ50\"",
-		"mtime": "2026-07-25T21:30:04.440Z",
-		"size": 973333,
-		"path": "../public/assets/TrebleClef3D-CiiVguHz.js"
 	}
 };
 //#endregion

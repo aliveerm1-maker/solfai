@@ -1,9 +1,9 @@
 import { s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
 import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { I as ArrowRight, O as FileMusic, d as ScanLine } from "../_libs/lucide-react.mjs";
-import { r as StaffLines, t as AppLayout } from "./StaffLines-DCfF9t-v.mjs";
+import { d as ScanLine } from "../_libs/lucide-react.mjs";
+import { n as StaffLines, t as AppLayout } from "./StaffLines-D2qcTeKL.mjs";
 import { t as bronze_material_default } from "./bronze_material-CBP8JZx1.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/library-BDVt_ffs.js
+//#region node_modules/.nitro/vite/services/ssr/assets/library-dxBoK_v0.js
 var import_jsx_runtime = require_jsx_runtime();
 var RESOURCES = [
 	{
@@ -74,11 +74,11 @@ function LibraryPage() {
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 									className: "mt-3 mx-auto max-w-md text-[13px] text-muted-dark leading-relaxed",
-									children: "Analyze a score and it will show up here once account sync ships. Until then, the Classic Studio remembers your most recent analysis and its solfège."
+									children: "Saved pieces need per-account storage, which isn't built yet. Analyze a score and it will show up here once account sync ships — nothing is stored between visits today."
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 									className: "mt-6 flex flex-wrap items-center justify-center gap-3",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
 										to: "/",
 										"data-testid": "library-analyze",
 										className: "inline-flex items-center gap-2 px-5 h-10 text-[11.5px] font-bold uppercase tracking-[0.18em]",
@@ -88,12 +88,7 @@ function LibraryPage() {
 											borderRadius: "2px"
 										},
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScanLine, { size: 14 }), " Analyze a score"]
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
-										href: "/classic",
-										className: "inline-flex items-center gap-2 px-5 h-10 text-[11.5px] font-semibold uppercase tracking-[0.18em] border border-[color:var(--border-dark)] text-paper hover:border-[color:var(--gold)]/50 transition-colors",
-										style: { borderRadius: "2px" },
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileMusic, { size: 14 }), " Open Classic Studio"]
-									})]
+									})
 								})
 							]
 						})]
@@ -126,28 +121,28 @@ function LibraryPage() {
 								})]
 							})
 						]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: RESOURCES.map((r) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
-						href: "/classic",
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: RESOURCES.map((r) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						"data-testid": `resource-${r.asset}`,
-						className: "group w-full flex items-center gap-4 py-4 border-b border-[color:var(--border-dark)] px-2 hover:bg-[color:var(--bg-2)]/50 text-left transition-colors",
+						className: "w-full flex items-center gap-4 py-4 border-b border-[color:var(--border-dark)] px-2 text-left",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "mono-cap text-[11px] text-[color:var(--gold)]",
+								className: "mono-cap text-[11px] text-[color:var(--gold)]/60",
 								children: r.asset
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 								className: "flex-1 min-w-0",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "serif text-[16px] font-medium text-paper",
+									className: "serif text-[16px] font-medium text-muted-dark",
 									children: r.name
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "text-[11.5px] text-muted-dark",
+									className: "text-[11.5px] text-muted-dark/70",
 									children: r.meta
 								})]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, {
-								size: 14,
-								className: "text-muted-dark group-hover:text-[color:var(--gold)] transition-colors"
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "shrink-0 text-[8.5px] font-bold uppercase tracking-[0.16em] px-2 py-1 border border-[color:var(--border-dark)] text-muted-dark",
+								style: { borderRadius: "2px" },
+								children: "In progress"
 							})
 						]
 					}, r.name)) })]

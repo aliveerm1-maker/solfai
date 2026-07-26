@@ -1,9 +1,9 @@
 import { i as __toESM } from "../_runtime.mjs";
 import { c as require_react, s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
-import { P as Check, a as TrendingUp, i as TriangleAlert, o as TrendingDown, r as Upload, s as Square, t as X, v as Mic, x as LoaderCircle } from "../_libs/lucide-react.mjs";
-import { r as StaffLines, t as AppLayout } from "./StaffLines-DCfF9t-v.mjs";
-import { n as evaluateSinging, t as AnalyzeApiError } from "./analyzeClient-D8-hzk1Y.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/vocal-coach-Da83UlCu.js
+import { L as Check, S as LoaderCircle, a as TrendingUp, i as TriangleAlert, o as TrendingDown, r as Upload, s as Square, t as X, y as Mic } from "../_libs/lucide-react.mjs";
+import { n as StaffLines, t as AppLayout } from "./StaffLines-D2qcTeKL.mjs";
+import { n as evaluateSinging, t as AnalyzeApiError } from "./analyzeClient-CANo0PQL.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/vocal-coach-Cht4f0aD.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var choir_ambient_default = "/assets/choir_ambient-BpSitkoo.png";

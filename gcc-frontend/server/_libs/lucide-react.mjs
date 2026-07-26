@@ -204,20 +204,39 @@ var Ear = createLucideIcon("ear", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
-var ExternalLink = createLucideIcon("external-link", [
+var EyeOff = createLucideIcon("eye-off", [
 	["path", {
-		d: "M15 3h6v6",
-		key: "1q9fwt"
+		d: "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49",
+		key: "ct8e1f"
 	}],
 	["path", {
-		d: "M10 14 21 3",
-		key: "gplh6r"
+		d: "M14.084 14.158a3 3 0 0 1-4.242-4.242",
+		key: "151rxh"
 	}],
 	["path", {
-		d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
-		key: "a6xqqp"
+		d: "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143",
+		key: "13bj9a"
+	}],
+	["path", {
+		d: "m2 2 20 20",
+		key: "1ooewy"
 	}]
 ]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Eye = createLucideIcon("eye", [["path", {
+	d: "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0",
+	key: "1nclc0"
+}], ["circle", {
+	cx: "12",
+	cy: "12",
+	r: "3",
+	key: "1v7zrd"
+}]]);
 /**
 * @license lucide-react v0.575.0 - ISC
 *
@@ -254,6 +273,26 @@ var Flame = createLucideIcon("flame", [["path", {
 	d: "M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4",
 	key: "1slcih"
 }]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Hammer = createLucideIcon("hammer", [
+	["path", {
+		d: "m15 12-9.373 9.373a1 1 0 0 1-3.001-3L12 9",
+		key: "1hayfq"
+	}],
+	["path", {
+		d: "m18 15 4-4",
+		key: "16gjal"
+	}],
+	["path", {
+		d: "m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172v-.344a2 2 0 0 0-.586-1.414l-1.657-1.657A6 6 0 0 0 12.516 3H9l1.243 1.243A6 6 0 0 1 12 8.485V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5",
+		key: "15ts47"
+	}]
+]);
 /**
 * @license lucide-react v0.575.0 - ISC
 *
@@ -566,6 +605,30 @@ var Radio = createLucideIcon("radio", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var RefreshCw = createLucideIcon("refresh-cw", [
+	["path", {
+		d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8",
+		key: "v9h5vc"
+	}],
+	["path", {
+		d: "M21 3v5h-5",
+		key: "1q7to0"
+	}],
+	["path", {
+		d: "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16",
+		key: "3uifl3"
+	}],
+	["path", {
+		d: "M8 16H3v5",
+		key: "1cv678"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var ScanLine = createLucideIcon("scan-line", [
 	["path", {
 		d: "M3 7V5a2 2 0 0 1 2-2h2",
@@ -758,4 +821,4 @@ var X = createLucideIcon("x", [["path", {
 	key: "d8bk6v"
 }]]);
 //#endregion
-export { Ear as A, Lightbulb as C, Flame as D, Languages as E, BookOpen as F, ArrowRight as I, Clock3 as M, CirclePlay as N, FileMusic as O, Check as P, ListMusic as S, LayoutList as T, Music2 as _, TrendingUp as a, Lock as b, Sparkles as c, ScanLine as d, Radio as f, PanelLeft as g, Paperclip as h, TriangleAlert as i, Command as j, ExternalLink as k, Settings as l, PenLine as m, Waves as n, TrendingDown as o, Plus as p, Upload as r, Square as s, X as t, Search as u, Mic as v, Library as w, LoaderCircle as x, MessageSquare as y };
+export { FileMusic as A, ListMusic as C, Languages as D, LayoutList as E, Clock3 as F, CirclePlay as I, Check as L, EyeOff as M, Ear as N, Hammer as O, Command as P, BookOpen as R, LoaderCircle as S, Library as T, PanelLeft as _, TrendingUp as a, MessageSquare as b, Sparkles as c, ScanLine as d, RefreshCw as f, Paperclip as g, PenLine as h, TriangleAlert as i, Eye as j, Flame as k, Settings as l, Plus as m, Waves as n, TrendingDown as o, Radio as p, Upload as r, Square as s, X as t, Search as u, Music2 as v, Lightbulb as w, Lock as x, Mic as y, ArrowRight as z };

@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/analyzeClient-D8-hzk1Y.js
+//#region node_modules/.nitro/vite/services/ssr/assets/analyzeClient-CANo0PQL.js
 var AnalyzeApiError = class extends Error {
 	retryable;
 	constructor(message, retryable = false) {
@@ -135,6 +135,22 @@ async function postParseMusicXML(params) {
 	}
 	return res.json();
 }
+async function postSightReading(params) {
+	const res = await fetch("/api/sight-reading", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(params)
+	});
+	if (!res.ok) {
+		let message = `Couldn't generate an exercise (${res.status})`;
+		try {
+			const data = await res.json();
+			if (data?.error) message = data.error;
+		} catch {}
+		throw new AnalyzeApiError(message, false);
+	}
+	return res.json();
+}
 async function postAnalyze(params) {
 	const hasPdfPages = params.pdfPages.length > 0;
 	const res = await fetch("/api/analyze", {
@@ -161,4 +177,4 @@ async function postAnalyze(params) {
 	return res.json();
 }
 //#endregion
-export { postAnalyze as a, pdfFileToPages as i, evaluateSinging as n, postParseMusicXML as o, imageFileToBase64 as r, AnalyzeApiError as t };
+export { postAnalyze as a, pdfFileToPages as i, evaluateSinging as n, postParseMusicXML as o, imageFileToBase64 as r, postSightReading as s, AnalyzeApiError as t };

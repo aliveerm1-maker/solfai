@@ -1,33 +1,29 @@
 import { s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
 import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { A as Ear, I as ArrowRight, N as CirclePlay, d as ScanLine } from "../_libs/lucide-react.mjs";
-import { r as StaffLines, t as AppLayout } from "./StaffLines-DCfF9t-v.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/practice-uzApWoAu.js
+import { I as CirclePlay, N as Ear, d as ScanLine, z as ArrowRight } from "../_libs/lucide-react.mjs";
+import { n as StaffLines, t as AppLayout } from "./StaffLines-D2qcTeKL.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/practice-C3Bv5EAb.js
 var import_jsx_runtime = require_jsx_runtime();
 var TOOLS = [
 	{
+		icon: ScanLine,
+		title: "Start from an analysis",
+		body: "Analyze a score to get its key, meter and your part in movable-do solfège, measure by measure.",
+		to: "/",
+		ready: true,
+		cta: "Go to Analyze"
+	},
+	{
 		icon: CirclePlay,
-		title: "Measure-by-measure practice",
-		body: "Play each measure of your part in real rhythm and tempo, loop the tricky spots, and slow it down for practice. Upload a MusicXML score and press Play.",
-		to: "/classic",
-		classic: true,
-		cta: "Open in Classic Studio"
+		title: "Measure-by-measure playback",
+		body: "Hearing each measure in real rhythm at the written tempo needs an audio engine in this UI, which isn't written yet. The measure data itself is already exact for MusicXML uploads — you can read it under Solfège today.",
+		ready: false
 	},
 	{
 		icon: Ear,
 		title: "Interval ear training",
-		body: "Hear two notes and name the interval, with adaptive difficulty. Runs in the Classic Studio today.",
-		to: "/classic",
-		classic: true,
-		cta: "Open in Classic Studio"
-	},
-	{
-		icon: ScanLine,
-		title: "Start from an analysis",
-		body: "Analyze a score first to generate its solfège, then practice it note by note.",
-		to: "/",
-		classic: false,
-		cta: "Go to Analyze"
+		body: "Hear two notes, name the interval, get scored. This needs both playback and a scoring loop here, and there's no backend for it yet — so it stays honest until it's real.",
+		ready: false
 	}
 ];
 function Practice() {
@@ -51,7 +47,7 @@ function Practice() {
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 					className: "col-span-12 lg:col-span-4 text-[13px] text-muted-dark leading-relaxed",
-					children: "Practice tools are moving into this studio. Everything below is real and working today — it just opens in the Classic Studio for now. No invented streaks, scores or achievements here."
+					children: "Only the analyze entry point is built here so far. Anything marked in progress is genuinely unfinished — we would rather say so than fake it. No invented streaks, scores or achievements anywhere on this page."
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "rule-gold" }),
@@ -74,37 +70,39 @@ function Practice() {
 								style: { borderRadius: "2px" },
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, {
 									size: 18,
-									className: "text-[color:var(--gold)]"
+									className: t.ready ? "text-[color:var(--gold)]" : "text-muted-dark"
 								})
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
 								className: "min-w-0 flex-1",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "block serif text-[20px] font-medium text-paper",
+									className: "block serif text-[20px] font-medium " + (t.ready ? "text-paper" : "text-muted-dark"),
 									children: t.title
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 									className: "block text-[12.5px] text-muted-dark mt-1 leading-snug max-w-2xl",
 									children: t.body
 								})]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							t.ready ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
 								className: "hidden sm:inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[color:var(--gold)] shrink-0",
 								children: [
 									t.cta,
 									" ",
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, { size: 13 })
 								]
+							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "shrink-0 text-[8.5px] font-bold uppercase tracking-[0.16em] px-2 py-1 border border-[color:var(--border-dark)] text-muted-dark",
+								style: { borderRadius: "2px" },
+								children: "In progress"
 							})
 						] });
-						const cls = "group flex items-center gap-5 px-6 md:px-8 py-6 hover:bg-[color:var(--bg)]/40 transition-colors";
-						return t.classic ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
-							href: t.to,
-							className: cls,
+						return t.ready && t.to ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+							to: t.to,
+							className: "group flex items-center gap-5 px-6 md:px-8 py-6 transition-colors hover:bg-[color:var(--bg)]/40",
 							"data-testid": "practice-tool",
 							children: inner
-						}, t.title) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
-							to: t.to,
-							className: cls,
+						}, t.title) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "group flex items-center gap-5 px-6 md:px-8 py-6 transition-colors",
 							"data-testid": "practice-tool",
 							children: inner
 						}, t.title);
