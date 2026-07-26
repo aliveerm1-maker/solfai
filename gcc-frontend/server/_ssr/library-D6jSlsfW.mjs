@@ -1,10 +1,10 @@
 import { s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
 import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { d as ScanLine } from "../_libs/lucide-react.mjs";
-import { n as StaffLines, t as AppLayout } from "./StaffLines-D2qcTeKL.mjs";
-import { t as bronze_material_default } from "./bronze_material-CBP8JZx1.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/library-dxBoK_v0.js
+import { u as ScanLine } from "../_libs/lucide-react.mjs";
+import { r as StaffLines, t as AppLayout } from "./StaffLines-xn9fxfO3.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/library-D6jSlsfW.js
 var import_jsx_runtime = require_jsx_runtime();
+var bronze_material_default = "/assets/bronze_material-Ca4AnOB5.png";
 var RESOURCES = [
 	{
 		name: "Pitch guide & keyboard",

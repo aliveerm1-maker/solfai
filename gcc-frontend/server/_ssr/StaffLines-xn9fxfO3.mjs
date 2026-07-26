@@ -1,8 +1,8 @@
 import { i as __toESM } from "../_runtime.mjs";
 import { c as require_react, s as require_jsx_runtime } from "../_libs/@react-three/drei+[...].mjs";
 import { _ as useNavigate, g as Link, l as useRouterState } from "../_libs/@tanstack/react-router+[...].mjs";
-import { I as CirclePlay, N as Ear, P as Command, T as Library, _ as PanelLeft, c as Sparkles, d as ScanLine, h as PenLine, l as Settings, m as Plus, p as Radio, t as X, u as Search, v as Music2, x as Lock, y as Mic, z as ArrowRight } from "../_libs/lucide-react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/StaffLines-D2qcTeKL.js
+import { C as Library, F as ArrowRight, O as Ear, _ as Music2, c as Settings, f as Radio, g as PanelLeft, j as CirclePlay, k as Command, l as Search, m as PenLine, p as Plus, s as Sparkles, t as X, u as ScanLine, v as Mic, y as MessageSquare } from "../_libs/lucide-react.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/StaffLines-xn9fxfO3.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function CommandPalette() {
@@ -220,12 +220,6 @@ function Equalizer({ bars = 4, className = "" }) {
       ` })]
 	});
 }
-var NAV_PRIMARY = [{
-	to: "/",
-	label: "New analysis",
-	icon: Plus,
-	kbd: "N"
-}];
 var NAV_MAIN = [
 	{
 		to: "/library",
@@ -246,11 +240,8 @@ var NAV_MAIN = [
 		kbd: "V"
 	}
 ];
-/** Small square clef mark used as brand lockup — refined, editorial.
-*  The gradient id must be unique per instance: a hardcoded id makes every
-*  copy point at the first one in document order, and when that copy sits
-*  inside a `display:none` subtree (the desktop rail on mobile) the fill
-*  resolves to nothing and the mark renders as an empty box. */
+/** Editorial glass/bronze clef brand mark. Gradient id is per-instance so
+*  copies inside a hidden subtree still resolve their fill. */
 function ClefMark({ className = "" }) {
 	const gradientId = `clefMarkGold-${(0, import_react.useId)()}`;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
@@ -286,17 +277,14 @@ function ClefMark({ className = "" }) {
 	});
 }
 /**
-* The ONE persistent shell. Sidebar and header mount once and stay mounted for
-* the life of the view — the content area is the only thing that changes.
+* THE one persistent shell. The sidebar and header mount once and stay mounted
+* for the life of the view. Only `children` (the chat area) changes — so the
+* hero⇄chat transition is an in-place content swap, never a page load.
 *
-* Previously the app rendered AppLayout for the upload state and a separate
-* SessionShell for the results state. Same route, no navigation, but React
-* unmounted the whole chrome and built a different one, which is exactly what
-* made pressing Run feel like a page load. The session UI is now expressed as
-* OPTIONAL PROPS on this component instead of a second component, so the
-* sidebar element survives the transition.
+* "New analysis" and "Recents" behave like a chat app: New analysis resets the
+* content to the empty hero in place; clicking a recent reopens that thread.
 */
-function AppLayout({ children, contentClassName = "", sections, activeSection, onSelectSection, sessionTitle, sessionSubtitle, sessionMeta, onNewAnalysis }) {
+function AppLayout({ children, contentClassName = "", recents, activeConversationId, onSelectRecent, onNewAnalysis, headerTitle, headerSubtitle }) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const [open, setOpen] = (0, import_react.useState)(true);
 	const [drawerOpen, setDrawerOpen] = (0, import_react.useState)(false);
@@ -305,7 +293,6 @@ function AppLayout({ children, contentClassName = "", sections, activeSection, o
 		setNotice(msg);
 		window.setTimeout(() => setNotice(null), 2800);
 	};
-	const inSession = !!sections?.length;
 	(0, import_react.useEffect)(() => {
 		if (!drawerOpen) return;
 		const onKey = (e) => {
@@ -331,16 +318,17 @@ function AppLayout({ children, contentClassName = "", sections, activeSection, o
 			flash("Couldn't share — copy the URL from the address bar.");
 		}
 	};
+	const doNewAnalysis = () => {
+		setDrawerOpen(false);
+		onNewAnalysis?.();
+	};
 	const railBody = (compact) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
 		/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 			className: "px-3 pt-4 shrink-0",
-			children: inSession && onNewAnalysis ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-				onClick: () => {
-					onNewAnalysis();
-					setDrawerOpen(false);
-				},
-				"data-testid": "session-new-analysis",
-				className: "w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-semibold transition-colors border border-[color:var(--gold)]/25 bg-[color:var(--gold)]/8 text-paper hover:bg-[color:var(--gold)]/15",
+			children: onNewAnalysis ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				onClick: doNewAnalysis,
+				"data-testid": "new-analysis-button",
+				className: "w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-semibold transition-colors border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/10 text-paper hover:bg-[color:var(--gold)]/18",
 				style: { borderRadius: "2px" },
 				title: "New analysis",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
@@ -350,74 +338,72 @@ function AppLayout({ children, contentClassName = "", sections, activeSection, o
 					className: "truncate",
 					children: "New analysis"
 				})]
-			}) : NAV_PRIMARY.map(({ to, label, icon: Icon, kbd }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
-				to,
-				"data-testid": `nav-${label.toLowerCase().replace(/\s/g, "-")}`,
-				className: "group flex items-center gap-3 px-3 py-2.5 text-[13px] font-semibold transition-colors border border-[color:var(--gold)]/25 bg-[color:var(--gold)]/8 text-paper hover:bg-[color:var(--gold)]/15",
+			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
+				to: "/",
+				"data-testid": "new-analysis-button",
+				className: "w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-semibold transition-colors border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/10 text-paper hover:bg-[color:var(--gold)]/18",
 				style: { borderRadius: "2px" },
-				title: label,
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, {
+				onClick: () => setDrawerOpen(false),
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
 					size: 15,
-					className: "text-[color:var(--gold)]"
-				}), compact && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: "text-[color:var(--gold)] shrink-0"
+				}), compact && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 					className: "truncate",
-					children: label
-				}), kbd && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
-					className: "ml-auto text-[9.5px] font-semibold px-1.5 py-0.5 mono-cap border border-[color:var(--border-dark)] text-muted-dark",
-					children: kbd
-				})] })]
-			}, label))
+					children: "New analysis"
+				})]
+			})
 		}),
-		inSession && compact && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("nav", {
-			className: "mt-4 px-3 flex flex-col gap-0.5 shrink-0",
-			"data-testid": "session-nav",
+		compact && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "mt-6 px-3 min-h-0 flex flex-col",
+			"data-testid": "recents-section",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-center gap-2 text-[9px] uppercase tracking-[0.26em] text-muted-dark px-2.5 mb-1.5",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Sections" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "flex-1 h-px bg-[color:var(--border-dark)]" })]
-			}), sections.map(({ id, label, icon: Icon, hint, disabled }) => {
-				const isActive = id === activeSection && !disabled;
-				return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-					onClick: () => {
-						if (!disabled) {
-							onSelectSection?.(id);
+				className: "flex items-center gap-2 text-[9.5px] uppercase tracking-[0.26em] text-muted-dark px-2 mb-2 shrink-0",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Recents" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "flex-1 h-px bg-[color:var(--border-dark)]" })]
+			}), recents && recents.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "flex flex-col gap-0.5 overflow-y-auto no-scrollbar pr-1",
+				"data-testid": "recents-list",
+				children: recents.map((r) => {
+					const active = r.id === activeConversationId;
+					return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						onClick: () => {
+							onSelectRecent?.(r.id);
 							setDrawerOpen(false);
-						}
-					},
-					disabled,
-					title: disabled ? `${label} — still in progress` : label,
-					"data-testid": `session-nav-${id}`,
-					"aria-current": isActive ? "page" : void 0,
-					className: "group relative flex items-center gap-2.5 px-2.5 py-2 text-[12.5px] text-left transition-colors " + (disabled ? "text-muted-dark/45 cursor-not-allowed" : isActive ? "text-paper bg-[color:var(--bg)]/70" : "text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40"),
-					style: { borderRadius: "2px" },
-					children: [
-						isActive && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-[color:var(--gold)]" }),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, {
-							size: 14,
-							className: isActive ? "text-[color:var(--gold)] shrink-0" : "shrink-0"
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-							className: "min-w-0 flex-1",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "block truncate leading-tight",
-								children: label
-							}), hint && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "block text-[10px] text-muted-dark/70 truncate leading-tight mt-0.5",
-								children: hint
-							})]
-						}),
-						disabled && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
-							size: 10,
-							className: "shrink-0 opacity-60"
-						})
-					]
-				}, id);
+						},
+						"data-testid": `recent-item-${r.id}`,
+						"aria-current": active ? "true" : void 0,
+						className: "group relative flex items-start gap-2.5 px-2.5 py-2 text-left transition-colors " + (active ? "bg-[color:var(--bg)]/70 text-paper" : "text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40"),
+						style: { borderRadius: "2px" },
+						children: [
+							active && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-[color:var(--gold)]" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MessageSquare, {
+								size: 13,
+								className: "mt-0.5 shrink-0 " + (active ? "text-[color:var(--gold)]" : "opacity-60")
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								className: "min-w-0 flex-1 leading-tight",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "block truncate text-[12.5px]",
+									children: r.title
+								}), r.subtitle && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "block truncate text-[10.5px] text-muted-dark/80 mt-0.5",
+									children: r.subtitle
+								})]
+							})
+						]
+					}, r.id);
+				})
+			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "border border-dashed border-[color:var(--border-dark)] px-3 py-3 text-[11px] leading-snug text-muted-dark",
+				style: { borderRadius: "2px" },
+				"data-testid": "recents-empty",
+				children: "No pieces yet. Analyzed scores show up here — click one to reopen the conversation."
 			})]
 		}),
 		/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("nav", {
-			className: "mt-4 px-3 flex flex-col gap-0.5 shrink-0",
+			className: "mt-6 px-3 flex flex-col gap-0.5 shrink-0",
 			"data-testid": "nav-main",
-			children: [inSession && compact && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-center gap-2 text-[9px] uppercase tracking-[0.26em] text-muted-dark px-2.5 mb-1.5",
+			children: [compact && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center gap-2 text-[9.5px] uppercase tracking-[0.26em] text-muted-dark px-2 mb-2",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Studio" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "flex-1 h-px bg-[color:var(--border-dark)]" })]
 			}), NAV_MAIN.map(({ to, label, icon: Icon, kbd }) => {
 				const active = pathname === to;
@@ -440,18 +426,6 @@ function AppLayout({ children, contentClassName = "", sections, activeSection, o
 						})] })
 					]
 				}, label);
-			})]
-		}),
-		compact && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "mt-6 px-4 shrink-0",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-center gap-2 text-[9.5px] uppercase tracking-[0.28em] text-muted-dark mb-3",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Recents" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "flex-1 h-px bg-[color:var(--border-dark)]" })]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "border border-dashed border-[color:var(--border-dark)] px-3 py-3 text-[11px] leading-snug text-muted-dark",
-				style: { borderRadius: "2px" },
-				"data-testid": "recents-empty",
-				children: "No recent pieces yet. Analyzed scores will appear here once account sync ships."
 			})]
 		}),
 		/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -527,7 +501,7 @@ function AppLayout({ children, contentClassName = "", sections, activeSection, o
 			onClick: () => setDrawerOpen(false),
 			className: "ml-auto grid place-items-center h-7 w-7 text-muted-dark hover:text-paper transition-colors",
 			"aria-label": "Close navigation",
-			"data-testid": "session-nav-close",
+			"data-testid": "drawer-close",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { size: 15 })
 		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 			onClick: () => setOpen((v) => !v),
@@ -539,7 +513,7 @@ function AppLayout({ children, contentClassName = "", sections, activeSection, o
 		})]
 	});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "min-h-screen bg-bg text-paper flex",
+		className: "h-screen bg-bg text-paper flex overflow-hidden",
 		"data-testid": "app-layout",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CommandPalette, {}),
@@ -549,18 +523,18 @@ function AppLayout({ children, contentClassName = "", sections, activeSection, o
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("aside", {
 				"data-testid": "sidebar",
-				className: "hidden md:flex shrink-0 flex-col border-r border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/60 backdrop-blur-xl transition-[width] duration-300 overflow-y-auto " + (open ? "w-[268px]" : "w-[68px]"),
+				className: "hidden md:flex shrink-0 flex-col border-r border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/60 backdrop-blur-xl transition-[width] duration-300 " + (open ? "w-[272px]" : "w-[68px]"),
 				children: [railHeader(false), railBody(open)]
 			}),
 			drawerOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "md:hidden fixed inset-0 z-[100] flex",
-				"data-testid": "session-drawer",
+				"data-testid": "mobile-drawer",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 					className: "absolute inset-0 bg-[color:var(--ink)]/70 backdrop-blur-sm",
 					onClick: () => setDrawerOpen(false),
 					"aria-hidden": true
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("aside", {
-					className: "relative flex w-[272px] max-w-[82vw] flex-col overflow-y-auto border-r border-[color:var(--border-dark)] bg-[color:var(--bg-2)] shadow-[0_0_60px_rgba(0,0,0,0.6)]",
+					className: "relative flex w-[276px] max-w-[82vw] flex-col overflow-y-auto border-r border-[color:var(--border-dark)] bg-[color:var(--bg-2)] shadow-[0_0_60px_rgba(0,0,0,0.6)]",
 					children: [railHeader(true), railBody(true)]
 				})]
 			}),
@@ -568,78 +542,45 @@ function AppLayout({ children, contentClassName = "", sections, activeSection, o
 				className: "flex-1 min-w-0 flex flex-col relative",
 				"data-testid": "main-content",
 				children: [
-					inSession ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
-						className: "sticky top-0 z-40 flex items-center gap-3 px-4 md:px-6 h-[57px] border-b border-[color:var(--border-dark)] bg-[color:var(--bg)]/90 backdrop-blur-xl shrink-0",
-						"data-testid": "session-header",
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+						className: "flex items-center gap-3 px-4 md:px-5 h-[53px] border-b border-[color:var(--border-dark)] bg-[color:var(--bg)]/85 backdrop-blur-xl shrink-0 z-30",
+						"data-testid": "top-bar",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 								onClick: () => setDrawerOpen(true),
 								className: "md:hidden grid place-items-center h-8 w-8 text-muted-dark hover:text-paper transition-colors shrink-0",
 								"aria-label": "Open navigation",
-								"data-testid": "session-nav-open",
+								"data-testid": "mobile-nav-open",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PanelLeft, { size: 16 })
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClefMark, { className: "hidden md:block h-5 w-5 shrink-0 opacity-90" }),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 								className: "min-w-0 flex-1",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "serif text-[15px] md:text-[16px] font-medium leading-tight text-paper truncate",
-									"data-testid": "session-title",
-									children: sessionTitle || "Your score"
-								}), sessionSubtitle && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								children: headerTitle ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "serif text-[15px] font-medium leading-tight text-paper truncate",
+									"data-testid": "header-title",
+									children: headerTitle
+								}), headerSubtitle && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 									className: "text-[10.5px] text-muted-dark truncate leading-tight",
-									children: sessionSubtitle
-								})]
+									children: headerSubtitle
+								})] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "hidden sm:flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-muted-dark",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Equalizer, { bars: 4 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Live session" })]
+								})
 							}),
-							sessionMeta && sessionMeta.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-								className: "hidden lg:flex items-center gap-px shrink-0",
-								"data-testid": "session-header-meta",
-								children: sessionMeta.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "px-3 text-right border-l border-[color:var(--border-dark)] first:border-l-0",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-[8.5px] uppercase tracking-[0.22em] text-muted-dark leading-none",
-										children: m.k
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "serif text-[13px] text-paper leading-tight mt-1 max-w-[150px] truncate",
-										children: m.v
-									})]
-								}, m.k))
-							})
-						]
-					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
-						className: "sticky top-3 z-30 mx-auto mt-3 flex items-center gap-2 px-3 py-1.5 border border-[color:var(--border-dark)] bg-[color:var(--bg-2)]/85 backdrop-blur-2xl shadow-[0_20px_60px_-24px_rgba(0,0,0,0.7)]",
-						style: {
-							width: "min(760px, calc(100% - 2.5rem))",
-							borderRadius: "3px"
-						},
-						"data-testid": "top-bar",
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								onClick: () => setDrawerOpen(true),
-								className: "md:hidden grid place-items-center h-7 w-7 text-muted-dark hover:text-paper transition-colors shrink-0",
-								"aria-label": "Open navigation",
-								"data-testid": "mobile-nav-open",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PanelLeft, { size: 15 })
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "hidden sm:flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-muted-dark",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Equalizer, { bars: 4 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Live session" })]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "hidden sm:inline h-3 w-px bg-[color:var(--border-dark)] mx-1" }),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 								onClick: () => window.dispatchEvent(new KeyboardEvent("keydown", {
 									key: "k",
 									metaKey: true
 								})),
 								"data-testid": "search-button",
-								className: "hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-muted-dark hover:text-paper hover:bg-[color:var(--bg)]/40 transition-colors",
+								className: "hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-muted-dark hover:text-paper hover:bg-[color:var(--bg-2)]/60 transition-colors",
 								style: { borderRadius: "2px" },
 								"aria-label": "Open command palette",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { size: 12 }),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 										className: "normal-case tracking-normal",
-										children: "Search anything"
+										children: "Search"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
 										className: "text-[9.5px] font-semibold mono-cap px-1 py-0.5 border border-[color:var(--border-dark)]",
@@ -647,26 +588,24 @@ function AppLayout({ children, contentClassName = "", sections, activeSection, o
 									})
 								]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "ml-auto flex items-center gap-1.5",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									onClick: onShare,
-									className: "hidden sm:inline-flex items-center gap-2 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-dark hover:text-paper transition-colors",
-									"data-testid": "share-button",
-									style: { borderRadius: "2px" },
-									children: "Share"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									onClick: () => flash("Solfai is free during preview — paid plans aren't available yet."),
-									title: "Paid plans coming soon",
-									"data-testid": "upgrade-button",
-									className: "inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]",
-									style: {
-										background: "var(--gold)",
-										color: "var(--ink)",
-										borderRadius: "2px"
-									},
-									children: "Upgrade"
-								})]
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								onClick: onShare,
+								className: "hidden sm:inline-flex items-center px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-dark hover:text-paper transition-colors",
+								"data-testid": "share-button",
+								style: { borderRadius: "2px" },
+								children: "Share"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								onClick: () => flash("Solfai is free during preview — paid plans aren't available yet."),
+								title: "Paid plans coming soon",
+								"data-testid": "upgrade-button",
+								className: "inline-flex items-center px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] hover:brightness-110 transition-all",
+								style: {
+									background: "var(--gold)",
+									color: "var(--ink)",
+									borderRadius: "2px"
+								},
+								children: "Upgrade"
 							})
 						]
 					}),
@@ -677,8 +616,8 @@ function AppLayout({ children, contentClassName = "", sections, activeSection, o
 						children: notice
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "flex-1 min-w-0 " + contentClassName,
-						"data-testid": "session-content",
+						className: "flex-1 min-h-0 " + contentClassName,
+						"data-testid": "content-region",
 						children
 					})
 				]
@@ -753,4 +692,4 @@ function StaffLines({ className = "", opacity = .35, strokeWidth = 1, animated =
 	});
 }
 //#endregion
-export { StaffLines as n, AppLayout as t };
+export { ClefMark as n, StaffLines as r, AppLayout as t };

@@ -128,6 +128,19 @@ var ArrowRight = createLucideIcon("arrow-right", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var ArrowUp = createLucideIcon("arrow-up", [["path", {
+	d: "m5 12 7-7 7 7",
+	key: "hav0vg"
+}], ["path", {
+	d: "M12 19V5",
+	key: "x0mq9r"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var BookOpen = createLucideIcon("book-open", [["path", {
 	d: "M12 7v14",
 	key: "1akyts"
@@ -204,45 +217,6 @@ var Ear = createLucideIcon("ear", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
-var EyeOff = createLucideIcon("eye-off", [
-	["path", {
-		d: "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49",
-		key: "ct8e1f"
-	}],
-	["path", {
-		d: "M14.084 14.158a3 3 0 0 1-4.242-4.242",
-		key: "151rxh"
-	}],
-	["path", {
-		d: "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143",
-		key: "13bj9a"
-	}],
-	["path", {
-		d: "m2 2 20 20",
-		key: "1ooewy"
-	}]
-]);
-/**
-* @license lucide-react v0.575.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var Eye = createLucideIcon("eye", [["path", {
-	d: "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0",
-	key: "1nclc0"
-}], ["circle", {
-	cx: "12",
-	cy: "12",
-	r: "3",
-	key: "1v7zrd"
-}]]);
-/**
-* @license lucide-react v0.575.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
 var FileMusic = createLucideIcon("file-music", [
 	["path", {
 		d: "M11.65 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v10.35",
@@ -263,16 +237,6 @@ var FileMusic = createLucideIcon("file-music", [
 		key: "j7wjp0"
 	}]
 ]);
-/**
-* @license lucide-react v0.575.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var Flame = createLucideIcon("flame", [["path", {
-	d: "M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4",
-	key: "1slcih"
-}]]);
 /**
 * @license lucide-react v0.575.0 - ISC
 *
@@ -448,24 +412,6 @@ var ListMusic = createLucideIcon("list-music", [
 var LoaderCircle = createLucideIcon("loader-circle", [["path", {
 	d: "M21 12a9 9 0 1 1-6.219-8.56",
 	key: "13zald"
-}]]);
-/**
-* @license lucide-react v0.575.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var Lock = createLucideIcon("lock", [["rect", {
-	width: "18",
-	height: "11",
-	x: "3",
-	y: "11",
-	rx: "2",
-	ry: "2",
-	key: "1w4ew1"
-}], ["path", {
-	d: "M7 11V7a5 5 0 0 1 10 0v4",
-	key: "fwvmzm"
 }]]);
 /**
 * @license lucide-react v0.575.0 - ISC
@@ -793,26 +739,6 @@ var Upload = createLucideIcon("upload", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
-var Waves = createLucideIcon("waves", [
-	["path", {
-		d: "M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1",
-		key: "knzxuh"
-	}],
-	["path", {
-		d: "M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1",
-		key: "2jd2cc"
-	}],
-	["path", {
-		d: "M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1",
-		key: "rd2r6e"
-	}]
-]);
-/**
-* @license lucide-react v0.575.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
 var X = createLucideIcon("x", [["path", {
 	d: "M18 6 6 18",
 	key: "1bl5f8"
@@ -821,4 +747,4 @@ var X = createLucideIcon("x", [["path", {
 	key: "d8bk6v"
 }]]);
 //#endregion
-export { FileMusic as A, ListMusic as C, Languages as D, LayoutList as E, Clock3 as F, CirclePlay as I, Check as L, EyeOff as M, Ear as N, Hammer as O, Command as P, BookOpen as R, LoaderCircle as S, Library as T, PanelLeft as _, TrendingUp as a, MessageSquare as b, Sparkles as c, ScanLine as d, RefreshCw as f, Paperclip as g, PenLine as h, TriangleAlert as i, Eye as j, Flame as k, Settings as l, Plus as m, Waves as n, TrendingDown as o, Radio as p, Upload as r, Square as s, X as t, Search as u, Music2 as v, Lightbulb as w, Lock as x, Mic as y, ArrowRight as z };
+export { Clock3 as A, Library as C, FileMusic as D, Hammer as E, ArrowRight as F, Check as M, BookOpen as N, Ear as O, ArrowUp as P, Lightbulb as S, Languages as T, Music2 as _, TrendingDown as a, LoaderCircle as b, Settings as c, RefreshCw as d, Radio as f, PanelLeft as g, Paperclip as h, TrendingUp as i, CirclePlay as j, Command as k, Search as l, PenLine as m, Upload as n, Square as o, Plus as p, TriangleAlert as r, Sparkles as s, X as t, ScanLine as u, Mic as v, LayoutList as w, ListMusic as x, MessageSquare as y };

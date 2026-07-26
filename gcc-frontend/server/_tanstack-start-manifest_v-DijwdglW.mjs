@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-DMzMvsEq.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-DijwdglW.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "C:/Users/857525/Desktop/glass-clef-craft/src/routes/__root.tsx",
@@ -8,44 +8,39 @@ var tsrStartManifest = () => ({ routes: {
 			"/practice",
 			"/vocal-coach"
 		],
-		preloads: ["/assets/index-DaaOcR1m.js"],
+		preloads: ["/assets/index-DRtZhrTI.js"],
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-DaaOcR1m.js"
+			src: "/assets/index-DRtZhrTI.js"
 		} }]
 	},
 	"/": {
 		filePath: "C:/Users/857525/Desktop/glass-clef-craft/src/routes/index.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/routes-D8okmzzT.js",
-			"/assets/StaffLines-B1gR0vqV.js",
-			"/assets/analyzeClient-DOQqin7s.js",
-			"/assets/bronze_material-BsZL-Xx_.js"
+			"/assets/routes-C71dJwDm.js",
+			"/assets/StaffLines-j02zAR7D.js",
+			"/assets/analyzeClient-CtiKjd5H.js"
 		]
 	},
 	"/library": {
 		filePath: "C:/Users/857525/Desktop/glass-clef-craft/src/routes/library.tsx",
 		children: void 0,
-		preloads: [
-			"/assets/library-BRlu5wZ_.js",
-			"/assets/StaffLines-B1gR0vqV.js",
-			"/assets/bronze_material-BsZL-Xx_.js"
-		]
+		preloads: ["/assets/library-Z03oMkmG.js", "/assets/StaffLines-j02zAR7D.js"]
 	},
 	"/practice": {
 		filePath: "C:/Users/857525/Desktop/glass-clef-craft/src/routes/practice.tsx",
 		children: void 0,
-		preloads: ["/assets/practice-C8J2lis2.js", "/assets/StaffLines-B1gR0vqV.js"]
+		preloads: ["/assets/practice-CPDLxE8v.js", "/assets/StaffLines-j02zAR7D.js"]
 	},
 	"/vocal-coach": {
 		filePath: "C:/Users/857525/Desktop/glass-clef-craft/src/routes/vocal-coach.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/vocal-coach-Ck2xhC-v.js",
-			"/assets/StaffLines-B1gR0vqV.js",
-			"/assets/analyzeClient-DOQqin7s.js"
+			"/assets/vocal-coach-y25IzEfT.js",
+			"/assets/StaffLines-j02zAR7D.js",
+			"/assets/analyzeClient-CtiKjd5H.js"
 		]
 	}
 } });

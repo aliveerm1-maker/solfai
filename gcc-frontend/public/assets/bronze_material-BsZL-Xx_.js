@@ -1,1 +1,0 @@
-var e=`/assets/bronze_material-Ca4AnOB5.png`;export{e as t};
