@@ -20,18 +20,11 @@ page.on('framenavigated', f => { if (f === page.mainFrame()) navigations++; });
 page.on('load', () => loads++);
 
 await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 30000 });
-await page.waitForSelector('[data-testid="analyze-file-input"]', { timeout: 30000 });
+await page.waitForSelector('[data-testid="composer-file-input"]', { timeout: 30000 });
 await sleep(1500);
 
 const navBefore = navigations, loadBefore = loads;
 const urlBefore = page.url();
-
-const input = await page.$('[data-testid="analyze-file-input"]');
-await input.uploadFile(mxl);
-await page.waitForFunction(() => {
-  const b = document.querySelector('[data-testid="composer-send"]');
-  return !!b && !b.disabled;
-}, { timeout: 20000 });
 
 // Tag the live shell nodes so we can detect unmount by identity, not by selector.
 const before = await page.evaluate(() => {
@@ -48,15 +41,17 @@ const before = await page.evaluate(() => {
   };
 });
 
-await page.evaluate(() => document.querySelector('[data-testid="composer-send"]').click());
+// Selecting a file auto-submits (handleFile -> runFlow), no Send click needed.
+const input = await page.$('[data-testid="composer-file-input"]');
+await input.uploadFile(mxl);
 // results view = the overview section rendering inside the SAME shell
-await page.waitForSelector('[data-testid="section-overview"]', { timeout: 40000 });
+await page.waitForSelector('[data-testid="chat-message-assistant"]', { timeout: 60000 });
 await sleep(600);
 
 const after = await page.evaluate(() => {
   const t = window.__tagged;
   const nowSidebar = document.querySelector('[data-testid="sidebar"]');
-  const nowSessionSidebar = document.querySelector("[data-testid=\"session-nav\"]");
+  const nowSessionSidebar = document.querySelector("[data-testid=\"recents-list\"]");
   return {
     // did the ORIGINAL nodes survive in the document?
     originalSidebarStillInDom: !!t.sidebar && document.contains(t.sidebar),
