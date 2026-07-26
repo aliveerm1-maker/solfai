@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-DijwdglW.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-BH7lfsfF.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "C:/Users/857525/Desktop/glass-clef-craft/src/routes/__root.tsx",
@@ -8,39 +8,39 @@ var tsrStartManifest = () => ({ routes: {
 			"/practice",
 			"/vocal-coach"
 		],
-		preloads: ["/assets/index-DRtZhrTI.js"],
+		preloads: ["/assets/index-BJwUclQ9.js"],
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-DRtZhrTI.js"
+			src: "/assets/index-BJwUclQ9.js"
 		} }]
 	},
 	"/": {
 		filePath: "C:/Users/857525/Desktop/glass-clef-craft/src/routes/index.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/routes-C71dJwDm.js",
-			"/assets/StaffLines-j02zAR7D.js",
-			"/assets/analyzeClient-CtiKjd5H.js"
+			"/assets/routes-CUV3OVEW.js",
+			"/assets/StaffLines-DtMpzIVA.js",
+			"/assets/analyzeClient-4tGhkJhz.js"
 		]
 	},
 	"/library": {
 		filePath: "C:/Users/857525/Desktop/glass-clef-craft/src/routes/library.tsx",
 		children: void 0,
-		preloads: ["/assets/library-Z03oMkmG.js", "/assets/StaffLines-j02zAR7D.js"]
+		preloads: ["/assets/library-eO_azC-z.js", "/assets/StaffLines-DtMpzIVA.js"]
 	},
 	"/practice": {
 		filePath: "C:/Users/857525/Desktop/glass-clef-craft/src/routes/practice.tsx",
 		children: void 0,
-		preloads: ["/assets/practice-CPDLxE8v.js", "/assets/StaffLines-j02zAR7D.js"]
+		preloads: ["/assets/practice-bkvcztfC.js", "/assets/StaffLines-DtMpzIVA.js"]
 	},
 	"/vocal-coach": {
 		filePath: "C:/Users/857525/Desktop/glass-clef-craft/src/routes/vocal-coach.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/vocal-coach-y25IzEfT.js",
-			"/assets/StaffLines-j02zAR7D.js",
-			"/assets/analyzeClient-CtiKjd5H.js"
+			"/assets/vocal-coach-CTdHF1zg.js",
+			"/assets/StaffLines-DtMpzIVA.js",
+			"/assets/analyzeClient-4tGhkJhz.js"
 		]
 	}
 } });

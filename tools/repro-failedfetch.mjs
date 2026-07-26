@@ -1,0 +1,20 @@
+import puppeteer from 'puppeteer-core';
+const FILE = process.env.FILE || 'C:/Users/857525/Documents/IMSLP02361.xml';
+const b = await puppeteer.launch({ executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe', headless:'new', args:['--no-sandbox']});
+const p = await b.newPage();
+p.on('pageerror', e => console.log('PAGEERROR:', String(e).slice(0,400)));
+p.on('console', m => { if (m.type()==='error') console.log('CONSOLE.ERR:', m.text().slice(0,400)); });
+p.on('requestfailed', r => console.log('REQUESTFAILED:', r.method(), r.url().slice(0,90), '→', r.failure()?.errorText));
+p.on('response', async r => { if (r.url().includes('/api/')) console.log('RESPONSE:', r.status(), r.url().slice(0,90)); });
+p.on('request', r => { if (r.url().includes('/api/')) console.log('REQUEST:', r.method(), r.url().slice(0,90)); });
+
+await p.goto('http://localhost:3300/', {waitUntil:'domcontentloaded', timeout:30000});
+await p.waitForSelector('[data-testid="composer-file-input"]', {timeout:30000});
+await new Promise(r=>setTimeout(r,1500));
+const input = await p.$('[data-testid="composer-file-input"]');
+await input.uploadFile(FILE);
+await new Promise(r=>setTimeout(r,12000));
+const txt = await p.evaluate(()=>document.body.innerText);
+console.log('\n--- VISIBLE TEXT (tail 600) ---');
+console.log(txt.slice(-600));
+await b.close();

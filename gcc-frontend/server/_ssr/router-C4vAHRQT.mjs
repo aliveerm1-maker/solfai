@@ -3,7 +3,7 @@ import { c as require_react, s as require_jsx_runtime } from "../_libs/@react-th
 import { c as HeadContent, d as createRouter, f as Outlet, g as Link, h as createRootRouteWithContext, m as createFileRoute, p as lazyRouteComponent, s as Scripts, v as useRouter } from "../_libs/@tanstack/react-router+[...].mjs";
 import { t as QueryClient } from "../_libs/tanstack__query-core.mjs";
 import { t as QueryClientProvider } from "../_libs/tanstack__react-query.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-DSJ0Ldt4.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-C4vAHRQT.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var styles_default = "/assets/styles-CK2sOfSe.css";
@@ -176,7 +176,7 @@ var Route$1 = createFileRoute("/library")({
 	}] }),
 	component: lazyRouteComponent($$splitComponentImporter$1, "component")
 });
-var $$splitComponentImporter = () => import("./routes-DLFzGm58.mjs");
+var $$splitComponentImporter = () => import("./routes-Dd2kE1n5.mjs");
 var Route = createFileRoute("/")({
 	head: () => ({ meta: [{ title: "Solfai — Sight-read studio" }, {
 		name: "description",

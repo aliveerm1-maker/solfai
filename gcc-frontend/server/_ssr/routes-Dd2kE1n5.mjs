@@ -4,7 +4,7 @@ import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { A as Clock3, D as FileMusic, E as Hammer, F as ArrowRight, N as BookOpen, O as Ear, P as ArrowUp, S as Lightbulb, T as Languages, _ as Music2, b as LoaderCircle, d as RefreshCw, h as Paperclip, m as PenLine, r as TriangleAlert, s as Sparkles, t as X, v as Mic, w as LayoutList, x as ListMusic } from "../_libs/lucide-react.mjs";
 import { n as ClefMark, r as StaffLines, t as AppLayout } from "./StaffLines-xn9fxfO3.mjs";
 import { a as postAnalyze, i as pdfFileToPages, o as postParseMusicXML, r as imageFileToBase64, s as postSightReading, t as AnalyzeApiError } from "./analyzeClient-CANo0PQL.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-DLFzGm58.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-Dd2kE1n5.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 /**
@@ -844,6 +844,34 @@ function Overview({ s, part }) {
 					size: 13,
 					className: "shrink-0 mt-0.5"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: s.keyWarning })]
+			}),
+			s.partFallback && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mt-4 flex items-start gap-2.5 border border-[color:var(--border-gold)] px-4 py-3",
+				style: {
+					borderRadius: "3px",
+					background: "color-mix(in oklab, var(--gold) 7%, transparent)"
+				},
+				"data-testid": "overview-part-fallback",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TriangleAlert, {
+					size: 14,
+					className: "shrink-0 mt-0.5 text-[color:var(--gold)]"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "text-[12.5px] leading-relaxed text-paper/90",
+					children: [
+						"This score has no ",
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: s.partFallback.requested }),
+						" part — you're looking at",
+						" ",
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: s.partFallback.used }),
+						". Parts in this file:",
+						" ",
+						s.partFallback.available.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [i > 0 && ", ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "text-[color:var(--gold)]",
+							children: p
+						})] }, p)),
+						"."
+					]
+				})]
 			}),
 			s.source === "musicxml" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "mt-4 inline-flex items-center gap-2 px-3 py-1.5 text-[10.5px] uppercase tracking-[0.18em] border border-[color:var(--border-gold)] text-[color:var(--gold)]",

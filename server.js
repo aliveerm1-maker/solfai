@@ -3661,9 +3661,18 @@ function parseMusicXML(xmlString, targetPart) {
 
   const target = (targetPart || 'Soprano').toLowerCase();
   let partId = partList[0]?.id || 'P1';
+  let partMatched = false;
   for (const p of partList) {
-    if (p.name.toLowerCase().includes(target)) { partId = p.id; break; }
+    if (p.name.toLowerCase().includes(target)) { partId = p.id; partMatched = true; break; }
   }
+  // Falling back to the first part is right for single-part scores, but on a
+  // multi-part score it silently analyses the WRONG line (e.g. asking for
+  // Soprano on a Voice+Piano score would hand back the piano). Record it so
+  // the caller can tell the singer which parts actually exist.
+  const partFallback = !partMatched && partList.length > 1
+    ? { requested: targetPart || 'Soprano', used: partList.find(p => p.id === partId)?.name || partId,
+        available: partList.map(p => p.name) }
+    : null;
 
   // ── Key signature ─────────────────────────────────────────
   let fifths = 0;
@@ -3706,7 +3715,10 @@ function parseMusicXML(xmlString, targetPart) {
     if (!tm) return null;
     const base = TYPE_FRACTION[tm[1].trim()];
     if (base === undefined) return null;
-    const dotCount = (noteXml.match(/<dot\/>/g) || []).length;
+    // `<dot/>`, `<dot />` and `<dot></dot>` are all valid; a bare-tag-only
+    // match would silently under-count dotted durations (same class of bug as
+    // the note regex below).
+    const dotCount = (noteXml.match(/<dot(?:\s[^>]*)?\s*\/?>/g) || []).length;
     let dur = base, add = base / 2;
     for (let i = 0; i < dotCount; i++) { dur += add; add /= 2; }
     const am = noteXml.match(/<actual-notes>(\d+)<\/actual-notes>/);
@@ -3826,8 +3838,12 @@ function parseMusicXML(xmlString, targetPart) {
     allDynamicChanges.push(...dynEntries);
     allRehearsalMarks.push(...rehearsals);
 
-    // Notes
-    const noteRegex = /<note>([\s\S]*?)<\/note>/g;
+    // Notes. `<note ...>` legitimately carries attributes (default-x/-y,
+    // print-object, color…) — Audiveris, MuseScore and Finale all emit them.
+    // A bare `<note>` match silently found ZERO notes in those files, which
+    // also forced the OMR override's `omrNoteCount >= 4` sanity gate to fail.
+    // Same treatment the measure regex above already had.
+    const noteRegex = /<note(?:\s[^>]*)?>([\s\S]*?)<\/note>/g;
     let nm;
     while ((nm = noteRegex.exec(measureXml)) !== null) {
       const noteXml = nm[1];
@@ -3923,7 +3939,7 @@ function parseMusicXML(xmlString, targetPart) {
 
   return {
     tonic, keySignature, timeSignature, mode,
-    measures, partId, partList, sharpCount, flatCount,
+    measures, partId, partList, partFallback, sharpCount, flatCount,
     pieceTitle, composerName,
     initialClef: currentClef,
     tempo: { display: tempoDisplay, text: firstTempo?.text || null, bpm: firstTempo?.bpm || null },
@@ -4073,6 +4089,10 @@ Return ONLY this JSON (no markdown):
       measures: result.measures,
       disagreements: 0,
       durationWarnings,
+      // Non-null when the requested voice part wasn't in the file and a
+      // different one was analysed instead. The UI must say so rather than
+      // present another line's notes as the singer's own.
+      partFallback: result.partFallback || null,
       rehearsalMarks: result.rehearsalMarks,
       tempoChanges: result.tempoChanges,
       dynamicChanges: result.dynamicChanges,
